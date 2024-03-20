@@ -122,7 +122,7 @@ fn generate_context_menu(world: &mut World) {
     };
 
     let mut root_node = entity;
-    while let Ok(parent) = world.query::<&Parent>().get(world, root_node) {
+    while let Some(parent) = world.get::<Parent>(root_node) {
         root_node = parent.get();
     }
 

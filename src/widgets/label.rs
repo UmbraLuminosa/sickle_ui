@@ -85,9 +85,7 @@ struct UpdateLabelText {
 
 impl EntityCommand for UpdateLabelText {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_text = world.query::<&mut Text>();
-        let mut q_config = world.query::<&LabelConfig>();
-        let Ok(config) = q_config.get(world, entity) else {
+        let Some(config) = world.get::<LabelConfig>(entity) else {
             warn!(
                 "Failed to set label text on entity {:?}: No LabelConfig component found!",
                 entity
@@ -96,7 +94,7 @@ impl EntityCommand for UpdateLabelText {
             return;
         };
         let style = config.text_style();
-        let Ok(mut text) = q_text.get_mut(world, entity) else {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
             warn!(
                 "Failed to set label text on entity {:?}: No Text component found!",
                 entity

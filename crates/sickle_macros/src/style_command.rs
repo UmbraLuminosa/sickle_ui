@@ -43,8 +43,7 @@ pub(crate) fn derive_style_command_macro(ast: &syn::DeriveInput) -> TokenStream 
     quote! {
         impl EntityCommand for #name_ident {
             fn apply(self, entity: Entity, world: &mut World) {
-                let mut q_style = world.query::<&mut Style>();
-                let Ok(mut style) = q_style.get_mut(world, entity) else {
+                let Some(mut style) = world.get_mut::<Style>(entity) else {
                     warn!(
                         "Failed to set {} property on entity {:?}: No Style component found!",
                         #target_name,

@@ -159,8 +159,7 @@ impl EntityCommand for SetImage {
             world.resource::<AssetServer>().load(self.path)
         };
 
-        let mut q_ui_image = world.query::<&mut UiImage>();
-        let Ok(mut image) = q_ui_image.get_mut(world, entity) else {
+        let Some(mut image) = world.get_mut::<UiImage>(entity) else {
             warn!(
                 "Failed to set image on entity {:?}: No UiImage component found!",
                 entity
@@ -191,8 +190,7 @@ struct SetImageScaleMode {
 
 impl EntityCommand for SetImageScaleMode {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_scale_mode = world.query::<&mut ImageScaleMode>();
-        let Ok(mut scale_mode) = q_scale_mode.get_mut(world, entity) else {
+        let Some(mut scale_mode) = world.get_mut::<ImageScaleMode>(entity) else {
             warn!(
                 "Failed to set image scale mode on entity {:?}: No ImageScaleMode component found!",
                 entity
@@ -221,8 +219,7 @@ struct SetEntityVisiblity {
 
 impl EntityCommand for SetEntityVisiblity {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_visibility = world.query::<&mut Visibility>();
-        let Ok(mut visiblity) = q_visibility.get_mut(world, entity) else {
+        let Some(mut visiblity) = world.get_mut::<Visibility>(entity) else {
             warn!(
                 "Failed to set visiblity on entity {:?}: No Visibility component found!",
                 entity
@@ -305,8 +302,7 @@ struct SetBorderColor {
 
 impl EntityCommand for SetBorderColor {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_border_color = world.query::<&mut BorderColor>();
-        let Ok(mut border_color) = q_border_color.get_mut(world, entity) else {
+        let Some(mut border_color) = world.get_mut::<BorderColor>(entity) else {
             warn!(
                 "Failed to set border color on entity {:?}: No BorderColor component found!",
                 entity
@@ -337,8 +333,7 @@ struct SetBackgroundColor {
 
 impl EntityCommand for SetBackgroundColor {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_background_color = world.query::<&mut BackgroundColor>();
-        let Ok(mut background_color) = q_background_color.get_mut(world, entity) else {
+        let Some(mut background_color) = world.get_mut::<BackgroundColor>(entity) else {
             warn!(
                 "Failed to set background color on entity {:?}: No BackgroundColor component found!",
                 entity
@@ -351,8 +346,7 @@ impl EntityCommand for SetBackgroundColor {
         }
 
         // TODO: Make this CFG optional
-        let mut q_interactive_state = world.query::<&mut InteractiveBackgroundState>();
-        let Ok(mut interactive_state) = q_interactive_state.get_mut(world, entity) else {
+        let Some(mut interactive_state) = world.get_mut::<InteractiveBackgroundState>(entity) else {
             return;
         };
 
@@ -377,8 +371,7 @@ struct SetZIndex {
 
 impl EntityCommand for SetZIndex {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_z_index = world.query::<&mut ZIndex>();
-        let Ok(mut z_index) = q_z_index.get_mut(world, entity) else {
+        let Some(mut z_index) = world.get_mut::<ZIndex>(entity) else {
             warn!(
                 "Failed to set z index on entity {:?}: No ZIndex component found!",
                 entity
@@ -418,8 +411,7 @@ struct SetFocusPolicy {
 
 impl EntityCommand for SetFocusPolicy {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_focus_policy = world.query::<&mut FocusPolicy>();
-        let Ok(mut focus_policy) = q_focus_policy.get_mut(world, entity) else {
+        let Some(mut focus_policy) = world.get_mut::<FocusPolicy>(entity) else {
             warn!(
                 "Failed to set focus policy on entity {:?}: No FocusPolicy component found!",
                 entity
@@ -450,8 +442,7 @@ struct SetFluxInteractionEnabled {
 
 impl EntityCommand for SetFluxInteractionEnabled {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_flux_interaction = world.query::<&mut FluxInteraction>();
-        let Ok(mut flux_interaction) = q_flux_interaction.get_mut(world, entity) else {
+        let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) else {
             warn!(
                 "Failed to set flux interaction on entity {:?}: No FluxInteraction component found!",
                 entity

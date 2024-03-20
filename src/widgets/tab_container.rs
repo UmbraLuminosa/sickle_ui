@@ -638,9 +638,8 @@ struct IncrementTabCount {
 
 impl Command for IncrementTabCount {
     fn apply(self, world: &mut World) {
-        let Ok(mut container) = world
-            .query::<&mut TabContainer>()
-            .get_mut(world, self.container)
+        let Some(mut container) = world
+            .get_mut::<TabContainer>(self.container)
         else {
             warn!(
                 "Failed to increment tab count: {:?} is not a TabContainer!",
