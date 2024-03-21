@@ -694,3 +694,79 @@ impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
         self
     }
 }
+
+struct SetAbsolutePosition {
+    position: Vec2,
+    check_lock: bool,
+}
+
+impl EntityCommand for SetAbsolutePosition {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "position: top", StylableAttribute::Top);
+            check_lock!(world, entity, "position: left", StylableAttribute::Left);
+        }
+
+        let offset = if let Some(parent) = world.get::<Parent>(entity) {
+            let Some(parent_node) = world.get::<Node>(parent.get()) else {
+                warn!(
+                    "Failed to set position on entity {:?}: Parent has no Node component!",
+                    entity
+                );
+                return;
+            };
+
+            let size = parent_node.size();
+            let Some(parent_transform) = world.get::<GlobalTransform>(parent.get()) else {
+                warn!(
+                    "Failed to set position on entity {:?}: Parent has no GlobalTransform component!",
+                    entity
+                );
+                return;
+            };
+
+            parent_transform.translation().truncate() - (size / 2.)
+        } else {
+            Vec2::ZERO
+        };
+
+        let Some(mut style) = world.get_mut::<Style>(entity) else {
+            warn!(
+                "Failed to set position on entity {:?}: No Style component found!",
+                entity
+            );
+            return;
+        };
+
+        style.top = Val::Px(self.position.y - offset.y);
+        style.left = Val::Px(self.position.x - offset.x);
+    }
+}
+
+pub trait SetAbsolutePositionExt<'a> {
+    fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyle<'a>;
+}
+
+impl<'a> SetAbsolutePositionExt<'a> for UiStyle<'a> {
+    fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyle<'a> {
+        self.commands.add(SetAbsolutePosition {
+            position,
+            check_lock: true,
+        });
+        self
+    }
+}
+
+pub trait SetAbsolutePositionUncheckedExt<'a> {
+    fn image_scale_mode(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetAbsolutePositionUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn image_scale_mode(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetAbsolutePosition {
+            position,
+            check_lock: false,
+        });
+        self
+    }
+}

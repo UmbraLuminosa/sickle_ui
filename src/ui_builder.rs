@@ -5,12 +5,19 @@ use bevy::{
         system::{Commands, EntityCommands},
     },
     hierarchy::BuildChildren,
+    prelude::*,
 };
 
 use crate::ui_style::{UiStyle, UiStyleExt};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct UiRoot;
+
+/// Used to find a root node where nodes are safe to spawn
+/// i.e. context menus or floating panels torn off from tab containers
+#[derive(Component, Debug, Default, Reflect)]
+#[reflect(Component)]
+pub struct UiContextRoot;
 
 pub struct UiBuilder<'w, 's, 'a, T> {
     commands: &'a mut Commands<'w, 's>,

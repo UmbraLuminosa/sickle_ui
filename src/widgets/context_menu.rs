@@ -1,7 +1,8 @@
 use bevy::{ecs::system::CommandQueue, prelude::*, window::PrimaryWindow};
 
 use crate::{
-    ui_builder::{UiBuilder, UiBuilderExt},
+    ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
+    ui_style::{SetAbsolutePositionExt, UiStyleExt},
     FluxInteractionUpdate,
 };
 
@@ -122,8 +123,11 @@ fn generate_context_menu(world: &mut World) {
     };
 
     let mut root_node = entity;
-    while let Ok(parent) = world.query::<&Parent>().get(world, root_node) {
+    while let Some(parent) = world.get::<Parent>(root_node) {
         root_node = parent.get();
+        if let Some(_) = world.get::<UiContextRoot>(root_node) {
+            break;
+        }
     }
 
     let entity_ref = world.entity(entity);
@@ -222,7 +226,7 @@ fn position_added_context_menu(
     q_context_menus: Query<Entity, Added<ContextMenu>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     //r_touches: Res<Touches>,
-    mut q_style: Query<&mut Style>,
+    mut commands: Commands,
 ) {
     let Ok(window) = q_window.get_single() else {
         return;
@@ -238,13 +242,7 @@ fn position_added_context_menu(
     };
 
     for entity in &q_context_menus {
-        let Ok(mut style) = q_style.get_mut(entity) else {
-            warn!("Missing Style component on ContextMenu {:?}!", entity);
-            continue;
-        };
-
-        style.top = Val::Px(position.y);
-        style.left = Val::Px(position.x);
+        commands.style(entity).absolute_position(position);
     }
 }
 

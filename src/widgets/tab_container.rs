@@ -5,7 +5,7 @@ use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
     drag_interaction::{DragState, Draggable, DraggableUpdate},
     interactions::InteractiveBackground,
-    ui_builder::{UiBuilder, UiBuilderExt},
+    ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{
         SetBackgroundColorExt, SetFluxInteractionExt, SetNodeLeftExt, SetNodeOverflowExt,
         SetNodePositionTypeExt, SetNodeShowHideExt, SetZIndexExt, UiStyleExt,
@@ -136,6 +136,7 @@ fn popout_panel_from_tab(
     >,
     q_panel: Query<&Panel>,
     q_parent: Query<&Parent>,
+    q_ui_context_root: Query<&UiContextRoot>,
     mut q_tab_container: Query<&mut TabContainer>,
     mut commands: Commands,
 ) {
@@ -174,7 +175,8 @@ fn popout_panel_from_tab(
 
         let root_node = q_parent
             .iter_ancestors(tab_contaier_id)
-            .last()
+            .find(|parent| q_ui_context_root.get(*parent).is_ok())
+            .or(q_parent.iter_ancestors(tab_contaier_id).last())
             .unwrap_or(tab_contaier_id);
 
         commands.entity(entity).despawn_recursive();
@@ -638,10 +640,7 @@ struct IncrementTabCount {
 
 impl Command for IncrementTabCount {
     fn apply(self, world: &mut World) {
-        let Ok(mut container) = world
-            .query::<&mut TabContainer>()
-            .get_mut(world, self.container)
-        else {
+        let Some(mut container) = world.get_mut::<TabContainer>(self.container) else {
             warn!(
                 "Failed to increment tab count: {:?} is not a TabContainer!",
                 self.container,

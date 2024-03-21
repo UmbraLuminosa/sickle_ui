@@ -6,7 +6,7 @@ use sickle_ui::{
         hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
-    ui_builder::{UiBuilderExt, UiRoot},
+    ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::{SetBackgroundColorExt, SetNodeHeightExt, SetNodeWidthExt},
     widgets::{prelude::*, tab_container::UiTabContainerSubExt, WidgetLibraryUpdate},
@@ -239,7 +239,7 @@ fn setup(
         });
         column
             .row(|_| {})
-            .insert(ShowcaseContainer)
+            .insert((ShowcaseContainer, UiContextRoot))
             .style()
             .height(Val::Percent(100.))
             .background_color(Color::NONE);

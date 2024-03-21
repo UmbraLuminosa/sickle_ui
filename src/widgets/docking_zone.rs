@@ -319,7 +319,7 @@ impl Command for DockingZoneSplit {
         let current_size = sized_zone.size();
         let current_min_size = sized_zone.min_size();
 
-        let Ok(_) = world.query::<&TabContainer>().get(world, tab_container_id) else {
+        let Some(_) = world.get::<TabContainer>(tab_container_id) else {
             error!(
                 "Tab container {:?} missing from docking zone {:?}",
                 tab_container_id, self.docking_zone
@@ -329,8 +329,7 @@ impl Command for DockingZoneSplit {
 
         // This must exists, since the Parent exists
         let current_index = world
-            .query::<&Children>()
-            .get(world, parent_id)
+            .get::<Children>(parent_id)
             .unwrap()
             .iter()
             .position(|child| *child == self.docking_zone)
@@ -363,10 +362,8 @@ impl Command for DockingZoneSplit {
             },
         };
 
-        let mut sized_zone = world
-            .query::<&mut SizedZone>()
-            .get_mut(world, self.docking_zone)
-            .unwrap();
+        // Missing SizedZone on a DockingZone must panic
+        let mut sized_zone = world.get_mut::<SizedZone>(self.docking_zone).unwrap();
 
         let new_container_size = if inject_container {
             50.

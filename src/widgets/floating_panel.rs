@@ -12,9 +12,9 @@ use crate::interactions::InteractiveBackground;
 use crate::resize_interaction::ResizeHandle;
 use crate::ui_builder::UiBuilderExt;
 use crate::ui_style::{
-    SetBackgroundColorExt, SetEntityVisiblityExt, SetFluxInteractionExt, SetFocusPolicyExt,
-    SetImageExt, SetNodeFlexGrowExt, SetNodeHeightExt, SetNodeLeftExt, SetNodeMarginExt,
-    SetNodeShowHideExt, SetNodeTopExt, SetNodeWidthExt, SetZIndexExt, UiStyleExt,
+    SetAbsolutePositionExt, SetBackgroundColorExt, SetEntityVisiblityExt, SetFluxInteractionExt,
+    SetFocusPolicyExt, SetImageExt, SetNodeFlexGrowExt, SetNodeHeightExt, SetNodeMarginExt,
+    SetNodeShowHideExt, SetNodeWidthExt, SetZIndexExt, UiStyleExt,
 };
 use crate::FluxInteraction;
 use crate::{
@@ -407,8 +407,7 @@ fn update_panel_layout(
                 true => Val::Auto,
                 false => Val::Px(panel.size.y.max(MIN_PANEL_SIZE.y)),
             })
-            .left(Val::Px(panel.position.x))
-            .top(Val::Px(panel.position.y));
+            .absolute_position(panel.position);
 
         if panel.priority {
             commands

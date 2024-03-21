@@ -19,8 +19,7 @@ struct SetTextSections {
 
 impl EntityCommand for SetTextSections {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_text = world.query::<&mut Text>();
-        let Ok(mut text) = q_text.get_mut(world, entity) else {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
             warn!(
                 "Failed to set text sections on entity {:?}: No Text component found!",
                 entity
@@ -50,8 +49,7 @@ struct SetText {
 
 impl EntityCommand for SetText {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_text = world.query::<&mut Text>();
-        let Ok(mut text) = q_text.get_mut(world, entity) else {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
             warn!(
                 "Failed to set text on entity {:?}: No Text component found!",
                 entity
