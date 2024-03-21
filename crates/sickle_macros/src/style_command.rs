@@ -35,7 +35,7 @@ fn parse_lock_attribute(
 
             let stylable_attr = list.tokens.clone();
             return Ok(quote! {
-                if let Ok(locked_attrs) = world.query::<&LockedStyleAttributes>().get(world, entity){
+                if let Some(locked_attrs) = world.get::<LockedStyleAttributes>(entity){
                     if locked_attrs.contains(#stylable_attr){
                         warn!(
                             "Failed to style {:?} property on entity {:?}: Attribute locked!",
@@ -76,8 +76,7 @@ fn parse_target_setter(
         let target_type_name = target_type.get_ident().unwrap().to_string();
 
         Ok(quote! {
-            let mut q_enum = world.query::<&mut #target_type>();
-            let Ok(mut #target_attr) = q_enum.get_mut(world, entity) else {
+            let Some(mut #target_attr) = world.get_mut::<#target_type>(entity) else {
                 warn!(
                     "Failed to set {} property on entity {:?}: No {} component found!",
                     #target_name,
@@ -118,8 +117,7 @@ fn parse_target_setter(
         let component_name = component_name.join("");
 
         Ok(quote! {
-            let mut q_component = world.query::<&mut #component_type>();
-            let Ok(mut #target_attr) = q_component.get_mut(world, entity) else {
+            let Some(mut #target_attr) = world.get_mut::<#component_type>(entity) else {
                 warn!(
                     "Failed to set {} property on entity {:?}: No {} component found!",
                     #target_name,
@@ -135,8 +133,7 @@ fn parse_target_setter(
         })
     } else {
         Ok(quote! {
-            let mut q_style = world.query::<&mut Style>();
-            let Ok(mut style) = q_style.get_mut(world, entity) else {
+            let Some(mut style) = world.get_mut::<Style>(entity) else {
                 warn!(
                     "Failed to set {} property on entity {:?}: No Style component found!",
                     #target_name,

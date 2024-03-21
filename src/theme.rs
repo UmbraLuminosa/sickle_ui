@@ -22,7 +22,7 @@ pub enum StylableAttribute {
     Height,
     MinWidth,
     MinHeight,
-    AspectRation,
+    AspectRatio,
     AlignItems,
     JustifyItems,
     AlignSelf,
@@ -53,8 +53,10 @@ pub enum StylableAttribute {
     ZIndex,
     Image,
     ImageScaleMode,
-    TextureAtlas,
-    Material,
+    // TODO: add these as use cases are discovered
+    // TextureAtlas,
+    // Material,
+    FluxInteraction,
 }
 
 #[derive(Debug, Default)]
@@ -148,3 +150,58 @@ where
 //     C: Component,
 // {
 // }
+
+/*
+
+Compose a queue of styling and apply them at once
+
+States:
+None, Hovered, Pressed, Released, Canceled, Disabled, Focused
+Delay
+
+Styles:
+Theme, Custom Theme, Local override, Functional state (i.e. Floating panel position): Locked attributes
+
+Enum of attributes to lock / override generic over source omponent?
+
+Once locked -> cannot unlock
+If locaked -> cannot override
+Theme change, component added -> theme applied if not overridden or locked
+
+Theme -> list of attribute(value). Use another enum of attributes with values set
+-> values are per-state collections of enums: Static, Animated
+-> Travers parents until custom theme found, or use default theme
+
+Theme<Component> -> too many components, but extensible
+Theme<Component>{
+    default: HashSet<impl StyleAttributeValue> ???
+    hovered: HashSet<StyleAttributeValue>
+}
+
+Theme<Component>(HashSet<StyleAttributeValue>)
+StyleAttributeValue<Type>{
+    Static(Value),
+    Animated(Value)
+}
+
+Need to resolve per state, but animation is pre-configured
+AnimatedInteraction has unused context (should be a PhantomData)
+Use QueryData/QueryFilter trait bounds?
+
+Trait?
+-> Theme<FloatingPanel>{
+fn default()->HashSet<StyleAttributeValue> {}
+fn hovered(){}
+... etc.
+}
+-> Need reflection for custom theme
+-> Generic function to style, which could look up the theme
+
+9 slice/image
+
+-> UiContextRoot marker components to find parents to spawn into
+-> Ideal to attach theme onto
+
+-> Text theme separate font family for types (italic, bold, etc.)
+
+*/

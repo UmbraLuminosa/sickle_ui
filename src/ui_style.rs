@@ -6,7 +6,6 @@ use bevy::{
 use sickle_macros::StyleCommand;
 
 use crate::{
-    interactions::{InteractionState, InteractiveBackgroundState},
     theme::{LockedStyleAttributes, StylableAttribute},
     FluxInteraction,
 };
@@ -55,137 +54,346 @@ impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
     }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Left)]
-struct SetNodePositionType {
-    position_type: PositionType,
-}
+// Simple Style attributes
 
 #[derive(StyleCommand)]
-struct SetNodeWidth {
-    width: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeHeight {
-    height: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeMinWidth {
-    min_width: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeMinHeight {
-    min_height: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeTop {
-    top: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeRight {
-    right: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeBottom {
-    bottom: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeLeft {
-    left: Val,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeOverflow {
-    overflow: Overflow,
-}
-
-#[derive(StyleCommand)]
-struct SetNodePadding {
-    padding: UiRect,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeMargin {
-    margin: UiRect,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeBorder {
-    border: UiRect,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeFlexDirection {
-    flex_direction: FlexDirection,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeFlexWrap {
-    flex_wrap: FlexWrap,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeFlexGrow {
-    flex_grow: f32,
-}
-
-#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Display)]
 struct SetNodeDisplay {
     display: Display,
 }
 
 #[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::PositionType)]
+struct SetNodePositionType {
+    position_type: PositionType,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Overflow)]
+struct SetNodeOverflow {
+    overflow: Overflow,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Direction)]
+struct SetNodeDirection {
+    direction: Direction,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Left)]
+struct SetNodeLeft {
+    left: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Right)]
+struct SetNodeRight {
+    right: Val,
+}
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Top)]
+struct SetNodeTop {
+    top: Val,
+}
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Bottom)]
+struct SetNodeBottom {
+    bottom: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Width)]
+struct SetNodeWidth {
+    width: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Height)]
+struct SetNodeHeight {
+    height: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::MinWidth)]
+struct SetNodeMinWidth {
+    min_width: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::MinHeight)]
+struct SetNodeMinHeight {
+    min_height: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::AspectRatio)]
+struct SetNodeAspectRatio {
+    aspect_ratio: Option<f32>,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::AlignItems)]
+struct SetNodeAlignItems {
+    align_items: AlignItems,
+}
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::JustifyItems)]
+struct SetNodeJustifyItems {
+    justify_items: JustifyItems,
+}
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::AlignSelf)]
 struct SetNodeAlignSelf {
     align_self: AlignSelf,
 }
 
 #[derive(StyleCommand)]
-struct SetNodeAlignItems {
-    align_items: AlignItems,
-}
-
-#[derive(StyleCommand)]
-struct SetNodeAlignContent {
-    align_content: AlignContent,
-}
-
-#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::JustifySelf)]
 struct SetNodeJustifySelf {
     justify_self: JustifySelf,
 }
 
 #[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Left)]
-struct SetNodeJustifyItems {
-    justify_items: JustifyItems,
+#[lock_attr(StylableAttribute::AlignContent)]
+struct SetNodeAlignContent {
+    align_content: AlignContent,
 }
 
 #[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::JustifyContent)]
 struct SetNodeJustifyContents {
     justify_content: JustifyContent,
 }
 
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Margin)]
+struct SetNodeMargin {
+    margin: UiRect,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Padding)]
+struct SetNodePadding {
+    padding: UiRect,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Border)]
+struct SetNodeBorder {
+    border: UiRect,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FlexDirection)]
+struct SetNodeFlexDirection {
+    flex_direction: FlexDirection,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FlexWrap)]
+struct SetNodeFlexWrap {
+    flex_wrap: FlexWrap,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FlexGrow)]
+struct SetNodeFlexGrow {
+    flex_grow: f32,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FlexShrink)]
+struct SetNodeFlexShrink {
+    flex_shrink: f32,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FlexBasis)]
+struct SetNodeFlexBasis {
+    flex_basis: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::RowGap)]
+struct SetNodeRowGap {
+    row_gap: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::ColumnGap)]
+struct SetNodeColumnGap {
+    column_gap: Val,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridAutoFlow)]
+struct SetNodeGridAutoFlow {
+    grid_auto_flow: GridAutoFlow,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridTemplateRows)]
+struct SetNodeGridTemplateRows {
+    grid_template_rows: Vec<RepeatedGridTrack>,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridTemplateColumns)]
+struct SetNodeGridTemplateColumns {
+    grid_template_columns: Vec<RepeatedGridTrack>,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridAutoRows)]
+struct SetNodeGridAutoRows {
+    grid_auto_rows: Vec<GridTrack>,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridAutoColumns)]
+struct SetNodeGridAutoColumns {
+    grid_auto_columns: Vec<GridTrack>,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridRow)]
+struct SetNodeGridRow {
+    grid_row: GridPlacement,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::GridColumn)]
+struct SetNodeGridColumn {
+    grid_column: GridPlacement,
+}
+
+// Tupl style-related components
+// TODO: Handle interactive original value for this and any other interactive attributes
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::BackgroundColor)]
+#[target_tupl(BackgroundColor)]
+struct SetBackgroundColor {
+    background_color: Color,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::BorderColor)]
+#[target_tupl(BorderColor)]
+struct SetBorderColor {
+    border_color: Color,
+}
+
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::FocusPolicy)]
+#[target_enum]
+struct SetFocusPolicy {
+    focus_policy: FocusPolicy,
+}
+
+// Enum style-related components
+#[derive(StyleCommand)]
+#[lock_attr(StylableAttribute::Visibility)]
+#[target_enum]
+struct SetEntityVisiblity {
+    visibility: Visibility,
+}
+
+// Special style-related components needing manual implementation
+macro_rules! check_lock {
+    ($world:expr, $entity:expr, $prop:literal, $lock_attr:path) => {
+        if let Some(locked_attrs) = $world.get::<LockedStyleAttributes>($entity) {
+            if locked_attrs.contains($lock_attr) {
+                warn!(
+                    "Failed to style {} property on entity {:?}: Attribute locked!",
+                    $prop, $entity
+                );
+                return;
+            }
+        }
+    };
+}
+
+struct SetZIndex {
+    z_index: ZIndex,
+    check_lock: bool,
+}
+
+impl EntityCommand for SetZIndex {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "z index", StylableAttribute::ZIndex);
+        }
+
+        let Some(mut z_index) = world.get_mut::<ZIndex>(entity) else {
+            warn!(
+                "Failed to set z index on entity {:?}: No ZIndex component found!",
+                entity
+            );
+            return;
+        };
+
+        // Best effort avoid change triggering
+        if let (ZIndex::Local(level), ZIndex::Local(target)) = (*z_index, self.z_index) {
+            if level != target {
+                *z_index = self.z_index;
+            }
+        } else if let (ZIndex::Global(level), ZIndex::Global(target)) = (*z_index, self.z_index) {
+            if level != target {
+                *z_index = self.z_index;
+            }
+        } else {
+            *z_index = self.z_index;
+        }
+    }
+}
+
+pub trait SetZIndexExt<'a> {
+    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a>;
+}
+
+impl<'a> SetZIndexExt<'a> for UiStyle<'a> {
+    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a> {
+        self.commands.add(SetZIndex {
+            z_index,
+            check_lock: true,
+        });
+        self
+    }
+}
+
+pub trait SetZIndexUncheckedExt<'a> {
+    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetZIndexUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetZIndex {
+            z_index,
+            check_lock: false,
+        });
+        self
+    }
+}
+
 struct SetImage {
     path: String,
+    check_lock: bool,
 }
 
 impl EntityCommand for SetImage {
     fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "image", StylableAttribute::Image);
+        }
+
         let handle = if self.path == "" {
             Handle::default()
         } else {
             world.resource::<AssetServer>().load(self.path)
         };
 
-        let mut q_ui_image = world.query::<&mut UiImage>();
-        let Ok(mut image) = q_ui_image.get_mut(world, entity) else {
+        let Some(mut image) = world.get_mut::<UiImage>(entity) else {
             warn!(
                 "Failed to set image on entity {:?}: No UiImage component found!",
                 entity
@@ -205,19 +413,45 @@ pub trait SetImageExt<'a> {
 
 impl<'a> SetImageExt<'a> for UiStyle<'a> {
     fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyle<'a> {
-        self.commands.add(SetImage { path: path.into() });
+        self.commands.add(SetImage {
+            path: path.into(),
+            check_lock: true,
+        });
+        self
+    }
+}
+
+pub trait SetImageUncheckedExt<'a> {
+    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetImageUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetImage {
+            path: path.into(),
+            check_lock: false,
+        });
         self
     }
 }
 
 struct SetImageScaleMode {
     scale_mode: ImageScaleMode,
+    check_lock: bool,
 }
 
 impl EntityCommand for SetImageScaleMode {
     fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_scale_mode = world.query::<&mut ImageScaleMode>();
-        let Ok(mut scale_mode) = q_scale_mode.get_mut(world, entity) else {
+        if self.check_lock {
+            check_lock!(
+                world,
+                entity,
+                "image scale mode",
+                StylableAttribute::ImageScaleMode
+            );
+        }
+
+        let Some(mut scale_mode) = world.get_mut::<ImageScaleMode>(entity) else {
             warn!(
                 "Failed to set image scale mode on entity {:?}: No ImageScaleMode component found!",
                 entity
@@ -235,16 +469,126 @@ pub trait SetImageScaleModeExt<'a> {
 
 impl<'a> SetImageScaleModeExt<'a> for UiStyle<'a> {
     fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyle<'a> {
-        self.commands.add(SetImageScaleMode { scale_mode });
+        self.commands.add(SetImageScaleMode {
+            scale_mode,
+            check_lock: true,
+        });
         self
     }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Visibility)]
-#[target_enum]
-struct SetEntityVisiblity {
-    visibility: Visibility,
+pub trait SetImageScaleModeUncheckedExt<'a> {
+    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetImageScaleModeUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetImageScaleMode {
+            scale_mode,
+            check_lock: false,
+        });
+        self
+    }
+}
+
+struct SetFluxInteractionEnabled {
+    enabled: bool,
+    check_lock: bool,
+}
+
+impl EntityCommand for SetFluxInteractionEnabled {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(
+                world,
+                entity,
+                "flux interaction",
+                StylableAttribute::FluxInteraction
+            );
+        }
+
+        let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) else {
+            warn!(
+                "Failed to set flux interaction on entity {:?}: No FluxInteraction component found!",
+                entity
+            );
+            return;
+        };
+
+        if self.enabled {
+            if *flux_interaction == FluxInteraction::Disabled {
+                *flux_interaction = FluxInteraction::None;
+            }
+        } else {
+            if *flux_interaction != FluxInteraction::Disabled {
+                *flux_interaction = FluxInteraction::Disabled;
+            }
+        }
+    }
+}
+
+pub trait SetFluxInteractionExt<'a> {
+    fn disable_flux_interaction(&'a mut self) -> &mut UiStyle<'a>;
+    fn enable_flux_interaction(&'a mut self) -> &mut UiStyle<'a>;
+    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyle<'a>;
+}
+
+impl<'a> SetFluxInteractionExt<'a> for UiStyle<'a> {
+    fn disable_flux_interaction(&'a mut self) -> &mut UiStyle<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled: false,
+            check_lock: true,
+        });
+        self
+    }
+
+    fn enable_flux_interaction(&'a mut self) -> &mut UiStyle<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled: true,
+            check_lock: true,
+        });
+        self
+    }
+
+    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyle<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled,
+            check_lock: true,
+        });
+        self
+    }
+}
+
+pub trait SetFluxInteractionUncheckedExt<'a> {
+    fn disable_flux_interaction(&'a mut self) -> &mut UiStyleUnchecked<'a>;
+    fn enable_flux_interaction(&'a mut self) -> &mut UiStyleUnchecked<'a>;
+    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetFluxInteractionUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn disable_flux_interaction(&'a mut self) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled: false,
+            check_lock: false,
+        });
+        self
+    }
+
+    fn enable_flux_interaction(&'a mut self) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled: true,
+            check_lock: false,
+        });
+        self
+    }
+
+    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetFluxInteractionEnabled {
+            enabled,
+            check_lock: false,
+        });
+        self
+    }
 }
 
 pub trait SetNodeShowHideExt<'a> {
@@ -299,174 +643,54 @@ impl<'a> SetNodeShowHideExt<'a> for UiStyle<'a> {
     }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::BorderColor)]
-#[target_tupl(BorderColor)]
-struct SetBorderColor {
-    border_color: Color,
+pub trait SetNodeShowHideUncheckedExt<'a> {
+    fn show(&'a mut self) -> &mut UiStyleUnchecked<'a>;
+    fn hide(&'a mut self) -> &mut UiStyleUnchecked<'a>;
+    fn render(&'a mut self, render: bool) -> &mut UiStyleUnchecked<'a>;
 }
 
-struct SetBackgroundColor {
-    color: Color,
-}
-
-impl EntityCommand for SetBackgroundColor {
-    fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_background_color = world.query::<&mut BackgroundColor>();
-        let Ok(mut background_color) = q_background_color.get_mut(world, entity) else {
-            warn!(
-                "Failed to set background color on entity {:?}: No BackgroundColor component found!",
-                entity
-            );
-            return;
-        };
-
-        if background_color.0 != self.color.into() {
-            background_color.0 = self.color.into();
-        }
-
-        // TODO: Make this CFG optional
-        let mut q_interactive_state = world.query::<&mut InteractiveBackgroundState>();
-        let Ok(mut interactive_state) = q_interactive_state.get_mut(world, entity) else {
-            return;
-        };
-
-        interactive_state.set_original(self.color);
-    }
-}
-
-pub trait SetBackgroundColorExt<'a> {
-    fn background_color(&'a mut self, color: Color) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetBackgroundColorExt<'a> for UiStyle<'a> {
-    fn background_color(&'a mut self, color: Color) -> &mut UiStyle<'a> {
-        self.commands.add(SetBackgroundColor { color });
-        self
-    }
-}
-
-struct SetZIndex {
-    z_index: ZIndex,
-}
-
-impl EntityCommand for SetZIndex {
-    fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_z_index = world.query::<&mut ZIndex>();
-        let Ok(mut z_index) = q_z_index.get_mut(world, entity) else {
-            warn!(
-                "Failed to set z index on entity {:?}: No ZIndex component found!",
-                entity
-            );
-            return;
-        };
-
-        // Best effort avoid change triggering
-        if let (ZIndex::Local(level), ZIndex::Local(target)) = (*z_index, self.z_index) {
-            if level != target {
-                *z_index = self.z_index;
-            }
-        } else if let (ZIndex::Global(level), ZIndex::Global(target)) = (*z_index, self.z_index) {
-            if level != target {
-                *z_index = self.z_index;
-            }
-        } else {
-            *z_index = self.z_index;
-        }
-    }
-}
-
-pub trait SetZIndexExt<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetZIndexExt<'a> for UiStyle<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a> {
-        self.commands.add(SetZIndex { z_index });
-        self
-    }
-}
-
-struct SetFocusPolicy {
-    focus_policy: FocusPolicy,
-}
-
-impl EntityCommand for SetFocusPolicy {
-    fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_focus_policy = world.query::<&mut FocusPolicy>();
-        let Ok(mut focus_policy) = q_focus_policy.get_mut(world, entity) else {
-            warn!(
-                "Failed to set focus policy on entity {:?}: No FocusPolicy component found!",
-                entity
-            );
-            return;
-        };
-
-        if *focus_policy != self.focus_policy {
-            *focus_policy = self.focus_policy;
-        }
-    }
-}
-
-pub trait SetFocusPolicyExt<'a> {
-    fn focus_policy(&'a mut self, focus_policy: FocusPolicy) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetFocusPolicyExt<'a> for UiStyle<'a> {
-    fn focus_policy(&'a mut self, focus_policy: FocusPolicy) -> &mut UiStyle<'a> {
-        self.commands.add(SetFocusPolicy { focus_policy });
-        self
-    }
-}
-
-struct SetFluxInteractionEnabled {
-    enabled: bool,
-}
-
-impl EntityCommand for SetFluxInteractionEnabled {
-    fn apply(self, entity: Entity, world: &mut World) {
-        let mut q_flux_interaction = world.query::<&mut FluxInteraction>();
-        let Ok(mut flux_interaction) = q_flux_interaction.get_mut(world, entity) else {
-            warn!(
-                "Failed to set flux interaction on entity {:?}: No FluxInteraction component found!",
-                entity
-            );
-            return;
-        };
-
-        if self.enabled {
-            if *flux_interaction == FluxInteraction::Disabled {
-                *flux_interaction = FluxInteraction::None;
-            }
-        } else {
-            if *flux_interaction != FluxInteraction::Disabled {
-                *flux_interaction = FluxInteraction::Disabled;
-            }
-        }
-    }
-}
-
-pub trait SetFluxInteractionExt<'a> {
-    fn disable_flux_interaction(&'a mut self) -> &mut UiStyle<'a>;
-    fn enable_flux_interaction(&'a mut self) -> &mut UiStyle<'a>;
-    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetFluxInteractionExt<'a> for UiStyle<'a> {
-    fn disable_flux_interaction(&'a mut self) -> &mut UiStyle<'a> {
+impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn show(&'a mut self) -> &mut UiStyleUnchecked<'a> {
         self.commands
-            .add(SetFluxInteractionEnabled { enabled: false });
+            .add(SetEntityVisiblityUnchecked {
+                visibility: Visibility::Inherited,
+            })
+            .add(SetNodeDisplayUnchecked {
+                display: Display::Flex,
+            });
         self
     }
 
-    fn enable_flux_interaction(&'a mut self) -> &mut UiStyle<'a> {
+    fn hide(&'a mut self) -> &mut UiStyleUnchecked<'a> {
         self.commands
-            .add(SetFluxInteractionEnabled { enabled: true });
+            .add(SetEntityVisiblityUnchecked {
+                visibility: Visibility::Hidden,
+            })
+            .add(SetNodeDisplayUnchecked {
+                display: Display::None,
+            });
         self
     }
 
-    fn flux_interaction_enabled(&'a mut self, enabled: bool) -> &mut UiStyle<'a> {
-        self.commands.add(SetFluxInteractionEnabled { enabled });
+    fn render(&'a mut self, render: bool) -> &mut UiStyleUnchecked<'a> {
+        if render {
+            self.commands
+                .add(SetEntityVisiblityUnchecked {
+                    visibility: Visibility::Inherited,
+                })
+                .add(SetNodeDisplayUnchecked {
+                    display: Display::Flex,
+                });
+        } else {
+            self.commands
+                .add(SetEntityVisiblityUnchecked {
+                    visibility: Visibility::Hidden,
+                })
+                .add(SetNodeDisplayUnchecked {
+                    display: Display::None,
+                });
+        }
+
         self
     }
 }

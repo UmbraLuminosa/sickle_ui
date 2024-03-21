@@ -19,6 +19,7 @@ impl Plugin for AnimatedInteractionPlugin {
 #[derive(SystemSet, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AnimatedInteractionUpdate;
 
+// TODO: Add support for continous animations, i.e. loop, ping-pong
 #[derive(Clone, Copy, Debug, Default, Reflect)]
 pub enum AnimationProgress {
     #[default]
