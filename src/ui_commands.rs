@@ -1,7 +1,7 @@
 use bevy::{
     core::Name,
     ecs::{
-        component::ComponentInfo,
+        component::{Component, ComponentInfo},
         entity::Entity,
         query::With,
         system::{Command, CommandQueue, Commands, EntityCommand, EntityCommands},
@@ -12,6 +12,10 @@ use bevy::{
     text::{Text, TextSection, TextStyle},
     ui::UiSurface,
     window::{CursorIcon, PrimaryWindow, Window},
+};
+
+use crate::theme::{
+    DynamicStyle, FluxDynamicStyle, PseudoDynamicStyle, PseudoFluxDynamicStyle, Theme,
 };
 
 struct SetTextSections {
@@ -296,5 +300,67 @@ pub trait EntityCommandsNamedExt {
 impl EntityCommandsNamedExt for EntityCommands<'_> {
     fn named(&mut self, name: impl Into<String>) -> &mut Self {
         self.insert(Name::new(name.into()))
+    }
+}
+
+pub trait InsertDynamicStyleExt<'a> {
+    fn insert_theme<C>(&'a mut self, theme: &Theme<C>) -> &mut EntityCommands<'a>
+    where
+        C: Component,
+        Theme<C>: Default;
+    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a>;
+}
+
+impl<'a> InsertDynamicStyleExt<'a> for EntityCommands<'a> {
+    fn insert_theme<C>(&'a mut self, theme: &Theme<C>) -> &mut EntityCommands<'a>
+    where
+        C: Component,
+        Theme<C>: Default,
+    {
+        let style = theme.style();
+
+        if style.need_pseudo_state() && style.need_flux_interaction() {
+            self.insert((style.clone(), PseudoFluxDynamicStyle));
+            self.remove::<PseudoDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        } else if style.need_pseudo_state() {
+            self.insert((style.clone(), PseudoDynamicStyle));
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        } else if style.need_flux_interaction() {
+            self.insert((style.clone(), FluxDynamicStyle));
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<PseudoDynamicStyle>();
+        } else {
+            self.insert(style.clone());
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<PseudoDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        }
+
+        self
+    }
+
+    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a> {
+        if style.need_pseudo_state() && style.need_flux_interaction() {
+            self.insert((style.clone(), PseudoFluxDynamicStyle));
+            self.remove::<PseudoDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        } else if style.need_pseudo_state() {
+            self.insert((style.clone(), PseudoDynamicStyle));
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        } else if style.need_flux_interaction() {
+            self.insert((style.clone(), FluxDynamicStyle));
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<PseudoDynamicStyle>();
+        } else {
+            self.insert(style.clone());
+            self.remove::<PseudoFluxDynamicStyle>();
+            self.remove::<PseudoDynamicStyle>();
+            self.remove::<FluxDynamicStyle>();
+        }
+
+        self
     }
 }
