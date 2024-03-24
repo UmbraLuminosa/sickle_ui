@@ -70,7 +70,7 @@ fn cleanup_empty_docking_zones(
         };
 
         let mut despawn_zone = true;
-        let parent_id = parent.get();        
+        let parent_id = parent.get();
         if let Ok(_) = q_split_zones.get(parent_id) {
             let mut zone_child_count: Vec<usize> = vec![];
             if let Ok(children) = q_children.get(parent_id) {
@@ -80,9 +80,12 @@ fn cleanup_empty_docking_zones(
                     }
 
                     if q_sized_zone.get(*child).is_ok() {
-                        zone_child_count.push(children.iter()
-                        .filter(|child| q_sized_zone.get(**child).is_ok())
-                        .count());
+                        zone_child_count.push(
+                            children
+                                .iter()
+                                .filter(|child| q_sized_zone.get(**child).is_ok())
+                                .count(),
+                        );
                     }
                 }
 

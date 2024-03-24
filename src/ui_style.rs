@@ -2,13 +2,11 @@ use bevy::{
     ecs::system::{EntityCommand, EntityCommands},
     prelude::*,
     ui::FocusPolicy,
+    utils::HashSet,
 };
 use sickle_macros::StyleCommand;
 
-use crate::{
-    theme::{LockedStyleAttributes, StylableAttribute},
-    FluxInteraction,
-};
+use crate::FluxInteraction;
 
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
@@ -17,6 +15,10 @@ pub struct UiStyle<'a> {
 impl<'a> UiStyle<'a> {
     pub fn id(&self) -> Entity {
         self.commands.id()
+    }
+
+    pub fn entity_commands(&mut self) -> EntityCommands {
+        self.commands.reborrow()
     }
 }
 
@@ -54,7 +56,65 @@ impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
     }
 }
 
-// Simple Style attributes
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect)]
+pub enum StylableAttribute {
+    Display,
+    PositionType,
+    Overflow,
+    Direction,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    Width,
+    Height,
+    MinWidth,
+    MinHeight,
+    AspectRatio,
+    AlignItems,
+    JustifyItems,
+    AlignSelf,
+    JustifySelf,
+    AlignContent,
+    JustifyContent,
+    Margin,
+    Padding,
+    Border,
+    FlexDirection,
+    FlexWrap,
+    FlexGrow,
+    FlexShrink,
+    FlexBasis,
+    RowGap,
+    ColumnGap,
+    GridAutoFlow,
+    GridTemplateRows,
+    GridTemplateColumns,
+    GridAutoRows,
+    GridAutoColumns,
+    GridRow,
+    GridColumn,
+    BackgroundColor,
+    BorderColor,
+    FocusPolicy,
+    Visibility,
+    ZIndex,
+    Image,
+    ImageScaleMode,
+    // TODO: add these as use cases are discovered
+    // TextureAtlas,
+    // Material,
+    FluxInteraction,
+}
+
+#[derive(Component, Debug, Default)]
+pub struct LockedStyleAttributes(HashSet<StylableAttribute>);
+
+impl LockedStyleAttributes {
+    pub fn contains(&self, attr: StylableAttribute) -> bool {
+        self.0.contains(&attr)
+    }
+}
 
 #[derive(StyleCommand)]
 #[lock_attr(StylableAttribute::Display)]

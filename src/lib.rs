@@ -29,6 +29,7 @@ use hierarchy_delay::HierarchyDelayPlugin;
 use interactions::InteractionsPlugin;
 use resize_interaction::ResizeHandlePlugin;
 use scroll_interaction::ScrollInteractionPlugin;
+use theme::ThemePlugin;
 use widgets::WidgetsPlugin;
 
 use self::animated_interaction::AnimatedInteractionPlugin;
@@ -74,6 +75,7 @@ impl Plugin for SickleUiPlugin {
             ResizeHandlePlugin,
             ScrollInteractionPlugin,
             WidgetsPlugin,
+            ThemePlugin,
         ));
     }
 }
