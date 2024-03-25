@@ -213,6 +213,7 @@ impl Menu {
 
     fn container() -> impl Bundle {
         (
+            Name::new("Menu Container"),
             NodeBundle {
                 style: Style {
                     top: Val::Px(22.),
@@ -252,7 +253,9 @@ impl<'w, 's> UiMenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         spawn_items: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut container = Entity::PLACEHOLDER;
-        let mut menu = self.container(Menu::button(), |menu_button| {
+        let name = format!("Menu [{}]", config.name.clone());
+
+        let mut menu = self.container((Name::new(name), Menu::button()), |menu_button| {
             container = menu_button.container(Menu::container(), spawn_items).id();
             menu_button.label(LabelConfig {
                 label: config.name.clone(),

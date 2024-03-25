@@ -8,7 +8,10 @@ use bevy::{
     prelude::*,
 };
 
-use crate::ui_style::{UiStyle, UiStyleExt};
+use crate::{
+    ui_commands::EntityCommandsNamedExt,
+    ui_style::{UiStyle, UiStyleExt},
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct UiRoot;
@@ -70,6 +73,11 @@ impl<'w, 's> UiBuilder<'w, 's, '_, Entity> {
 
     pub fn insert(&mut self, bundle: impl Bundle) -> &mut Self {
         self.entity_commands().insert(bundle);
+        self
+    }
+
+    pub fn named(&mut self, name: impl Into<String>) -> &mut Self {
+        self.entity_commands().named(name);
         self
     }
 }

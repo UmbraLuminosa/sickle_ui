@@ -30,7 +30,18 @@ impl Plugin for DockingZonePlugin {
         app.configure_sets(Update, DockingZoneUpdate.after(DroppableUpdate))
             .add_systems(
                 PreUpdate,
-                cleanup_empty_docking_zones.after(SizedZonePreUpdate),
+                (
+                    cleanup_empty_docking_zones,
+                    (
+                        cleanup_empty_docking_zone_splits,
+                        apply_deferred, // To make sure empties are removed
+                        cleanup_shell_docking_zone_splits,
+                    )
+                        .chain()
+                        .run_if(should_cleanup_lingering_docking_zone_splits),
+                )
+                    .chain()
+                    .after(SizedZonePreUpdate),
             )
             .add_systems(
                 Update,
@@ -46,13 +57,9 @@ impl Plugin for DockingZonePlugin {
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct DockingZoneUpdate;
 
-// TODO: Fix lingering DockingZoneSplitContainer after their sole docking zone child's content is removed
 fn cleanup_empty_docking_zones(
     q_tab_containers: Query<(&TabContainer, &RemoveEmptyDockingZone), Changed<TabContainer>>,
     q_parent: Query<&Parent>,
-    q_children: Query<&Children>,
-    q_sized_zone: Query<(Entity, &SizedZone)>,
-    q_split_zones: Query<&DockingZoneSplitContainer>,
     mut commands: Commands,
 ) {
     for (tab_container, zone_ref) in &q_tab_containers {
@@ -69,55 +76,250 @@ fn cleanup_empty_docking_zones(
             continue;
         };
 
-        let mut despawn_zone = true;
-        let parent_id = parent.get();        
-        if let Ok(_) = q_split_zones.get(parent_id) {
-            let mut zone_child_count: Vec<usize> = vec![];
-            if let Ok(children) = q_children.get(parent_id) {
-                for child in children {
-                    if *child == zone_ref.zone {
-                        continue;
-                    }
+        let parent_id = parent.get();
 
-                    if q_sized_zone.get(*child).is_ok() {
-                        zone_child_count.push(children.iter()
-                        .filter(|child| q_sized_zone.get(**child).is_ok())
-                        .count());
-                    }
+        commands.entity(zone_ref.zone).despawn_recursive();
+        // Make sure the docking zone's parent is updated to avoid invalid taffy state
+        // TODO: remove this once it is no longer needed. Testing should be done by calling despawn_recursive on parent_id in a later frame
+        commands.entity(parent_id).add(ResetChildrenInUiSurface);
+    }
+}
+
+fn should_cleanup_lingering_docking_zone_splits(
+    q_zone_splits: Query<Entity, (With<DockingZoneSplitContainer>, Changed<Children>)>,
+) -> bool {
+    // A split should be removed if:
+    // - it has no sized zone child (custom content is removed, it is not supported in DockingZoneSplitContainer)
+    //   - spread size proportionally among sized zone siblings
+    //   - it's a leaf node and should be just despawn_recursive'd:
+    //   - [DockingZoneSplitContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [UnsupportedAdditionalContent]
+    // - it is a child of a split and has exactly one sized zone child and no sized zone siblings
+    //   - update the child's size to the parent's
+    //   - replace parent with the single zone child, depsawn parent and self (refresh new parent's children):
+    //   - [DockingZoneSplitContainer:Column]            ->   [SizedZone:Column]
+    //       - [DockingZoneSplitContainer:Row]                - [SizedZoneResizeHandleContainer]
+    //         - [SizedZone:Column]                           - [SizedZoneResizeHandleContainer]
+    //           - [SizedZoneResizeHandleContainer]
+    //           - [SizedZoneResizeHandleContainer]
+    //         - [SizedZoneResizeHandleContainer]
+    //         - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //   - if it has multiple sized zone childs, move them to the parent, but spread the size amongst them
+    // - any chain of empty splits should be removed
+    // This is done in two separate steps, clean up empties first, then clean up nested ones
+
+    q_zone_splits.iter().count() > 0
+}
+
+fn cleanup_empty_docking_zone_splits(
+    q_zone_splits: Query<(Entity, &Children), (With<DockingZoneSplitContainer>, With<SizedZone>)>,
+    q_zone_split: Query<&DockingZoneSplitContainer, With<SizedZone>>,
+    q_parent: Query<&Parent>,
+    q_children: Query<&Children>,
+    mut q_sized_zone: Query<&mut SizedZone>,
+    mut commands: Commands,
+) {
+    // Find zones that have no sized zone children (custom content is removed, it is not supported in DockingZoneSplitContainer)
+    //   - spread size equally among sized zone siblings
+    //   - it's a leaf node and should be just despawn_recursive'd:
+    //   - [DockingZoneSplitContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [UnsupportedAdditionalContent]
+    // - any chain of empty splits should be removed
+    for (zone_split_id, children) in &q_zone_splits {
+        if children
+            .iter()
+            .any(|child| q_sized_zone.get(*child).is_ok())
+        {
+            // This is NOT an empty (leaf) split, walk up the tree until one has other branches
+            continue;
+        }
+
+        let mut topmost_empty_split = zone_split_id;
+        let mut topmost_sibling_count = 0;
+        for ancestor in q_parent.iter_ancestors(zone_split_id) {
+            if q_zone_split.get(ancestor).is_err() {
+                // Ancestor isn't a valid docking zone split
+                break;
+            }
+
+            // Safe unwrap
+            let other_branches = q_children.get(ancestor).unwrap();
+            let sibling_count = other_branches
+                .iter()
+                .filter(|branch| {
+                    **branch != topmost_empty_split && q_sized_zone.get(**branch).is_ok()
+                })
+                .count();
+
+            if sibling_count > 0 {
+                topmost_sibling_count = sibling_count;
+                break;
+            }
+
+            topmost_empty_split = ancestor;
+        }
+
+        let Ok(parent) = q_parent.get(topmost_empty_split) else {
+            warn!(
+                "DockingZoneSplitContainer {:?} has no Parent. This is not supported!",
+                topmost_empty_split
+            );
+
+            commands.entity(topmost_empty_split).despawn_recursive();
+            continue;
+        };
+
+        let parent_id = parent.get();
+
+        // Distribute removed sized zone size among its siblings
+        if topmost_sibling_count > 0 {
+            // Safe unwrap, we already checked the topmost is a split
+            let sized_zone = q_sized_zone.get(topmost_empty_split).unwrap();
+            let split_size = sized_zone.size();
+            let Ok(siblings) = q_children.get(parent_id) else {
+                unreachable!();
+            };
+
+            let sibling_portion = split_size / topmost_sibling_count as f32;
+            for sibling in siblings {
+                if *sibling == topmost_empty_split {
+                    continue;
                 }
 
-                if !(zone_child_count.len() > 0 && zone_child_count[0] > 0) {
-                    if let Ok(split_parent) = q_parent.get(parent_id) {
-                        let split_parent_id = split_parent.get();
-                        let index = q_children
-                            .get(split_parent_id)
-                            .unwrap()
-                            .iter()
-                            .position(|child| *child == parent_id)
-                            .unwrap();
+                let Ok(mut sized_zone) = q_sized_zone.get_mut(*sibling) else {
+                    continue;
+                };
 
-                        for child in children {
-                            if *child == zone_ref.zone {
-                                continue;
-                            }
-
-                            if q_sized_zone.get(*child).is_ok() {
-                                commands
-                                    .entity(split_parent_id)
-                                    .insert_children(index, &[*child]);
-                            }
-                        }
-                        commands.entity(parent_id).despawn_recursive();
-                    }
-                    despawn_zone = false;
-                }
+                let new_size = sized_zone.size() + sibling_portion;
+                sized_zone.set_size(new_size);
             }
         }
 
-        if despawn_zone {
-            commands.entity(zone_ref.zone).despawn_recursive();
-            commands.entity(parent_id).add(ResetChildrenInUiSurface);
+        commands.entity(topmost_empty_split).despawn_recursive();
+        commands.entity(parent_id).add(ResetChildrenInUiSurface);
+    }
+}
+
+fn cleanup_shell_docking_zone_splits(
+    q_zone_splits: Query<
+        (Entity, &Children, &Parent),
+        (With<DockingZoneSplitContainer>, With<SizedZone>),
+    >,
+    q_zone_split: Query<&DockingZoneSplitContainer, With<SizedZone>>,
+    q_parent: Query<&Parent>,
+    q_children: Query<&Children>,
+    mut q_sized_zone: Query<&mut SizedZone>,
+    mut commands: Commands,
+) {
+    // Find zone splits that are a child of a split and have more than one sized zone children and no sized zone siblings
+    //   - update the child's size to the parent's
+    //   - replace parent with the single zone child, depsawn parent and self (refresh new parent's children):
+    //   - [DockingZoneSplitContainer:Column]            ->   [SizedZone:Column]
+    //       - [DockingZoneSplitContainer:Row]                - [SizedZoneResizeHandleContainer]
+    //         - [SizedZone:Column]                           - [SizedZoneResizeHandleContainer]
+    //           - [SizedZoneResizeHandleContainer]
+    //           - [SizedZoneResizeHandleContainer]
+    //         - [SizedZoneResizeHandleContainer]
+    //         - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //   - if it has multiple sized zone childs, move them to the parent, but spread the size amongst them
+
+    // At this point, there should be no empty docking zone splits, but check anyway
+    // Don't traverse the tree upwards to find cleanup opportunities, these should be rare enough to be dealt with in multiple frames if needed
+    // Keep track of entities that were moved or deleted, as we don't know the processing order
+    let mut entities_to_skip: Vec<Entity> = Vec::with_capacity(q_sized_zone.iter().count());
+    for (zone_split_id, children, parent) in &q_zone_splits {
+        if entities_to_skip.contains(&zone_split_id) {
+            // We already processed this zone
+            continue;
         }
+
+        let parent_id = parent.get();
+        if entities_to_skip.contains(&parent_id) {
+            // We already processed the parent of this zone
+            continue;
+        }
+
+        if q_zone_split.get(parent_id).is_err() {
+            // Parent isn't a docking zone split, keep it.
+            continue;
+        }
+
+        let Ok(second_parent) = q_parent.get(parent_id) else {
+            // The parent split zone doesn't have parent. It is a root node.
+            warn!("Docking zone split {:?} doesnt't have a parent!", parent_id);
+            continue;
+        };
+        let second_parent_id = second_parent.get();
+
+        if !children
+            .iter()
+            .any(|child| q_sized_zone.get(*child).is_ok())
+        {
+            // Zone split has no sized zone children, it shouldn't be here!
+            warn!(
+                "Empty docking zone split {:?} detected after cleanup",
+                zone_split_id
+            );
+            continue;
+        }
+
+        // Safe unwrap, parent must have at least the current zone
+        let siblings = q_children.get(parent_id).unwrap();
+        if siblings
+            .iter()
+            .any(|sibling| *sibling != zone_split_id && q_sized_zone.get(*sibling).is_ok())
+        {
+            // Split has sized zone siblings, keep the parent
+            continue;
+        }
+
+        // Don't process ancestors later
+        entities_to_skip.push(parent_id);
+        entities_to_skip.push(second_parent_id);
+
+        // The parent zone's size needs to be redistributed to the moved children
+        // Safe unwarp: already checked that parent is a docking zone split with a sized zone
+        let sized_zone = q_sized_zone.get(parent_id).unwrap();
+        let split_size_ratio = sized_zone.size() / 100.;
+        let mut children_to_move: Vec<Entity> = Vec::with_capacity(children.len());
+        for child in children {
+            let Ok(mut sized_zone) = q_sized_zone.get_mut(*child) else {
+                continue;
+            };
+
+            let new_size = sized_zone.size() * split_size_ratio;
+            sized_zone.set_size(new_size);
+
+            entities_to_skip.push(*child);
+            children_to_move.push(*child);
+        }
+
+        // Safe unwrap: a parent found via Parent must have Children, which contains itself
+        let insert_index = q_children
+            .get(second_parent_id)
+            .unwrap()
+            .iter()
+            .position(|child| *child == parent_id)
+            .unwrap();
+
+        // Move sized zones to outer (second) parent
+        commands
+            .entity(second_parent_id)
+            .insert_children(insert_index, &children_to_move);
+        // Remove parent, along with the current split
+        commands.entity(parent_id).despawn_recursive();
+        // Refresh outer parent's children in taffy to avoid panics
+        commands
+            .entity(second_parent_id)
+            .add(ResetChildrenInUiSurface);
     }
 }
 
@@ -481,17 +683,20 @@ impl Default for RemoveEmptyDockingZone {
 
 impl DockingZone {
     fn zone_highlight() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
+        (
+            Name::new("Zone Highlight"),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    ..default()
+                },
+                background_color: Color::NONE.into(),
+                z_index: ZIndex::Local(100),
                 ..default()
             },
-            background_color: Color::NONE.into(),
-            z_index: ZIndex::Local(100),
-            ..default()
-        }
+        )
     }
 }
 
@@ -538,6 +743,7 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         });
 
         docking_zone.insert((
+            Name::new("Docking Zone"),
             DockingZone {
                 tab_container,
                 zone_highlight,
@@ -550,6 +756,9 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         docking_zone
     }
 
+    /// Create a sized zone dedicated to holding docking zones. These are the same as what
+    /// `DockingZone`s generate when a FloatingPanel is dropped on their sides
+    /// NOTE: Custom content will be removed on cleanup.
     fn docking_zone_split<'a>(
         &'a mut self,
         config: SizedZoneConfig,
@@ -557,7 +766,7 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let new_id = self
             .sized_zone(config, spawn_children)
-            .insert(DockingZoneSplitContainer)
+            .insert((Name::new("Docking Zone Split"), DockingZoneSplitContainer))
             .id();
 
         self.commands().ui_builder(new_id)

@@ -199,6 +199,7 @@ impl Dropdown {
 
     fn base_bundle(options: Vec<String>) -> impl Bundle {
         (
+            Name::new("Dropdown"),
             ButtonBundle {
                 style: Style {
                     min_width: Val::Px(150.),
@@ -228,6 +229,7 @@ impl Dropdown {
 
     fn option_bundle(option: usize, dropdown: Entity) -> impl Bundle {
         (
+            Name::new(format!("Dropdown Option {}", option)),
             ButtonBundle {
                 style: Style {
                     height: Val::Px(26.),

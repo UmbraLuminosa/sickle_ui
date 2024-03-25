@@ -25,7 +25,7 @@ pub trait UiIconExt<'w, 's> {
 
 impl<'w, 's> UiIconExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn icon<'a>(&'a mut self, path: impl Into<String>) -> UiBuilder<'w, 's, 'a, Entity> {
-        let mut icon = self.spawn((Icon::bundle(), Icon));
+        let mut icon = self.spawn((Name::new("Icon"), Icon::bundle(), Icon));
 
         icon.style().image(path);
 

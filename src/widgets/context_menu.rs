@@ -198,7 +198,11 @@ fn generate_context_menu(world: &mut World) {
 
     let container_id = commands
         .ui_builder(root_node)
-        .spawn((ContextMenu::frame(), ContextMenu { context: entity }))
+        .spawn((
+            Name::new("Context Menu"),
+            ContextMenu::frame(),
+            ContextMenu { context: entity },
+        ))
         .id();
 
     let mut last_index = 0;

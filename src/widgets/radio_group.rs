@@ -232,14 +232,20 @@ impl<'w, 's> UiRadioGroupExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let option_count = options.len();
         let mut queue = VecDeque::from(options);
         self.container(
-            (NodeBundle::default(), RadioGroup::default()),
+            (
+                Name::new("Radio Group"),
+                NodeBundle::default(),
+                RadioGroup::default(),
+            ),
             |radio_group| {
                 for i in 0..option_count {
                     let label = queue.pop_front().unwrap();
                     let id = radio_group.context();
                     let mut check_node: Entity = Entity::PLACEHOLDER;
+                    let label_string = label.into();
+                    let name = format!("Radio Button [{}]", label_string.clone());
                     radio_group
-                        .container(RadioButton::button(), |button| {
+                        .container((Name::new(name), RadioButton::button()), |button| {
                             button.container(
                                 RadioButton::radio_mark_background(),
                                 |radio_mark_bg| {
@@ -248,7 +254,7 @@ impl<'w, 's> UiRadioGroupExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                 },
                             );
                             button.label(LabelConfig {
-                                label: label.into(),
+                                label: label_string,
                                 margin: UiRect::right(Val::Px(10.)),
                                 ..default()
                             });

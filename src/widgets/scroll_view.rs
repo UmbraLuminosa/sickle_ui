@@ -415,19 +415,23 @@ impl ScrollView {
     }
 
     fn frame() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
+        (
+            Name::new("Scroll View"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 
     fn viewport() -> impl Bundle {
         (
+            Name::new("Viewport"),
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
@@ -473,6 +477,7 @@ impl ScrollView {
         };
 
         (
+            Name::new("Content"),
             NodeBundle {
                 style: Style {
                     width,
@@ -492,47 +497,57 @@ impl ScrollView {
     }
 
     fn scroll_bar_container() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                justify_content: JustifyContent::End,
-                align_content: AlignContent::Stretch,
+        (
+            Name::new("Scroll Bar Container"),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    justify_content: JustifyContent::End,
+                    align_content: AlignContent::Stretch,
+                    ..default()
+                },
+                z_index: ZIndex::Local(1),
                 ..default()
             },
-            z_index: ZIndex::Local(1),
-            ..default()
-        }
+        )
     }
 
     fn scroll_bar(axis: ScrollAxis) -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                width: match axis {
-                    ScrollAxis::Horizontal => Val::Percent(100.),
-                    ScrollAxis::Vertical => Val::Px(12.),
+        (
+            Name::new(match axis {
+                ScrollAxis::Horizontal => "Horizontal Scroll Bar",
+                ScrollAxis::Vertical => "Vertical Scroll Bar",
+            }),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    width: match axis {
+                        ScrollAxis::Horizontal => Val::Percent(100.),
+                        ScrollAxis::Vertical => Val::Px(12.),
+                    },
+                    height: match axis {
+                        ScrollAxis::Horizontal => Val::Px(12.),
+                        ScrollAxis::Vertical => Val::Percent(100.),
+                    },
+                    flex_direction: match axis {
+                        ScrollAxis::Horizontal => FlexDirection::Row,
+                        ScrollAxis::Vertical => FlexDirection::Column,
+                    },
+                    align_self: AlignSelf::End,
+                    justify_content: JustifyContent::Start,
+                    ..default()
                 },
-                height: match axis {
-                    ScrollAxis::Horizontal => Val::Px(12.),
-                    ScrollAxis::Vertical => Val::Percent(100.),
-                },
-                flex_direction: match axis {
-                    ScrollAxis::Horizontal => FlexDirection::Row,
-                    ScrollAxis::Vertical => FlexDirection::Column,
-                },
-                align_self: AlignSelf::End,
-                justify_content: JustifyContent::Start,
+                background_color: Color::GRAY.into(),
                 ..default()
             },
-            background_color: Color::GRAY.into(),
-            ..default()
-        }
+        )
     }
 
     fn scroll_bar_handle(axis: ScrollAxis) -> impl Bundle {
         (
+            Name::new("Scroll Bar Handle"),
             ButtonBundle {
                 style: Style {
                     width: match axis {

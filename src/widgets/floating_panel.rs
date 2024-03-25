@@ -609,20 +609,24 @@ impl FloatingPanel {
     }
 
     fn title_container() -> impl Bundle {
-        ButtonBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Start,
+        (
+            Name::new("Floating Panel Title Container"),
+            ButtonBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Start,
+                    ..default()
+                },
+                background_color: Color::DARK_GRAY.into(),
                 ..default()
             },
-            background_color: Color::DARK_GRAY.into(),
-            ..default()
-        }
+        )
     }
 
     fn drag_handle() -> impl Bundle {
         (
+            Name::new("Floating Panel Drag Handle"),
             ButtonBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -640,18 +644,21 @@ impl FloatingPanel {
     }
 
     fn close_button_container() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                right: Val::Px(0.),
-                border: UiRect::left(Val::Px(2.)),
+        (
+            Name::new("Floating Panel Close Button"),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    right: Val::Px(0.),
+                    border: UiRect::left(Val::Px(2.)),
+                    ..default()
+                },
+                border_color: Color::BLACK.into(),
+                background_color: Color::GRAY.into(),
+                focus_policy: bevy::ui::FocusPolicy::Block,
                 ..default()
             },
-            border_color: Color::BLACK.into(),
-            background_color: Color::GRAY.into(),
-            focus_policy: bevy::ui::FocusPolicy::Block,
-            ..default()
-        }
+        )
     }
 }
 
@@ -735,6 +742,9 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             } else {
                 "Untitled".into()
             };
+
+            let floating_panel_name = format!("Floating Panel [{}]", title_text);
+            container.named(floating_panel_name);
 
             vertical_resize_handles = container
                 .container(

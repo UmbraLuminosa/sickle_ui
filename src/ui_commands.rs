@@ -1,4 +1,5 @@
 use bevy::{
+    core::Name,
     ecs::{
         component::ComponentInfo,
         entity::Entity,
@@ -280,5 +281,16 @@ impl EntityCommand for ResetChildrenInUiSurface {
             };
             ui_surface.update_children(id, children);
         });
+    }
+}
+
+// Adopted from @brandonreinhart
+pub trait EntityCommandsNamedExt {
+    fn named(&mut self, name: impl Into<String>) -> &mut Self;
+}
+
+impl EntityCommandsNamedExt for EntityCommands<'_> {
+    fn named(&mut self, name: impl Into<String>) -> &mut Self {
+        self.insert(Name::new(name.into()))
     }
 }

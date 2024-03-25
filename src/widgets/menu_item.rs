@@ -224,39 +224,48 @@ impl MenuItem {
     }
 
     fn shortcut() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                margin: UiRect::left(Val::Px(50.)),
-                justify_content: JustifyContent::End,
-                flex_wrap: FlexWrap::NoWrap,
-                flex_grow: 2.,
+        (
+            Name::new("Menu Item Shortcut"),
+            NodeBundle {
+                style: Style {
+                    margin: UiRect::left(Val::Px(50.)),
+                    justify_content: JustifyContent::End,
+                    flex_wrap: FlexWrap::NoWrap,
+                    flex_grow: 2.,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 
     fn leading_icon() -> impl Bundle {
-        ImageBundle {
-            style: Style {
-                width: Val::Px(12.),
-                aspect_ratio: (1.).into(),
+        (
+            Name::new("Menu Item Leading Icon"),
+            ImageBundle {
+                style: Style {
+                    width: Val::Px(12.),
+                    aspect_ratio: (1.).into(),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 
     fn trailing_icon() -> impl Bundle {
-        ImageBundle {
-            style: Style {
-                width: Val::Px(12.),
-                aspect_ratio: (1.).into(),
-                margin: UiRect::left(Val::Px(5.)),
+        (
+            Name::new("Menu Item Trailing Icon"),
+            ImageBundle {
+                style: Style {
+                    width: Val::Px(12.),
+                    aspect_ratio: (1.).into(),
+                    margin: UiRect::left(Val::Px(5.)),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 }
 
@@ -270,8 +279,9 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let mut label = Entity::PLACEHOLDER;
         let mut shortcut = Entity::PLACEHOLDER;
         let mut trailing = Entity::PLACEHOLDER;
+        let name = format!("Menu Item [{}]", config.name.clone());
 
-        let mut item = self.container((MenuItem::button(), config), |menu_item| {
+        let mut item = self.container((Name::new(name), MenuItem::button(), config), |menu_item| {
             leading = menu_item.spawn(MenuItem::leading_icon()).id();
             label = menu_item
                 .label(LabelConfig {
@@ -302,6 +312,7 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             trailing,
             ..default()
         });
+
         item
     }
 }

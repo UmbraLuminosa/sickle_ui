@@ -26,7 +26,7 @@ impl Plugin for SizedZonePlugin {
             )
                 .chain()
                 .in_set(SizedZonePreUpdate)
-                .run_if(did_add_or_remove_sized_zone),
+                .run_if(should_update_sized_zone_layout),
         )
         .add_systems(
             Update,
@@ -46,11 +46,14 @@ impl Plugin for SizedZonePlugin {
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct SizedZonePreUpdate;
 
-fn did_add_or_remove_sized_zone(
+fn should_update_sized_zone_layout(
     q_added_zones: Query<Entity, Added<SizedZone>>,
+    q_parent_changed_zones: Query<Entity, (With<SizedZone>, Changed<Parent>)>,
     q_removed_zones: RemovedComponents<SizedZone>,
 ) -> bool {
-    q_added_zones.iter().count() > 0 || q_removed_zones.len() > 0
+    q_added_zones.iter().count() > 0
+        || q_parent_changed_zones.iter().count() > 0
+        || q_removed_zones.len() > 0
 }
 
 fn preset_sized_zone_flex_layout(
@@ -567,27 +570,33 @@ impl SizedZone {
     }
 
     fn frame() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
+        (
+            Name::new("Sized Zone"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    ..default()
+                },
+                border_color: Color::rgb(0.1, 0.1, 0.1).into(),
                 ..default()
             },
-            border_color: Color::rgb(0.1, 0.1, 0.1).into(),
-            ..default()
-        }
+        )
     }
 
     fn vertical_handles_container() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                justify_content: JustifyContent::SpaceBetween,
+        (
+            Name::new("Vertical Handles"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 }
 

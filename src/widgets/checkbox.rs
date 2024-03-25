@@ -96,32 +96,38 @@ impl Checkbox {
     }
 
     fn checkmark_background() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Px(16.),
-                height: Val::Px(16.),
-                margin: UiRect::all(Val::Px(5.)),
-                border: UiRect::all(Val::Px(1.)),
+        (
+            Name::new("Checkmark Background"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(16.),
+                    height: Val::Px(16.),
+                    margin: UiRect::all(Val::Px(5.)),
+                    border: UiRect::all(Val::Px(1.)),
+                    ..default()
+                },
+                border_color: Color::DARK_GRAY.into(),
+                background_color: Color::ANTIQUE_WHITE.into(),
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            border_color: Color::DARK_GRAY.into(),
-            background_color: Color::ANTIQUE_WHITE.into(),
-            focus_policy: FocusPolicy::Pass,
-            ..default()
-        }
+        )
     }
 
     fn checkmark() -> impl Bundle {
-        ImageBundle {
-            style: Style {
-                width: Val::Px(10.),
-                height: Val::Px(10.),
-                margin: UiRect::all(Val::Px(2.)),
+        (
+            Name::new("Checkmark"),
+            ImageBundle {
+                style: Style {
+                    width: Val::Px(10.),
+                    height: Val::Px(10.),
+                    margin: UiRect::all(Val::Px(2.)),
+                    ..default()
+                },
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            focus_policy: FocusPolicy::Pass,
-            ..default()
-        }
+        )
     }
 }
 
@@ -140,6 +146,7 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         value: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut check_node: Entity = Entity::PLACEHOLDER;
+        let mut name_attr: String = String::from("Checkbox");
 
         let mut input = self.container(Checkbox::checkbox_container(), |container| {
             container.container(Checkbox::checkmark_background(), |checkmark_bg| {
@@ -150,18 +157,21 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             });
 
             if let Some(label) = label {
+                name_attr = label.into();
                 container.label(LabelConfig {
-                    label: label.into(),
+                    label: name_attr.clone(),
                     margin: UiRect::right(Val::Px(10.)),
                     ..default()
                 });
             }
         });
 
-        input.insert(Checkbox {
-            check_node,
-            checked: value,
-        });
+        input
+            .insert(Checkbox {
+                check_node,
+                checked: value,
+            })
+            .named(name_attr);
 
         input
     }
