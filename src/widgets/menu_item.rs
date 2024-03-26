@@ -225,7 +225,7 @@ impl MenuItem {
 
     fn shortcut() -> impl Bundle {
         (
-            Name::new("Menu Item Shortcut"),
+            Name::new("Shortcut"),
             NodeBundle {
                 style: Style {
                     margin: UiRect::left(Val::Px(50.)),
@@ -241,7 +241,7 @@ impl MenuItem {
 
     fn leading_icon() -> impl Bundle {
         (
-            Name::new("Menu Item Leading Icon"),
+            Name::new("Leading Icon"),
             ImageBundle {
                 style: Style {
                     width: Val::Px(12.),
@@ -255,7 +255,7 @@ impl MenuItem {
 
     fn trailing_icon() -> impl Bundle {
         (
-            Name::new("Menu Item Trailing Icon"),
+            Name::new("Trailing Icon"),
             ImageBundle {
                 style: Style {
                     width: Val::Px(12.),

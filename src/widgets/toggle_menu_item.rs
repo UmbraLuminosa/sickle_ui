@@ -82,7 +82,10 @@ impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         config: ToggleMenuItemConfig,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut item = self.menu_item(config.clone().into());
+
+        let name = format!("Toggle Menu [{}]", config.name.clone());
         item.insert((
+            Name::new(name),
             ToggleMenuItem {
                 checked: config.initially_checked,
             },

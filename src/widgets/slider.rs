@@ -408,6 +408,7 @@ impl Slider {
 
     fn horizontal_bar_container() -> impl Bundle {
         (
+            Name::new("Horizontal Bar Container"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -421,33 +422,40 @@ impl Slider {
     }
 
     fn horizontal_bar() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Px(4.),
-                margin: UiRect::vertical(Val::Px(8.)),
-                border: UiRect::px(1., 1., 0., 1.),
+        (
+            Name::new("Horizontal Bar"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Px(4.),
+                    margin: UiRect::vertical(Val::Px(8.)),
+                    border: UiRect::px(1., 1., 0., 1.),
+                    ..default()
+                },
+                background_color: Color::DARK_GRAY.into(),
+                border_color: Color::GRAY.into(),
                 ..default()
             },
-            background_color: Color::DARK_GRAY.into(),
-            border_color: Color::GRAY.into(),
-            ..default()
-        }
+        )
     }
 
     fn horizontal_readout_container() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Px(50.),
-                overflow: Overflow::clip(),
+        (
+            Name::new("Horizontal Readount"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(50.),
+                    overflow: Overflow::clip(),
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 
     fn vertical_bar_container() -> impl Bundle {
         (
+            Name::new("Vertical Bar Container"),
             NodeBundle {
                 style: Style {
                     height: Val::Percent(100.),
@@ -462,19 +470,22 @@ impl Slider {
     }
 
     fn vertical_bar() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Px(4.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                margin: UiRect::horizontal(Val::Px(8.)),
-                border: UiRect::px(1., 1., 0., 1.),
+        (
+            Name::new("Vertical Bar"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(4.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    margin: UiRect::horizontal(Val::Px(8.)),
+                    border: UiRect::px(1., 1., 0., 1.),
+                    ..default()
+                },
+                background_color: Color::DARK_GRAY.into(),
+                border_color: Color::GRAY.into(),
                 ..default()
             },
-            background_color: Color::DARK_GRAY.into(),
-            border_color: Color::GRAY.into(),
-            ..default()
-        }
+        )
     }
 
     fn handle_bundle(slider: Entity, axis: SliderAxis) -> impl Bundle {
@@ -484,6 +495,7 @@ impl Slider {
         };
 
         (
+            Name::new("Handle"),
             ButtonBundle {
                 style: Style {
                     width: Val::Px(20.),
@@ -527,8 +539,12 @@ impl<'w, 's> UiSliderExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 let input_id = slider.id();
 
                 if let Some(label) = config.label.clone() {
+                    let label_string: String = label.into();
+                    let name_attr = format!("Horizontal Slider [{}]", label_string.clone());
+                    slider.insert(Name::new(name_attr));
+
                     slider.label(LabelConfig {
-                        label,
+                        label: label_string,
                         margin: UiRect::px(5., 10., 0., 0.),
                         ..default()
                     });
@@ -595,8 +611,12 @@ impl<'w, 's> UiSliderExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     .id();
 
                 if let Some(label) = config.label.clone() {
+                    let label_string: String = label.into();
+                    let name_attr = format!("Vertical Slider [{}]", label_string.clone());
+                    slider.insert(Name::new(name_attr));
+
                     slider.label(LabelConfig {
-                        label,
+                        label: label_string,
                         margin: UiRect::px(5., 5., 0., 5.),
                         ..default()
                     });

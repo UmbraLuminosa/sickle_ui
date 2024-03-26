@@ -610,7 +610,7 @@ impl FloatingPanel {
 
     fn title_container() -> impl Bundle {
         (
-            Name::new("Floating Panel Title Container"),
+            Name::new("Title Container"),
             ButtonBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -626,7 +626,7 @@ impl FloatingPanel {
 
     fn drag_handle() -> impl Bundle {
         (
-            Name::new("Floating Panel Drag Handle"),
+            Name::new("Drag Handle"),
             ButtonBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -645,7 +645,7 @@ impl FloatingPanel {
 
     fn close_button_container() -> impl Bundle {
         (
-            Name::new("Floating Panel Close Button"),
+            Name::new("Close Button Container"),
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
@@ -743,22 +743,24 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 "Untitled".into()
             };
 
-            let floating_panel_name = format!("Floating Panel [{}]", title_text);
-            container.named(floating_panel_name);
+            container.insert(Name::new(format!("Floating Panel [{}]", title_text)));
 
             vertical_resize_handles = container
                 .container(
                     (ResizeHandle::resize_handle_container(10),),
                     |resize_container| {
                         resize_container.container(
-                            NodeBundle {
-                                style: Style {
-                                    width: Val::Percent(100.),
-                                    height: Val::Px(ResizeHandle::resize_zone_size()),
+                            (
+                                Name::new("Top Row"),
+                                NodeBundle {
+                                    style: Style {
+                                        width: Val::Percent(100.),
+                                        height: Val::Px(ResizeHandle::resize_zone_size()),
+                                        ..default()
+                                    },
                                     ..default()
                                 },
-                                ..default()
-                            },
+                            ),
                             |top_row| {
                                 top_row.spawn((
                                     ResizeHandle::resize_handle(ResizeDirection::North),
@@ -768,14 +770,17 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                         );
 
                         resize_container.container(
-                            NodeBundle {
-                                style: Style {
-                                    width: Val::Percent(100.),
-                                    height: Val::Px(ResizeHandle::resize_zone_size()),
+                            (
+                                Name::new("Bottom Row"),
+                                NodeBundle {
+                                    style: Style {
+                                        width: Val::Percent(100.),
+                                        height: Val::Px(ResizeHandle::resize_zone_size()),
+                                        ..default()
+                                    },
                                     ..default()
                                 },
-                                ..default()
-                            },
+                            ),
                             |bottom_row| {
                                 bottom_row.spawn((
                                     ResizeHandle::resize_handle(ResizeDirection::South),
@@ -794,15 +799,18 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     (ResizeHandle::resize_handle_container(11),),
                     |resize_container| {
                         resize_container.container(
-                            NodeBundle {
-                                style: Style {
-                                    width: Val::Percent(100.),
-                                    height: Val::Percent(100.),
-                                    justify_content: JustifyContent::SpaceBetween,
+                            (
+                                Name::new("Middle Row"),
+                                NodeBundle {
+                                    style: Style {
+                                        width: Val::Percent(100.),
+                                        height: Val::Percent(100.),
+                                        justify_content: JustifyContent::SpaceBetween,
+                                        ..default()
+                                    },
                                     ..default()
                                 },
-                                ..default()
-                            },
+                            ),
                             |middle_row| {
                                 middle_row.spawn((
                                     ResizeHandle::resize_handle(ResizeDirection::West),
@@ -834,6 +842,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                             false => "sickle_ui://icons/chevron_down.png",
                         })
                         .insert((
+                            Name::new("Fold Button"),
                             Interaction::default(),
                             TrackedInteraction::default(),
                             InteractiveBackground {
@@ -869,6 +878,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                             close_button = close_button_container
                                 .icon("sickle_ui://icons/close.png")
                                 .insert((
+                                    Name::new("Close Button"),
                                     Interaction::default(),
                                     TrackedInteraction::default(),
                                     InteractiveBackground {

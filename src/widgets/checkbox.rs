@@ -157,21 +157,24 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             });
 
             if let Some(label) = label {
-                name_attr = label.into();
+                let label_string: String = label.into();
+                name_attr = format!("Checkbox [{}]", label_string.clone());
+
                 container.label(LabelConfig {
-                    label: name_attr.clone(),
+                    label: label_string.clone(),
                     margin: UiRect::right(Val::Px(10.)),
                     ..default()
                 });
             }
         });
 
-        input
-            .insert(Checkbox {
+        input.insert((
+            Name::new(name_attr),
+            Checkbox {
                 check_node,
                 checked: value,
-            })
-            .named(name_attr);
+            },
+        ));
 
         input
     }

@@ -117,19 +117,22 @@ impl ResizeHandle {
     }
 
     pub fn resize_handle_container(elevation: i32) -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                justify_content: JustifyContent::SpaceBetween,
-                align_self: AlignSelf::Stretch,
-                flex_direction: FlexDirection::Column,
+        (
+            Name::new("Resize Handle Container"),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    justify_content: JustifyContent::SpaceBetween,
+                    align_self: AlignSelf::Stretch,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                z_index: ZIndex::Local(elevation),
                 ..default()
             },
-            z_index: ZIndex::Local(elevation),
-            ..default()
-        }
+        )
     }
 
     pub fn resize_handle(direction: ResizeDirection) -> impl Bundle {
@@ -145,9 +148,20 @@ impl ResizeHandle {
             ResizeDirection::West => (Val::Px(zone_size), Val::Percent(100.)),
             ResizeDirection::NorthWest => (Val::Px(zone_size), Val::Px(zone_size)),
         };
+        let name = match direction {
+            ResizeDirection::North => "North",
+            ResizeDirection::NorthEast => "NorthEast",
+            ResizeDirection::East => "East",
+            ResizeDirection::SouthEast => "SouthEast",
+            ResizeDirection::South => "South",
+            ResizeDirection::SouthWest => "SouthWest",
+            ResizeDirection::West => "West",
+            ResizeDirection::NorthWest => "NorthWest",
+        };
 
         let pullback = Val::Px(-ResizeHandle::resize_zone_pullback());
         (
+            Name::new(format!("Resize Handle: [{}]", name)),
             NodeBundle {
                 style: Style {
                     top: pullback,

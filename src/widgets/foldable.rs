@@ -133,7 +133,7 @@ impl<'w, 's> UiFoldableExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 .flex_grow(1.)
                 .id();
         })
-        .named(format!("Foldable [{}] - Button Row", name));
+        .insert(Name::new(format!("Foldable [{}] - Button Row", name)));
 
         container = self
             .container(

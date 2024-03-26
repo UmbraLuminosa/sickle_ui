@@ -105,11 +105,14 @@ impl<'w, 's> UiEntityComponentListExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> 
         entity: Option<Entity>,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         self.row(|row| {
-            row.insert(EntityComponentList { entity })
-                .style()
-                .flex_wrap(FlexWrap::Wrap)
-                .align_items(AlignItems::FlexStart)
-                .align_content(AlignContent::FlexStart);
+            row.insert((
+                Name::new("Entity Component List"),
+                EntityComponentList { entity },
+            ))
+            .style()
+            .flex_wrap(FlexWrap::Wrap)
+            .align_items(AlignItems::FlexStart)
+            .align_content(AlignContent::FlexStart);
         })
     }
 }

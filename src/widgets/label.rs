@@ -46,14 +46,13 @@ impl LabelConfig {
 
     fn frame(self) -> impl Bundle {
         let mut section = Text::from_section(self.label.clone(), self.text_style());
-        let name = format!("Label [{}]", self.label.clone());
 
         if self.wrap == FlexWrap::NoWrap {
             section = section.with_no_wrap();
         }
 
         (
-            Name::new(name),
+            Name::new("Label"),
             TextBundle {
                 style: Style {
                     align_self: AlignSelf::Center,

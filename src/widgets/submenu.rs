@@ -349,6 +349,7 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             .ui_builder(menu_id)
             .container(
                 (
+                    Name::new("Submenu Container"),
                     SubmenuContainer::frame(),
                     SubmenuContainerState::default(),
                     SubmenuContainer {
@@ -360,7 +361,9 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             )
             .id();
 
+        let name = format!("Submenu [{}]", config.name.clone());
         self.commands().ui_builder(menu_id).insert((
+            Name::new(name),
             Submenu {
                 container,
                 external_container,

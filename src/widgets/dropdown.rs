@@ -229,7 +229,7 @@ impl Dropdown {
 
     fn option_bundle(option: usize, dropdown: Entity) -> impl Bundle {
         (
-            Name::new(format!("Dropdown Option {}", option)),
+            Name::new(format!("Option {}", option)),
             ButtonBundle {
                 style: Style {
                     height: Val::Px(26.),

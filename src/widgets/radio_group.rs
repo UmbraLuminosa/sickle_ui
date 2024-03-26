@@ -185,33 +185,39 @@ impl RadioButton {
     }
 
     fn radio_mark_background() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Px(16.),
-                height: Val::Px(16.),
-                margin: UiRect::all(Val::Px(5.)),
-                border: UiRect::all(Val::Px(1.)),
+        (
+            Name::new("Checkmark Background"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(16.),
+                    height: Val::Px(16.),
+                    margin: UiRect::all(Val::Px(5.)),
+                    border: UiRect::all(Val::Px(1.)),
+                    ..default()
+                },
+                border_color: Color::DARK_GRAY.into(),
+                background_color: Color::ANTIQUE_WHITE.into(),
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            border_color: Color::DARK_GRAY.into(),
-            background_color: Color::ANTIQUE_WHITE.into(),
-            focus_policy: FocusPolicy::Pass,
-            ..default()
-        }
+        )
     }
 
     fn radio_mark() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Px(10.),
-                height: Val::Px(10.),
-                margin: UiRect::all(Val::Px(2.)),
+        (
+            Name::new("Checkmark"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(10.),
+                    height: Val::Px(10.),
+                    margin: UiRect::all(Val::Px(2.)),
+                    ..default()
+                },
+                background_color: Color::DARK_GRAY.into(),
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            background_color: Color::DARK_GRAY.into(),
-            focus_policy: FocusPolicy::Pass,
-            ..default()
-        }
+        )
     }
 }
 

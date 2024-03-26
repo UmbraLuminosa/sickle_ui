@@ -637,14 +637,17 @@ impl<'w, 's> UiSizedZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 ),
                 |resize_container| {
                     resize_container.container(
-                        NodeBundle {
-                            style: Style {
-                                width: Val::Percent(100.),
-                                height: Val::Px(ResizeHandle::resize_zone_size()),
+                        (
+                            Name::new("Top Row"),
+                            NodeBundle {
+                                style: Style {
+                                    width: Val::Percent(100.),
+                                    height: Val::Px(ResizeHandle::resize_zone_size()),
+                                    ..default()
+                                },
                                 ..default()
                             },
-                            ..default()
-                        },
+                        ),
                         |top_row| {
                             top_handle = top_row
                                 .spawn((
@@ -658,14 +661,17 @@ impl<'w, 's> UiSizedZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     );
 
                     resize_container.container(
-                        NodeBundle {
-                            style: Style {
-                                width: Val::Percent(100.),
-                                height: Val::Px(ResizeHandle::resize_zone_size()),
+                        (
+                            Name::new("Bottom Row"),
+                            NodeBundle {
+                                style: Style {
+                                    width: Val::Percent(100.),
+                                    height: Val::Px(ResizeHandle::resize_zone_size()),
+                                    ..default()
+                                },
                                 ..default()
                             },
-                            ..default()
-                        },
+                        ),
                         |bottom_row| {
                             bottom_handle = bottom_row
                                 .spawn((

@@ -213,7 +213,7 @@ impl Menu {
 
     fn container() -> impl Bundle {
         (
-            Name::new("Menu Container"),
+            Name::new("Container"),
             NodeBundle {
                 style: Style {
                     top: Val::Px(22.),

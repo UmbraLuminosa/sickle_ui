@@ -199,7 +199,7 @@ fn generate_context_menu(world: &mut World) {
     let container_id = commands
         .ui_builder(root_node)
         .spawn((
-            Name::new("Context Menu"),
+            Name::new(format!("Context Menu of [{:?}]", entity)),
             ContextMenu::frame(),
             ContextMenu { context: entity },
         ))

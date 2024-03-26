@@ -171,13 +171,17 @@ impl EntityCommand for LogHierarchy {
         }
 
         let padding = padding_parts.join("");
-        let entity_text = format!("{}  {}══ Entity {:?}: ", padding, prefix, id);
+        let name = match world.get::<Name>(id) {
+            Some(name) => format!("[{:?}] {}", id, name),
+            None => format!("Entity {:?}", id),
+        };
+        let entity_text = format!("{}  {}══ {} ", padding, prefix, name);
         let has_children = children_ids.len() > 0;
 
         info!("{}", entity_text);
         for i in 0..debug_infos.len() {
             let is_last = i == (debug_infos.len() - 1);
-            let component_pipe = if is_last { "╚" } else { "╠" };
+            let component_pipe = if is_last { "└" } else { "├" };
             let child_pipe = if self.is_last {
                 if has_children {
                     "      ║      "
@@ -192,7 +196,7 @@ impl EntityCommand for LogHierarchy {
                 }
             };
             info!(
-                "{}{}{}══ {}",
+                "{}{}{}── {}",
                 padding, child_pipe, component_pipe, debug_infos[i]
             );
         }

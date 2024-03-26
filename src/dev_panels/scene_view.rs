@@ -510,9 +510,12 @@ impl<'w, 's> UiSceneViewExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 's, 'a, Entity> {
         let column = self
             .column(|_| {})
-            .insert(SpawnSceneView {
-                asset_path: asset.into(),
-            })
+            .insert((
+                Name::new("Scene View"),
+                SpawnSceneView {
+                    asset_path: asset.into(),
+                },
+            ))
             .style() // Needed until UiImage stops depending on background color
             .background_color(Color::WHITE)
             .width(Val::Percent(100.))

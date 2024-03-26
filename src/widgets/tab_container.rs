@@ -739,6 +739,7 @@ impl TabContainer {
 
     fn frame() -> impl Bundle {
         (
+            Name::new("Tab Container"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -754,6 +755,7 @@ impl TabContainer {
 
     fn bar() -> impl Bundle {
         (
+            Name::new("Tab Bar"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.),
@@ -882,6 +884,7 @@ impl<'w, 's> UiTabContainerSubExt<'w, 's> for UiBuilder<'w, 's, '_, TabContainer
 
         self.commands().ui_builder(bar_id).container(
             (
+                Name::new(format!("Tab [{}]", title.clone())),
                 TabContainer::tab(),
                 Tab {
                     container: container_id,
