@@ -33,7 +33,7 @@ impl Plugin for HierarchyTreeViewPlugin {
                 initialize_hierarchy_tree_view,
                 update_hierarchy_on_foldable_change,
                 update_hierarchy_selection,
-                update_hierarchy_nodes,
+                update_hierarchy_node_style,
                 update_entity_component_list,
             )
                 .chain()
@@ -159,7 +159,7 @@ fn update_hierarchy_on_foldable_change(
     }
 }
 
-fn update_hierarchy_nodes(
+fn update_hierarchy_node_style(
     q_hierarchies: Query<(Entity, &HierarchyContainer), Changed<HierarchyContainer>>,
     q_hierarchy_nodes: Query<(Entity, &HierarchyNode)>,
     mut commands: Commands,
@@ -218,9 +218,15 @@ struct RefreshHierarchyButton {
 
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
-struct HierarchyNode {
+pub struct HierarchyNode {
     hierarchy: Entity,
     entity: Entity,
+}
+
+impl HierarchyNode {
+    pub fn target(&self) -> Entity {
+        self.entity
+    }
 }
 
 #[derive(Component, Debug, Reflect)]
@@ -274,8 +280,6 @@ impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                 .insert(HierarchyNodeContainer {
                                     hierarchy: hierarchy_id,
                                 })
-                                .style()
-                                .width(Val::Percent(100.))
                                 .id();
 
                             scroll_view.commands().entity(refresh_button).insert(

@@ -36,6 +36,8 @@ impl Plugin for DockingZonePlugin {
                         cleanup_empty_docking_zone_splits,
                         apply_deferred, // To make sure empties are removed
                         cleanup_shell_docking_zone_splits,
+                        apply_deferred, // To make sure double-direction changes are removed
+                        cleanup_leftover_docking_zone_splits,
                     )
                         .chain()
                         .run_if(should_cleanup_lingering_docking_zone_splits),
@@ -302,7 +304,7 @@ fn cleanup_shell_docking_zone_splits(
             children_to_move.push(*child);
         }
 
-        // Safe unwrap: a parent found via Parent must have Children, which contains itself
+        // Safe unwraps: a parent found via Parent must have Children, which contains the entity
         let insert_index = q_children
             .get(second_parent_id)
             .unwrap()
@@ -320,6 +322,75 @@ fn cleanup_shell_docking_zone_splits(
         commands
             .entity(second_parent_id)
             .add(ResetChildrenInUiSurface);
+    }
+}
+
+fn cleanup_leftover_docking_zone_splits(
+    q_zone_splits: Query<
+        (Entity, &Children, &Parent),
+        (With<DockingZoneSplitContainer>, With<SizedZone>),
+    >,
+    q_docking_zone: Query<&DockingZone, With<SizedZone>>,
+    q_children: Query<&Children>,
+    mut q_sized_zone: Query<&mut SizedZone>,
+    mut commands: Commands,
+) {
+    // This is a special case when a DockingZone is the sole remaining child of a docking zone split.
+    // The DockingZone cannot have a SizedZone as a direct descedant (not supported), so the direction change can be cleaned up.
+    //   - [DockingZoneSplitContainer:Column]            ->   [DockingZone:Column]
+    //     - [DockingZone:Row]                                  - [TabContainer]
+    //       - [TabContainer]                                   - [SizedZoneResizeHandleContainer]
+    //       - [SizedZoneResizeHandleContainer]                 - [SizedZoneResizeHandleContainer]
+    //       - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    //     - [SizedZoneResizeHandleContainer]
+    // - Make sure to check if there are no other sized zones in the split before moving docking zone up
+    for (zone_split_id, zone_split_children, zone_split_parent) in &q_zone_splits {
+        if zone_split_children
+            .iter()
+            .filter(|child| q_sized_zone.get(**child).is_ok())
+            .count()
+            == 1
+            && zone_split_children
+                .iter()
+                .filter(|child| q_docking_zone.get(**child).is_ok())
+                .count()
+                == 1
+        {
+            // Safe unwrap: checked in *if*
+            let docking_zone_id = *zone_split_children
+                .iter()
+                .find(|child| q_docking_zone.get(**child).is_ok())
+                .unwrap();
+
+            // Safe unwrap: query is a subset of the query the entity is from
+            let split_sized_zone = q_sized_zone.get(zone_split_id).unwrap();
+            let size = split_sized_zone.size();
+
+            // Safe unwrap: query is a subset of the query the entity is from
+            let mut docking_sized_zone = q_sized_zone.get_mut(docking_zone_id).unwrap();
+            docking_sized_zone.set_size(size);
+
+            let zone_split_parent_id = zone_split_parent.get();
+            // Safe unwraps: a parent found via Parent must have Children, which contains the entity
+            let insert_index = q_children
+                .get(zone_split_parent_id)
+                .unwrap()
+                .iter()
+                .position(|child| *child == zone_split_id)
+                .unwrap();
+
+            // Move docking zones to split zone parent
+            commands
+                .entity(zone_split_parent_id)
+                .insert_children(insert_index, &vec![docking_zone_id]);
+            // Remove split zone
+            commands.entity(zone_split_id).despawn_recursive();
+            // Refresh parent's children in taffy to avoid panics
+            commands
+                .entity(zone_split_parent_id)
+                .add(ResetChildrenInUiSurface);
+        }
     }
 }
 
@@ -562,7 +633,7 @@ impl Command for DockingZoneSplit {
         if inject_container {
             let new_parent_id = commands
                 .ui_builder(parent_id)
-                .sized_zone(
+                .docking_zone_split(
                     SizedZoneConfig {
                         size: current_size,
                         min_size: current_min_size,
@@ -570,7 +641,6 @@ impl Command for DockingZoneSplit {
                     },
                     |_| {},
                 )
-                .insert(DockingZoneSplitContainer)
                 .id();
 
             commands

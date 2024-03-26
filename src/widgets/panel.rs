@@ -56,7 +56,7 @@ impl<'w, 's> UiPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         title: String,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let name = format!("Menu [{}]", title.clone());
+        let name = format!("Panel [{}]", title.clone());
         let mut container = self.container((Name::new(name), Panel::frame()), spawn_children);
         let own_id = container.id();
 

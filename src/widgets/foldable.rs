@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     ui_builder::*,
-    ui_style::{SetNodeFlexGrowExt, SetNodeJustifySelfExt, SetNodeShowHideExt, UiStyleExt},
+    ui_style::{SetNodeFlexGrowExt, SetNodeShowHideExt, UiStyleExt},
 };
 
 use super::{
@@ -90,7 +90,6 @@ impl Foldable {
             style: Style {
                 width: Val::Percent(100.),
                 height: Val::Auto,
-                overflow: Overflow::clip(),
                 flex_direction: FlexDirection::Column,
                 justify_items: JustifyItems::Start,
                 align_items: AlignItems::Stretch,
@@ -129,7 +128,6 @@ impl<'w, 's> UiFoldableExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     ..default()
                 })
                 .style()
-                .justify_self(JustifySelf::Stretch)
                 .flex_grow(1.)
                 .id();
         })

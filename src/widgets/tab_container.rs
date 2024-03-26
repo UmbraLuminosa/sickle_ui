@@ -104,6 +104,7 @@ fn dock_panel_in_tab_container(
 
         commands.ui_builder(bar_id).container(
             (
+                Name::new(format!("Tab [{}]", panel.title())),
                 TabContainer::tab(),
                 Tab {
                     container: container_id,

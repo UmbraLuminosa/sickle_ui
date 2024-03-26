@@ -4,7 +4,7 @@ use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
         SetBackgroundColorExt, SetNodeAlignContentExt, SetNodeAlignItemsExt, SetNodeFlexWrapExt,
-        SetNodeMarginExt, SetNodePaddingExt,
+        SetNodeMarginExt, SetNodeOverflowExt, SetNodePaddingExt,
     },
     widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiRowExt},
 };
@@ -110,6 +110,7 @@ impl<'w, 's> UiEntityComponentListExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> 
                 EntityComponentList { entity },
             ))
             .style()
+            .overflow(Overflow::clip())
             .flex_wrap(FlexWrap::Wrap)
             .align_items(AlignItems::FlexStart)
             .align_content(AlignContent::FlexStart);
