@@ -159,6 +159,8 @@ fn update_hierarchy_on_foldable_change(
     }
 }
 
+// TODO: Refresh the hierarchy automatically
+
 fn update_hierarchy_node_style(
     q_hierarchies: Query<(Entity, &HierarchyContainer), Changed<HierarchyContainer>>,
     q_hierarchy_nodes: Query<(Entity, &HierarchyNode)>,

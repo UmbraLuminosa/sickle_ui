@@ -36,6 +36,14 @@ fn update_entity_component_list(
     world: &mut World,
 ) {
     if let Some(selected) = selected_entity {
+        if world.get_entity(selected).is_none() {
+            let mut queue = CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, world);
+            commands.entity(container).despawn_descendants();
+            queue.apply(world);
+            return;
+        }
+
         let debug_infos: Vec<_> = world
             .inspect_entity(selected)
             .into_iter()
