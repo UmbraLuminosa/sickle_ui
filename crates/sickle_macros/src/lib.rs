@@ -1,6 +1,7 @@
 mod event_handler;
 mod simple_interaction_plugin;
 mod style_command;
+mod style_commands;
 
 use proc_macro::TokenStream;
 use syn::DeriveInput;
@@ -109,4 +110,19 @@ pub fn simple_interaction_for(attr: TokenStream, item: TokenStream) -> TokenStre
 pub fn style_command_macro_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input.clone()).unwrap();
     style_command::derive_style_command_macro(&ast)
+}
+
+#[proc_macro_derive(
+    StyleCommands,
+    attributes(
+        skip_enity_command,
+        skip_ui_style_ext,
+        animatable,
+        target_enum,
+        target_tupl
+    )
+)]
+pub fn style_commands_macro_derive(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input.clone()).unwrap();
+    style_commands::derive_style_commands_macro(&ast)
 }

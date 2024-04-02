@@ -65,6 +65,8 @@ pub enum FluxInteraction {
 #[component(storage = "SparseSet")]
 pub struct FluxInteractionStopwatch(pub Stopwatch);
 
+// TODO: Add FluxInteractionStopwatchLock (sparse set)
+
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq, Reflect)]
 #[reflect(Component, PartialEq)]
 pub enum PrevInteraction {

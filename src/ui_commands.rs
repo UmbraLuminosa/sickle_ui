@@ -1,21 +1,27 @@
+use std::marker::PhantomData;
+
+use crate::{
+    theme::{
+        dynamic_style::{DynamicStyle, FluxDynamicStyle},
+        pseudo_state::PseudoStates,
+        Theme,
+    },
+    FluxInteraction,
+};
 use bevy::{
     core::Name,
     ecs::{
         component::{Component, ComponentInfo},
         entity::Entity,
         query::With,
-        system::{Command, CommandQueue, Commands, EntityCommand, EntityCommands},
+        system::{Command, Commands, EntityCommand, EntityCommands},
         world::{Mut, World},
     },
-    hierarchy::Children,
+    hierarchy::{Children, Parent},
     log::{info, warn},
     text::{Text, TextSection, TextStyle},
     ui::UiSurface,
     window::{CursorIcon, PrimaryWindow, Window},
-};
-
-use crate::theme::{
-    DynamicStyle, FluxDynamicStyle, PseudoDynamicStyle, PseudoFluxDynamicStyle, Theme,
 };
 
 struct SetTextSections {
@@ -127,7 +133,7 @@ struct LogHierarchy {
 impl EntityCommand for LogHierarchy {
     fn apply<'a>(self, id: Entity, world: &mut World) {
         let mut children_ids: Vec<Entity> = Vec::new();
-        if let Ok(children) = world.query::<&Children>().get(world, id) {
+        if let Some(children) = world.get::<Children>(id) {
             children_ids = children.iter().map(|child| *child).collect();
         }
 
@@ -208,9 +214,6 @@ impl EntityCommand for LogHierarchy {
         if children_ids.len() > 0 {
             let next_level = self.level + 1;
 
-            let mut queue = CommandQueue::default();
-            let mut commands = Commands::new(&mut queue, world);
-
             for i in 0..children_ids.len() {
                 let child = children_ids[i];
                 let is_last = i == (children_ids.len() - 1);
@@ -219,15 +222,14 @@ impl EntityCommand for LogHierarchy {
                     trace_levels.push(self.level);
                 }
 
-                commands.entity(child).add(LogHierarchy {
+                LogHierarchy {
                     level: next_level,
                     is_last,
                     trace_levels,
                     component_filter: self.component_filter,
-                });
+                }
+                .apply(child, world);
             }
-
-            queue.apply(world);
         }
     }
 }
@@ -252,19 +254,19 @@ impl<'a> LogHierarchyExt<'a> for EntityCommands<'a> {
     /// ## Output Example
     /// ```
     /// ╚══ Entity 254v2:
-    ///     ║      ╚══ Node
+    ///     ║      └── Node
     ///     ╠══ Entity 252v2:
-    ///     ║   ║      ╚══ Node
+    ///     ║   ║      └── Node
     ///     ║   ╚══ Entity 158v2:
-    ///     ║       ║      ╚══ Node
+    ///     ║       ║      └── Node
     ///     ║       ╠══ Entity 159v2:
-    ///     ║       ║   ║      ╚══ Node
+    ///     ║       ║   ║      └── Node
     ///     ║       ║   ╚══ Entity 286v1:
-    ///     ║       ║              ╚══ Node
+    ///     ║       ║              └── Node
     ///     ║       ╚══ Entity 287v1:
-    ///     ║                  ╚══ Node
+    ///     ║                  └── Node
     ///     ╚══ Entity 292v1:
-    ///                ╚══ Node
+    ///                └── Node
     /// ```
     fn log_hierarchy(
         &'a mut self,
@@ -304,7 +306,7 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
 }
 
 pub trait InsertDynamicStyleExt<'a> {
-    fn insert_theme<C>(&'a mut self, theme: &Theme<C>) -> &mut EntityCommands<'a>
+    fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
         C: Component,
         Theme<C>: Default;
@@ -312,55 +314,96 @@ pub trait InsertDynamicStyleExt<'a> {
 }
 
 impl<'a> InsertDynamicStyleExt<'a> for EntityCommands<'a> {
-    fn insert_theme<C>(&'a mut self, theme: &Theme<C>) -> &mut EntityCommands<'a>
+    fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
         C: Component,
         Theme<C>: Default,
     {
-        let style = theme.style();
+        self.add(RefreshEntityTheme::<C> {
+            context: PhantomData,
+        });
+        self
+    }
 
-        if style.need_pseudo_state() && style.need_flux_interaction() {
-            self.insert((style.clone(), PseudoFluxDynamicStyle));
-            self.remove::<PseudoDynamicStyle>();
-            self.remove::<FluxDynamicStyle>();
-        } else if style.need_pseudo_state() {
-            self.insert((style.clone(), PseudoDynamicStyle));
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<FluxDynamicStyle>();
-        } else if style.need_flux_interaction() {
-            self.insert((style.clone(), FluxDynamicStyle));
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<PseudoDynamicStyle>();
+    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a> {
+        if style.need_flux_interaction() {
+            self.insert((FluxDynamicStyle, style));
         } else {
-            self.insert(style.clone());
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<PseudoDynamicStyle>();
+            self.insert(style);
             self.remove::<FluxDynamicStyle>();
         }
 
         self
     }
+}
 
-    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a> {
-        if style.need_pseudo_state() && style.need_flux_interaction() {
-            self.insert((style.clone(), PseudoFluxDynamicStyle));
-            self.remove::<PseudoDynamicStyle>();
-            self.remove::<FluxDynamicStyle>();
-        } else if style.need_pseudo_state() {
-            self.insert((style.clone(), PseudoDynamicStyle));
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<FluxDynamicStyle>();
-        } else if style.need_flux_interaction() {
-            self.insert((style.clone(), FluxDynamicStyle));
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<PseudoDynamicStyle>();
+struct RefreshEntityTheme<C> {
+    context: PhantomData<C>,
+}
+
+impl<C> EntityCommand for RefreshEntityTheme<C>
+where
+    C: Component,
+    Theme<C>: Default,
+{
+    fn apply(self, entity: Entity, world: &mut World) {
+        let pseudo_states = world.get::<PseudoStates>(entity);
+        let mut style = None;
+
+        if let Some(own_theme) = world.get::<Theme<C>>(entity) {
+            match pseudo_states {
+                Some(pseudo_states) => {
+                    style = own_theme.style(pseudo_states);
+                }
+                None => {
+                    style = own_theme.base_style();
+                }
+            }
         } else {
-            self.insert(style.clone());
-            self.remove::<PseudoFluxDynamicStyle>();
-            self.remove::<PseudoDynamicStyle>();
-            self.remove::<FluxDynamicStyle>();
+            let mut found_theme = false;
+            let mut current_ancestor = entity;
+            while let Some(parent) = world.get::<Parent>(current_ancestor) {
+                current_ancestor = parent.get();
+                if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
+                    match pseudo_states {
+                        Some(pseudo_states) => {
+                            style = ancestor_theme.style(pseudo_states);
+                        }
+                        None => {
+                            style = ancestor_theme.base_style();
+                        }
+                    }
+                    found_theme = true;
+                    break;
+                }
+            }
+
+            if !found_theme {
+                let theme = Theme::<C>::default();
+                match pseudo_states {
+                    Some(pseudo_states) => {
+                        style = theme.style(pseudo_states);
+                    }
+                    None => {
+                        style = theme.base_style();
+                    }
+                }
+            }
         }
 
-        self
+        if let Some(style) = style {
+            if style.need_flux_interaction() {
+                world.entity_mut(entity).insert((FluxDynamicStyle, style));
+                if world.get::<FluxInteraction>(entity).is_none() {
+                    world.entity_mut(entity).insert(FluxInteraction::default());
+                }
+            } else {
+                world.entity_mut(entity).insert(style);
+                world.entity_mut(entity).remove::<FluxDynamicStyle>();
+            }
+        } else {
+            world.entity_mut(entity).remove::<DynamicStyle>();
+            world.entity_mut(entity).remove::<FluxDynamicStyle>();
+        }
     }
 }

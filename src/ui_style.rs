@@ -818,11 +818,11 @@ impl<'a> SetAbsolutePositionExt<'a> for UiStyle<'a> {
 }
 
 pub trait SetAbsolutePositionUncheckedExt<'a> {
-    fn image_scale_mode(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a>;
+    fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a>;
 }
 
 impl<'a> SetAbsolutePositionUncheckedExt<'a> for UiStyleUnchecked<'a> {
-    fn image_scale_mode(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a> {
+    fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a> {
         self.commands.add(SetAbsolutePosition {
             position,
             check_lock: false,
