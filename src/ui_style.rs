@@ -42,6 +42,10 @@ impl<'a> UiStyleUnchecked<'a> {
     pub fn id(&self) -> Entity {
         self.commands.id()
     }
+
+    pub fn entity_commands(&mut self) -> EntityCommands {
+        self.commands.reborrow()
+    }
 }
 
 pub trait UiStyleUncheckedExt<'a> {

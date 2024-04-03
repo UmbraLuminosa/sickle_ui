@@ -1,8 +1,8 @@
-use bevy::ecs::system::EntityCommand;
 use bevy::prelude::*;
+use bevy::{ecs::system::EntityCommand, ui::FocusPolicy};
 use sickle_macros::StyleCommands;
 
-use crate::{ui_style::UiStyle, FluxInteraction};
+use crate::{ui_style::UiStyle, ui_style::UiStyleUnchecked, FluxInteraction};
 
 // TODO: Add support for continous animations, i.e. loop, ping-pong
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -20,7 +20,7 @@ pub struct InteractionAnimationState {
     animation: AnimationProgress,
 }
 
-pub struct StaticValueBundle<T: Default + Clone + Copy + PartialEq> {
+pub struct StaticValueBundle<T: Clone> {
     base: T,
     hover: Option<T>,
     press: Option<T>,
@@ -28,9 +28,9 @@ pub struct StaticValueBundle<T: Default + Clone + Copy + PartialEq> {
     focus: Option<T>,
 }
 
-impl<T: Default + Clone + Copy + PartialEq> StaticValueBundle<T> {
+impl<T: Clone> StaticValueBundle<T> {
     fn to_value(&self, flux_interaction: crate::FluxInteraction) -> T {
-        self.base
+        self.base.clone()
     }
 }
 
@@ -76,168 +76,159 @@ impl EntityCommand for CustomAnimatableStyleAttribute {
     }
 }
 
-// pub enum StaticStyleAttribute {
-//     BackgroundColor(Color),
-//     Custom(fn(Entity, &mut World)),
-// }
-
-// impl PartialEq for StaticStyleAttribute {
-//     fn eq(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Self::BackgroundColor(_), Self::BackgroundColor(_)) => true,
-//             (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
-//             _ => false,
-//         }
-//     }
-// }
-
-// impl StaticStyleAttribute {
-//     pub fn apply(&self, ui_style: &mut UiStyle) {
-//         match self {
-//             Self::BackgroundColor(value) => todo!(), //ui_style.background_color(value),
-//             Self::Custom(callback) => {
-//                 ui_style.entity_commands().add(*callback);
-//             }
-//         }
-//     }
-// }
-
-// equality only on base value
-pub enum InteractiveStyleAttribute {
-    BackgroundColor(StaticValueBundle<Color>),
-    Custom(fn(Entity, FluxInteraction, &mut World)),
-}
-
-impl PartialEq for InteractiveStyleAttribute {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::BackgroundColor(_), Self::BackgroundColor(_)) => true,
-            (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
-            _ => false,
-        }
-    }
-}
-
-impl InteractiveStyleAttribute {
-    fn to_attribute(&self, flux_interaction: FluxInteraction) -> StaticStyleAttribute {
-        match self {
-            Self::BackgroundColor(bundle) => {
-                StaticStyleAttribute::BackgroundColor(bundle.to_value(flux_interaction))
-            }
-            Self::Custom(_) => StaticStyleAttribute::Custom(|_, _| {
-                error!("Custom InteractiveStyleAttribute marshalled to StaticStyleAttribute!");
-            }),
-        }
-    }
-
-    pub fn apply(&self, flux_interaction: FluxInteraction, ui_style: &mut UiStyle) {
-        match self {
-            Self::Custom(callback) => {
-                ui_style
-                    .entity_commands()
-                    .add(CustomInteractiveStyleAttribute {
-                        callback: *callback,
-                        flux_interaction,
-                    });
-            }
-            _ => self.to_attribute(flux_interaction).apply(ui_style),
-        }
-    }
-}
-
-pub enum AnimatedStyleAttribute {
-    BackgroundColor(AnimatedValueBundle<Color>),
-    Custom(fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World)),
-}
-
-impl PartialEq for AnimatedStyleAttribute {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::BackgroundColor(_), Self::BackgroundColor(_)) => true,
-            (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
-            _ => false,
-        }
-    }
-}
-
-impl AnimatedStyleAttribute {
-    fn to_attribute(
-        &self,
-        transition_base: InteractionAnimationState,
-        animation_progress: InteractionAnimationState,
-    ) -> StaticStyleAttribute {
-        match self {
-            Self::BackgroundColor(bundle) => StaticStyleAttribute::BackgroundColor(
-                bundle.to_value(transition_base, animation_progress),
-            ),
-            Self::Custom(_) => StaticStyleAttribute::Custom(|_, _| {
-                error!("Custom AnimatedStyleAttribute marshalled to StaticStyleAttribute!");
-            }),
-        }
-    }
-
-    pub fn apply(
-        &self,
-        transition_base: InteractionAnimationState,
-        animation_progress: InteractionAnimationState,
-        ui_style: &mut UiStyle,
-    ) {
-        match self {
-            Self::Custom(callback) => {
-                ui_style
-                    .entity_commands()
-                    .add(CustomAnimatableStyleAttribute {
-                        callback: *callback,
-                        transition_base,
-                        animation_progress,
-                    });
-            }
-            _ => self
-                .to_attribute(transition_base, animation_progress)
-                .apply(ui_style),
-        }
-    }
-}
-
 #[derive(StyleCommands)]
 enum _StyleAttributes {
-    // Display { display: bevy::ui::Display },
-    // PositionType {
-    //     position_type: PositionType,
-    // },
-    // Overflow {
-    //     overflow: Overflow,
-    // },
-    // Direction {
-    //     direction: Direction,
-    // },
-    // #[animatable]
-    // Left {
-    //     left: bevy::ui::Val,
-    // },
+    Display {
+        display: Display,
+    },
+    PositionType {
+        position_type: PositionType,
+    },
+    Overflow {
+        overflow: Overflow,
+    },
+    Direction {
+        direction: Direction,
+    },
+    #[animatable]
+    Left {
+        left: Val,
+    },
+    #[animatable]
+    Right {
+        right: Val,
+    },
+    #[animatable]
+    Top {
+        top: Val,
+    },
+    #[animatable]
+    Bottom {
+        bottom: Val,
+    },
+    #[animatable]
+    Width {
+        width: Val,
+    },
+    #[animatable]
+    Height {
+        height: Val,
+    },
+    #[animatable]
+    MinWidth {
+        min_width: Val,
+    },
+    #[animatable]
+    MinHeight {
+        min_height: Val,
+    },
+    AspectRatio {
+        aspect_ratio: Option<f32>,
+    },
+    AlignItems {
+        align_items: AlignItems,
+    },
+    JustifyItems {
+        justify_items: JustifyItems,
+    },
+    AlignSelf {
+        align_self: AlignSelf,
+    },
+    JustifySelf {
+        justify_self: JustifySelf,
+    },
+    AlignContent {
+        align_content: AlignContent,
+    },
+    JustifyContents {
+        justify_content: JustifyContent,
+    },
+    #[animatable]
+    Margin {
+        margin: UiRect,
+    },
+    #[animatable]
+    Padding {
+        padding: UiRect,
+    },
+    #[animatable]
+    Border {
+        border: UiRect,
+    },
+    FlexDirection {
+        flex_direction: FlexDirection,
+    },
+    FlexWrap {
+        flex_wrap: FlexWrap,
+    },
+    #[animatable]
+    FlexGrow {
+        flex_grow: f32,
+    },
+    #[animatable]
+    FlexShrink {
+        flex_shrink: f32,
+    },
+    #[animatable]
+    FlexBasis {
+        flex_basis: Val,
+    },
+    #[animatable]
+    RowGap {
+        row_gap: Val,
+    },
+    #[animatable]
+    ColumnGap {
+        column_gap: Val,
+    },
+    GridAutoFlow {
+        grid_auto_flow: GridAutoFlow,
+    },
+    GridTemplateRows {
+        grid_template_rows: Vec<RepeatedGridTrack>,
+    },
+    GridTemplateColumns {
+        grid_template_columns: Vec<RepeatedGridTrack>,
+    },
+    GridAutoRows {
+        grid_auto_rows: Vec<GridTrack>,
+    },
+    GridAutoColumns {
+        grid_auto_columns: Vec<GridTrack>,
+    },
+    GridRow {
+        grid_row: GridPlacement,
+    },
+    GridColumn {
+        grid_column: GridPlacement,
+    },
     #[target_tupl(BackgroundColor)]
     #[animatable]
     BackgroundColor {
-        background_color: bevy::render::color::Color,
+        background_color: Color,
     },
-    // #[target_tupl(BorderColor)]
-    // BorderColor {
-    //     border_color: bevy::render::color::Color,
-    // },
-    // #[target_enum]
-    // FocusPolicy {
-    //     focus_policy: bevy::ui::FocusPolicy,
-    // },
-    // #[target_enum]
-    // Visibility {
-    //     visibility: bevy::render::view::Visibility,
-    // },
+    #[target_tupl(BorderColor)]
+    BorderColor {
+        border_color: Color,
+    },
+    #[target_enum]
+    FocusPolicy {
+        focus_policy: FocusPolicy,
+    },
+    #[target_enum]
+    Visibility {
+        visibility: Visibility,
+    },
     // #[skip_enity_command]
     // ZIndex {
-    //     z_index: bevy::ui::ZIndex,
+    //     z_index: ZIndex,
     // },
     // #[skip_ui_style_ext]
     // Image {
     //     image: String,
+    // },
+    // #[skip_enity_command]
+    // ImageScaleMode {
+    //     image_scale_mode: ImageScaleMode,
     // },
 }
