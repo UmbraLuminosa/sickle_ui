@@ -24,10 +24,17 @@ struct StyleAttribute {
     target_enum: bool,
     skip_enity_command: bool,
     skip_ui_style_ext: bool,
+    cmd_struct_name: String,
+    cmd_struct_ident: Ident,
+    target_attr_name: String,
 }
 
 impl StyleAttribute {
     fn new(ident: Ident, command: Ident, type_path: TypePath) -> Self {
+        let cmd_struct_name = format!("Set{}", ident);
+        let cmd_struct_ident = Ident::new(cmd_struct_name.as_str(), ident.span().clone());
+        let target_attr_name = command.to_string();
+
         Self {
             ident,
             command,
@@ -37,6 +44,9 @@ impl StyleAttribute {
             target_enum: false,
             skip_enity_command: false,
             skip_ui_style_ext: false,
+            cmd_struct_name,
+            cmd_struct_ident,
+            target_attr_name,
         }
     }
 }
@@ -452,21 +462,21 @@ fn to_animated_style_appl_variant(style_attribute: &StyleAttribute) -> proc_macr
 }
 
 fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
-    let ident = &style_attribute.ident;
-    let name = format!("Set{}", ident);
-    let name_ident = Ident::new(name.as_str(), ident.span().clone());
-    let name_unchecked = String::from(name.as_str()) + "Unchecked";
+    let cmd_struct_name = &style_attribute.cmd_struct_name.clone();
+    let cmd_struct_ident = &style_attribute.cmd_struct_ident.clone();
     let target_attr = &style_attribute.command;
     let target_type = &style_attribute.type_path;
 
-    let extension_name = String::from(name) + "Ext";
-    let extension_ident = Ident::new(extension_name.as_str(), name_ident.span().clone());
-    let extension_unchecked_name = String::from(name_unchecked) + "Ext";
-    let extension_unchecked_ident =
-        Ident::new(extension_unchecked_name.as_str(), name_ident.span().clone());
+    let extension_name = String::from(cmd_struct_name.clone()) + "Ext";
+    let extension_ident = Ident::new(extension_name.as_str(), cmd_struct_ident.span().clone());
+    let extension_unchecked_name = String::from(cmd_struct_name.as_str()) + "UncheckedExt";
+    let extension_unchecked_ident = Ident::new(
+        extension_unchecked_name.as_str(),
+        cmd_struct_ident.span().clone(),
+    );
 
     quote! {
-        struct #name_ident {
+        struct #cmd_struct_ident {
             #target_attr: #target_type,
             check_lock: bool,
         }
@@ -477,7 +487,7 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
 
         impl<'a> #extension_ident<'a> for UiStyle<'a> {
             fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyle<'a> {
-                self.entity_commands().add(#name_ident {
+                self.entity_commands().add(#cmd_struct_ident {
                     #target_attr,
                     check_lock: true
                 });
@@ -491,7 +501,7 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
 
         impl<'a> #extension_unchecked_ident<'a> for UiStyleUnchecked<'a> {
             fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyleUnchecked<'a> {
-                self.entity_commands().add(#name_ident {
+                self.entity_commands().add(#cmd_struct_ident {
                     #target_attr,
                     check_lock: false
                 });
@@ -503,14 +513,96 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
 
 fn to_ui_style_command_impl(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
     let ident = &style_attribute.ident;
-    let name = format!("Set{}", ident);
-    let name_ident = Ident::new(name.as_str(), ident.span().clone());
+    let cmd_struct_ident = &style_attribute.cmd_struct_ident.clone();
+    let target_attr_name = &style_attribute.target_attr_name;
+    let setter = to_setter_entity_command_frag(style_attribute);
 
     quote! {
-        impl EntityCommand for #name_ident {
-            fn apply(self, _entity: Entity, _world: &mut World) {
+        impl EntityCommand for #cmd_struct_ident {
+            fn apply(self, entity: Entity, world: &mut World) {
+                if self.check_lock {
+                    if let Some(locked_attrs) = world.get::<LockedStyleAttributes>(entity) {
+                        if locked_attrs.contains(StylableAttribute::#ident) {
+                            warn!(
+                                "Failed to style {} property on entity {:?}: Attribute locked!",
+                                #target_attr_name,
+                                entity
+                            );
+                            return;
+                        }
+                    }
+                }
 
+                #setter
             }
         }
     }
 }
+
+fn to_setter_entity_command_frag(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
+    let target_attr = &style_attribute.command;
+    let target_type = &style_attribute.type_path;
+    let target_attr_name = &style_attribute.target_attr_name;
+
+    if style_attribute.target_enum {
+        let target_type_name = target_type.path.get_ident().unwrap().to_string();
+
+        quote! {
+            let Some(mut #target_attr) = world.get_mut::<#target_type>(entity) else {
+                warn!(
+                    "Failed to set {} property on entity {:?}: No {} component found!",
+                    #target_attr_name,
+                    entity,
+                    #target_type_name
+                );
+                return;
+            };
+
+            if *#target_attr != self.#target_attr {
+                *#target_attr = self.#target_attr;
+            }
+        }
+    } else if let Some(target_tupl) = &style_attribute.target_tupl {
+        let component_type = target_tupl.clone();
+        let component_name: Vec<String> = target_tupl
+            .clone()
+            .into_iter()
+            .map(|tt| tt.to_string())
+            .collect();
+        let component_name = component_name.join("");
+
+        quote! {
+            let Some(mut #target_attr) = world.get_mut::<#component_type>(entity) else {
+                warn!(
+                    "Failed to set {} property on entity {:?}: No {} component found!",
+                    #target_attr_name,
+                    entity,
+                    #component_name,
+                );
+                return;
+            };
+
+            if #target_attr.0 != self.#target_attr {
+                #target_attr.0 = self.#target_attr;
+            }
+        }
+    } else {
+        quote! {
+            let Some(mut style) = world.get_mut::<Style>(entity) else {
+                warn!(
+                    "Failed to set {} property on entity {:?}: No Style component found!",
+                    #target_attr_name,
+                    entity
+                );
+                return;
+            };
+
+            if style.#target_attr != self.#target_attr {
+                style.#target_attr = self.#target_attr;
+            }
+        }
+    }
+}
+
+// TODO: Add skip_styleable_enum (so Position cannot be locked) attr or skip_lock_variant attr
+// TODO: Add static-only attr (FluxInteraction cannot be interactive :D)

@@ -1,8 +1,21 @@
 use bevy::prelude::*;
+use bevy::utils::HashSet;
 use bevy::{ecs::system::EntityCommand, ui::FocusPolicy};
 use sickle_macros::StyleCommands;
 
-use crate::{ui_style::UiStyle, ui_style::UiStyleUnchecked, FluxInteraction};
+use crate::{
+    ui_style::{UiStyle, UiStyleUnchecked},
+    FluxInteraction,
+};
+
+#[derive(Component, Debug, Default)]
+pub struct LockedStyleAttributes(HashSet<StylableAttribute>);
+
+impl LockedStyleAttributes {
+    pub fn contains(&self, attr: StylableAttribute) -> bool {
+        self.0.contains(&attr)
+    }
+}
 
 // TODO: Add support for continous animations, i.e. loop, ping-pong
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -76,6 +89,8 @@ impl EntityCommand for CustomAnimatableStyleAttribute {
     }
 }
 
+/// Derive leaves the original struct, ignore it.
+/// (derive macros have a better style overall)
 #[derive(StyleCommands)]
 enum _StyleAttributes {
     Display {
