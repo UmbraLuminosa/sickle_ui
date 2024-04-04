@@ -7,8 +7,8 @@ use crate::{
     interactions::InteractiveBackground,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{
-        SetBackgroundColorExt, SetFluxInteractionExt, SetNodeLeftExt, SetNodeOverflowExt,
-        SetNodePositionTypeExt, SetNodeShowHideExt, SetZIndexExt, UiStyleExt,
+        SetBackgroundColorExt, SetFluxInteractionExt, SetLeftExt, SetOverflowExt,
+        SetPositionTypeExt, SetNodeShowHideExt, SetZIndexExt, UiStyleExt,
     },
     TrackedInteraction,
 };

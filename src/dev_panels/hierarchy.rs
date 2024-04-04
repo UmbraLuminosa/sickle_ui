@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
-        SetBackgroundColorExt, SetBorderColorExt, SetNodeBorderExt, SetNodeMarginExt,
-        SetNodePaddingExt, SetNodeWidthExt, UiStyleExt,
+        SetBackgroundColorExt, SetBorderColorExt, SetBorderExt, SetMarginExt, SetPaddingExt,
+        SetWidthExt, UiStyleExt,
     },
     widgets::{
         foldable::{Foldable, UiFoldableExt},

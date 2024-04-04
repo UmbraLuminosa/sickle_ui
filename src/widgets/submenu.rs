@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{SetBackgroundColorExt, SetEntityVisiblityExt, UiStyleExt},
+    ui_style::{SetBackgroundColorExt, SetVisibilityExt, UiStyleExt},
     FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
 };
 

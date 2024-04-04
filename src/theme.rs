@@ -2,7 +2,6 @@ pub mod default_theme;
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
 pub mod pseudo_state;
-pub mod style;
 pub mod style_animation;
 
 use std::marker::PhantomData;

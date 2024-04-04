@@ -7,7 +7,7 @@ use crate::{
     interactions::InteractiveBackground,
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
-    ui_style::{SetNodePaddingExt, UiStyleExt},
+    ui_style::{SetPaddingExt, UiStyleExt},
     TrackedInteraction,
 };
 

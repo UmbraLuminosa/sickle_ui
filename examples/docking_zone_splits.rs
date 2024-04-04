@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
-    ui_style::{SetBackgroundColorExt, SetNodeBorderExt, SetNodeWidthExt},
+    ui_style::{SetBackgroundColorExt, SetBorderExt, SetWidthExt},
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
     SickleUiPlugin,
 };

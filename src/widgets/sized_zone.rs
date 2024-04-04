@@ -5,7 +5,7 @@ use crate::{
     resize_interaction::{ResizeDirection, ResizeHandle},
     ui_builder::*,
     ui_commands::LogHierarchyExt,
-    ui_style::{SetEntityVisiblityExt, SetNodeLeftExt, SetNodeTopExt, UiStyleExt},
+    ui_style::{SetLeftExt, SetTopExt, SetVisibilityExt, UiStyleExt},
 };
 
 use super::{docking_zone::DockingZoneUpdate, prelude::UiContainerExt};

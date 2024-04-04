@@ -5,7 +5,7 @@ use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
     interactions::InteractiveBackground,
     ui_builder::UiBuilder,
-    ui_style::{SetEntityVisiblityExt, SetImageExt, UiStyleExt},
+    ui_style::{SetImageExt, SetVisibilityExt, UiStyleExt},
     FluxInteraction, TrackedInteraction,
 };
 

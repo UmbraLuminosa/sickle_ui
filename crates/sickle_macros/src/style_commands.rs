@@ -22,8 +22,10 @@ struct StyleAttribute {
     target_tupl: Option<proc_macro2::TokenStream>,
     animatable: bool,
     target_enum: bool,
+    static_style_only: bool,
     skip_enity_command: bool,
     skip_ui_style_ext: bool,
+    skip_styleable_enum: bool,
     cmd_struct_name: String,
     cmd_struct_ident: Ident,
     target_attr_name: String,
@@ -42,8 +44,10 @@ impl StyleAttribute {
             target_tupl: None,
             animatable: false,
             target_enum: false,
+            static_style_only: false,
             skip_enity_command: false,
             skip_ui_style_ext: false,
+            skip_styleable_enum: false,
             cmd_struct_name,
             cmd_struct_ident,
             target_attr_name,
@@ -147,10 +151,14 @@ fn parse_variant(variant: &Variant) -> Result<StyleAttribute, (proc_macro2::Span
                 attribute.animatable = true;
             } else if attr.path().is_ident("target_enum") {
                 attribute.target_enum = true;
+            } else if attr.path().is_ident("static_style_only") {
+                attribute.static_style_only = true;
             } else if attr.path().is_ident("skip_enity_command") {
                 attribute.skip_enity_command = true;
             } else if attr.path().is_ident("skip_ui_style_ext") {
                 attribute.skip_ui_style_ext = true;
+            } else if attr.path().is_ident("skip_styleable_enum") {
+                attribute.skip_styleable_enum = true;
             } else if attr.path().is_ident("target_tupl") {
                 let token_stream = target_tupl(attr)?;
                 attribute.target_tupl = Some(token_stream);
@@ -191,6 +199,7 @@ fn target_tupl(
 fn prepare_stylable_attribute(style_attributes: &Vec<StyleAttribute>) -> proc_macro2::TokenStream {
     let base_variants: Vec<proc_macro2::TokenStream> = style_attributes
         .iter()
+        .filter(|v| !v.skip_styleable_enum)
         .map(to_style_attribute_variant)
         .collect();
 
@@ -250,12 +259,17 @@ fn prepare_interactive_style_attribute(
 ) -> proc_macro2::TokenStream {
     let base_variants: Vec<proc_macro2::TokenStream> = style_attributes
         .iter()
+        .filter(|v| !v.static_style_only)
         .map(to_interactive_style_variant)
         .collect();
-    let eq_variants: Vec<proc_macro2::TokenStream> =
-        style_attributes.iter().map(to_eq_style_variant).collect();
+    let eq_variants: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| !v.static_style_only)
+        .map(to_eq_style_variant)
+        .collect();
     let apply_variants: Vec<proc_macro2::TokenStream> = style_attributes
         .iter()
+        .filter(|v| !v.static_style_only)
         .map(to_interactive_style_appl_variant)
         .collect();
 
@@ -603,6 +617,3 @@ fn to_setter_entity_command_frag(style_attribute: &StyleAttribute) -> proc_macro
         }
     }
 }
-
-// TODO: Add skip_styleable_enum (so Position cannot be locked) attr or skip_lock_variant attr
-// TODO: Add static-only attr (FluxInteraction cannot be interactive :D)

@@ -4,9 +4,9 @@ use bevy::{
     ui::FocusPolicy,
     utils::HashSet,
 };
-use sickle_macros::StyleCommand;
+use sickle_macros::StyleCommands;
 
-use crate::FluxInteraction;
+use crate::{theme::style_animation::AnimationProgress, FluxInteraction};
 
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
@@ -60,55 +60,173 @@ impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect)]
-pub enum StylableAttribute {
-    Display,
-    PositionType,
-    Overflow,
-    Direction,
-    Left,
-    Right,
-    Top,
-    Bottom,
-    Width,
-    Height,
-    MinWidth,
-    MinHeight,
-    AspectRatio,
-    AlignItems,
-    JustifyItems,
-    AlignSelf,
-    JustifySelf,
-    AlignContent,
-    JustifyContent,
-    Margin,
-    Padding,
-    Border,
-    FlexDirection,
-    FlexWrap,
-    FlexGrow,
-    FlexShrink,
-    FlexBasis,
-    RowGap,
-    ColumnGap,
-    GridAutoFlow,
-    GridTemplateRows,
-    GridTemplateColumns,
-    GridAutoRows,
-    GridAutoColumns,
-    GridRow,
-    GridColumn,
-    BackgroundColor,
-    BorderColor,
-    FocusPolicy,
-    Visibility,
-    ZIndex,
-    Image,
-    ImageScaleMode,
-    // TODO: add these as use cases are discovered
-    // TextureAtlas,
-    // Material,
-    FluxInteraction,
+/// Derive leaves the original struct, ignore it.
+/// (derive macros have a better style overall)
+#[derive(StyleCommands)]
+enum _StyleAttributes {
+    Display {
+        display: Display,
+    },
+    PositionType {
+        position_type: PositionType,
+    },
+    Overflow {
+        overflow: Overflow,
+    },
+    Direction {
+        direction: Direction,
+    },
+    #[animatable]
+    Left {
+        left: Val,
+    },
+    #[animatable]
+    Right {
+        right: Val,
+    },
+    #[animatable]
+    Top {
+        top: Val,
+    },
+    #[animatable]
+    Bottom {
+        bottom: Val,
+    },
+    #[animatable]
+    Width {
+        width: Val,
+    },
+    #[animatable]
+    Height {
+        height: Val,
+    },
+    #[animatable]
+    MinWidth {
+        min_width: Val,
+    },
+    #[animatable]
+    MinHeight {
+        min_height: Val,
+    },
+    AspectRatio {
+        aspect_ratio: Option<f32>,
+    },
+    AlignItems {
+        align_items: AlignItems,
+    },
+    JustifyItems {
+        justify_items: JustifyItems,
+    },
+    AlignSelf {
+        align_self: AlignSelf,
+    },
+    JustifySelf {
+        justify_self: JustifySelf,
+    },
+    AlignContent {
+        align_content: AlignContent,
+    },
+    JustifyContents {
+        justify_content: JustifyContent,
+    },
+    #[animatable]
+    Margin {
+        margin: UiRect,
+    },
+    #[animatable]
+    Padding {
+        padding: UiRect,
+    },
+    #[animatable]
+    Border {
+        border: UiRect,
+    },
+    FlexDirection {
+        flex_direction: FlexDirection,
+    },
+    FlexWrap {
+        flex_wrap: FlexWrap,
+    },
+    #[animatable]
+    FlexGrow {
+        flex_grow: f32,
+    },
+    #[animatable]
+    FlexShrink {
+        flex_shrink: f32,
+    },
+    #[animatable]
+    FlexBasis {
+        flex_basis: Val,
+    },
+    #[animatable]
+    RowGap {
+        row_gap: Val,
+    },
+    #[animatable]
+    ColumnGap {
+        column_gap: Val,
+    },
+    GridAutoFlow {
+        grid_auto_flow: GridAutoFlow,
+    },
+    GridTemplateRows {
+        grid_template_rows: Vec<RepeatedGridTrack>,
+    },
+    GridTemplateColumns {
+        grid_template_columns: Vec<RepeatedGridTrack>,
+    },
+    GridAutoRows {
+        grid_auto_rows: Vec<GridTrack>,
+    },
+    GridAutoColumns {
+        grid_auto_columns: Vec<GridTrack>,
+    },
+    GridRow {
+        grid_row: GridPlacement,
+    },
+    GridColumn {
+        grid_column: GridPlacement,
+    },
+    #[target_tupl(BackgroundColor)]
+    #[animatable]
+    BackgroundColor {
+        background_color: Color,
+    },
+    #[target_tupl(BorderColor)]
+    BorderColor {
+        border_color: Color,
+    },
+    #[target_enum]
+    FocusPolicy {
+        focus_policy: FocusPolicy,
+    },
+    #[target_enum]
+    Visibility {
+        visibility: Visibility,
+    },
+    #[skip_enity_command]
+    ZIndex {
+        z_index: ZIndex,
+    },
+    #[skip_ui_style_ext]
+    Image {
+        image: String,
+    },
+    #[skip_enity_command]
+    ImageScaleMode {
+        image_scale_mode: ImageScaleMode,
+    },
+    #[static_style_only]
+    #[skip_ui_style_ext]
+    FluxInteraction {
+        flux_interaction_enabled: bool,
+    },
+    #[skip_styleable_enum]
+    #[skip_ui_style_ext]
+    AbsolutePosition {
+        absolute_position: Vec2,
+    },
 }
 
 #[derive(Component, Debug, Default)]
@@ -120,247 +238,67 @@ impl LockedStyleAttributes {
     }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Display)]
-struct SetNodeDisplay {
-    display: Display,
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct InteractionAnimationState {
+    phase: crate::FluxInteraction,
+    iteration: u8,
+    animation: AnimationProgress,
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::PositionType)]
-struct SetNodePositionType {
-    position_type: PositionType,
+pub struct StaticValueBundle<T: Clone> {
+    base: T,
+    hover: Option<T>,
+    press: Option<T>,
+    cancel: Option<T>,
+    focus: Option<T>,
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Overflow)]
-struct SetNodeOverflow {
-    overflow: Overflow,
+impl<T: Clone> StaticValueBundle<T> {
+    fn to_value(&self, flux_interaction: crate::FluxInteraction) -> T {
+        self.base.clone()
+    }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Direction)]
-struct SetNodeDirection {
-    direction: Direction,
+pub struct AnimatedValueBundle<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> {
+    base: T,
+    hover: Option<T>,
+    press: Option<T>,
+    cancel: Option<T>,
+    focus: Option<T>,
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Left)]
-struct SetNodeLeft {
-    left: Val,
+impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
+    fn to_value(
+        &self,
+        transition_base: InteractionAnimationState,
+        animation_progress: InteractionAnimationState,
+    ) -> T {
+        // TODO: LERP
+        self.base
+    }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Right)]
-struct SetNodeRight {
-    right: Val,
-}
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Top)]
-struct SetNodeTop {
-    top: Val,
-}
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Bottom)]
-struct SetNodeBottom {
-    bottom: Val,
+pub struct CustomInteractiveStyleAttribute {
+    callback: fn(Entity, FluxInteraction, &mut World),
+    flux_interaction: FluxInteraction,
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Width)]
-struct SetNodeWidth {
-    width: Val,
+impl EntityCommand for CustomInteractiveStyleAttribute {
+    fn apply(self, id: Entity, world: &mut World) {
+        (self.callback)(id, self.flux_interaction, world);
+    }
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Height)]
-struct SetNodeHeight {
-    height: Val,
+pub struct CustomAnimatableStyleAttribute {
+    callback: fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
+    transition_base: InteractionAnimationState,
+    animation_progress: InteractionAnimationState,
 }
 
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::MinWidth)]
-struct SetNodeMinWidth {
-    min_width: Val,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::MinHeight)]
-struct SetNodeMinHeight {
-    min_height: Val,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::AspectRatio)]
-struct SetNodeAspectRatio {
-    aspect_ratio: Option<f32>,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::AlignItems)]
-struct SetNodeAlignItems {
-    align_items: AlignItems,
-}
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::JustifyItems)]
-struct SetNodeJustifyItems {
-    justify_items: JustifyItems,
-}
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::AlignSelf)]
-struct SetNodeAlignSelf {
-    align_self: AlignSelf,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::JustifySelf)]
-struct SetNodeJustifySelf {
-    justify_self: JustifySelf,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::AlignContent)]
-struct SetNodeAlignContent {
-    align_content: AlignContent,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::JustifyContent)]
-struct SetNodeJustifyContents {
-    justify_content: JustifyContent,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Margin)]
-struct SetNodeMargin {
-    margin: UiRect,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Padding)]
-struct SetNodePadding {
-    padding: UiRect,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Border)]
-struct SetNodeBorder {
-    border: UiRect,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FlexDirection)]
-struct SetNodeFlexDirection {
-    flex_direction: FlexDirection,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FlexWrap)]
-struct SetNodeFlexWrap {
-    flex_wrap: FlexWrap,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FlexGrow)]
-struct SetNodeFlexGrow {
-    flex_grow: f32,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FlexShrink)]
-struct SetNodeFlexShrink {
-    flex_shrink: f32,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FlexBasis)]
-struct SetNodeFlexBasis {
-    flex_basis: Val,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::RowGap)]
-struct SetNodeRowGap {
-    row_gap: Val,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::ColumnGap)]
-struct SetNodeColumnGap {
-    column_gap: Val,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridAutoFlow)]
-struct SetNodeGridAutoFlow {
-    grid_auto_flow: GridAutoFlow,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridTemplateRows)]
-struct SetNodeGridTemplateRows {
-    grid_template_rows: Vec<RepeatedGridTrack>,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridTemplateColumns)]
-struct SetNodeGridTemplateColumns {
-    grid_template_columns: Vec<RepeatedGridTrack>,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridAutoRows)]
-struct SetNodeGridAutoRows {
-    grid_auto_rows: Vec<GridTrack>,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridAutoColumns)]
-struct SetNodeGridAutoColumns {
-    grid_auto_columns: Vec<GridTrack>,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridRow)]
-struct SetNodeGridRow {
-    grid_row: GridPlacement,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::GridColumn)]
-struct SetNodeGridColumn {
-    grid_column: GridPlacement,
-}
-
-// Tupl style-related components
-// TODO: Handle interactive original value for this and any other interactive attributes
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::BackgroundColor)]
-#[target_tupl(BackgroundColor)]
-struct SetBackgroundColor {
-    background_color: Color,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::BorderColor)]
-#[target_tupl(BorderColor)]
-struct SetBorderColor {
-    border_color: Color,
-}
-
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::FocusPolicy)]
-#[target_enum]
-struct SetFocusPolicy {
-    focus_policy: FocusPolicy,
-}
-
-// Enum style-related components
-#[derive(StyleCommand)]
-#[lock_attr(StylableAttribute::Visibility)]
-#[target_enum]
-struct SetEntityVisiblity {
-    visibility: Visibility,
+impl EntityCommand for CustomAnimatableStyleAttribute {
+    fn apply(self, id: Entity, world: &mut World) {
+        (self.callback)(id, self.transition_base, self.animation_progress, world);
+    }
 }
 
 // Special style-related components needing manual implementation
@@ -376,11 +314,6 @@ macro_rules! check_lock {
             }
         }
     };
-}
-
-struct SetZIndex {
-    z_index: ZIndex,
-    check_lock: bool,
 }
 
 impl EntityCommand for SetZIndex {
@@ -409,34 +342,6 @@ impl EntityCommand for SetZIndex {
         } else {
             *z_index = self.z_index;
         }
-    }
-}
-
-pub trait SetZIndexExt<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetZIndexExt<'a> for UiStyle<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyle<'a> {
-        self.commands.add(SetZIndex {
-            z_index,
-            check_lock: true,
-        });
-        self
-    }
-}
-
-pub trait SetZIndexUncheckedExt<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyleUnchecked<'a>;
-}
-
-impl<'a> SetZIndexUncheckedExt<'a> for UiStyleUnchecked<'a> {
-    fn z_index(&'a mut self, z_index: ZIndex) -> &mut UiStyleUnchecked<'a> {
-        self.commands.add(SetZIndex {
-            z_index,
-            check_lock: false,
-        });
-        self
     }
 }
 
@@ -499,11 +404,6 @@ impl<'a> SetImageUncheckedExt<'a> for UiStyleUnchecked<'a> {
     }
 }
 
-struct SetImageScaleMode {
-    scale_mode: ImageScaleMode,
-    check_lock: bool,
-}
-
 impl EntityCommand for SetImageScaleMode {
     fn apply(self, entity: Entity, world: &mut World) {
         if self.check_lock {
@@ -523,35 +423,7 @@ impl EntityCommand for SetImageScaleMode {
             return;
         };
 
-        *scale_mode = self.scale_mode;
-    }
-}
-
-pub trait SetImageScaleModeExt<'a> {
-    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyle<'a>;
-}
-
-impl<'a> SetImageScaleModeExt<'a> for UiStyle<'a> {
-    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyle<'a> {
-        self.commands.add(SetImageScaleMode {
-            scale_mode,
-            check_lock: true,
-        });
-        self
-    }
-}
-
-pub trait SetImageScaleModeUncheckedExt<'a> {
-    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyleUnchecked<'a>;
-}
-
-impl<'a> SetImageScaleModeUncheckedExt<'a> for UiStyleUnchecked<'a> {
-    fn image_scale_mode(&'a mut self, scale_mode: ImageScaleMode) -> &mut UiStyleUnchecked<'a> {
-        self.commands.add(SetImageScaleMode {
-            scale_mode,
-            check_lock: false,
-        });
-        self
+        *scale_mode = self.image_scale_mode;
     }
 }
 
@@ -664,22 +536,26 @@ pub trait SetNodeShowHideExt<'a> {
 impl<'a> SetNodeShowHideExt<'a> for UiStyle<'a> {
     fn show(&'a mut self) -> &mut UiStyle<'a> {
         self.commands
-            .add(SetEntityVisiblity {
+            .add(SetVisibility {
                 visibility: Visibility::Inherited,
+                check_lock: true,
             })
-            .add(SetNodeDisplay {
+            .add(SetDisplay {
                 display: Display::Flex,
+                check_lock: true,
             });
         self
     }
 
     fn hide(&'a mut self) -> &mut UiStyle<'a> {
         self.commands
-            .add(SetEntityVisiblity {
+            .add(SetVisibility {
                 visibility: Visibility::Hidden,
+                check_lock: true,
             })
-            .add(SetNodeDisplay {
+            .add(SetDisplay {
                 display: Display::None,
+                check_lock: true,
             });
         self
     }
@@ -687,19 +563,23 @@ impl<'a> SetNodeShowHideExt<'a> for UiStyle<'a> {
     fn render(&'a mut self, render: bool) -> &mut UiStyle<'a> {
         if render {
             self.commands
-                .add(SetEntityVisiblity {
+                .add(SetVisibility {
                     visibility: Visibility::Inherited,
+                    check_lock: true,
                 })
-                .add(SetNodeDisplay {
+                .add(SetDisplay {
                     display: Display::Flex,
+                    check_lock: true,
                 });
         } else {
             self.commands
-                .add(SetEntityVisiblity {
+                .add(SetVisibility {
                     visibility: Visibility::Hidden,
+                    check_lock: true,
                 })
-                .add(SetNodeDisplay {
+                .add(SetDisplay {
                     display: Display::None,
+                    check_lock: true,
                 });
         }
 
@@ -716,22 +596,27 @@ pub trait SetNodeShowHideUncheckedExt<'a> {
 impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
     fn show(&'a mut self) -> &mut UiStyleUnchecked<'a> {
         self.commands
-            .add(SetEntityVisiblityUnchecked {
+            .add(SetVisibility {
                 visibility: Visibility::Inherited,
+                check_lock: false,
             })
-            .add(SetNodeDisplayUnchecked {
+            .add(SetDisplay {
                 display: Display::Flex,
+                check_lock: false,
             });
         self
     }
 
     fn hide(&'a mut self) -> &mut UiStyleUnchecked<'a> {
         self.commands
-            .add(SetEntityVisiblityUnchecked {
+            .add(SetVisibility {
                 visibility: Visibility::Hidden,
+                check_lock: false,
             })
-            .add(SetNodeDisplayUnchecked {
+            .add(SetDisplay {
                 display: Display::None,
+
+                check_lock: false,
             });
         self
     }
@@ -739,19 +624,23 @@ impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
     fn render(&'a mut self, render: bool) -> &mut UiStyleUnchecked<'a> {
         if render {
             self.commands
-                .add(SetEntityVisiblityUnchecked {
+                .add(SetVisibility {
                     visibility: Visibility::Inherited,
+                    check_lock: false,
                 })
-                .add(SetNodeDisplayUnchecked {
+                .add(SetDisplay {
                     display: Display::Flex,
+                    check_lock: false,
                 });
         } else {
             self.commands
-                .add(SetEntityVisiblityUnchecked {
+                .add(SetVisibility {
                     visibility: Visibility::Hidden,
+                    check_lock: false,
                 })
-                .add(SetNodeDisplayUnchecked {
+                .add(SetDisplay {
                     display: Display::None,
+                    check_lock: false,
                 });
         }
 
@@ -760,13 +649,19 @@ impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
 }
 
 struct SetAbsolutePosition {
-    position: Vec2,
+    absolute_position: Vec2,
     check_lock: bool,
 }
 
 impl EntityCommand for SetAbsolutePosition {
     fn apply(self, entity: Entity, world: &mut World) {
         if self.check_lock {
+            check_lock!(
+                world,
+                entity,
+                "position_type",
+                StylableAttribute::PositionType
+            );
             check_lock!(world, entity, "position: top", StylableAttribute::Top);
             check_lock!(world, entity, "position: left", StylableAttribute::Left);
         }
@@ -802,8 +697,9 @@ impl EntityCommand for SetAbsolutePosition {
             return;
         };
 
-        style.top = Val::Px(self.position.y - offset.y);
-        style.left = Val::Px(self.position.x - offset.x);
+        style.position_type = PositionType::Absolute;
+        style.top = Val::Px(self.absolute_position.y - offset.y);
+        style.left = Val::Px(self.absolute_position.x - offset.x);
     }
 }
 
@@ -814,7 +710,7 @@ pub trait SetAbsolutePositionExt<'a> {
 impl<'a> SetAbsolutePositionExt<'a> for UiStyle<'a> {
     fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyle<'a> {
         self.commands.add(SetAbsolutePosition {
-            position,
+            absolute_position: position,
             check_lock: true,
         });
         self
@@ -828,7 +724,7 @@ pub trait SetAbsolutePositionUncheckedExt<'a> {
 impl<'a> SetAbsolutePositionUncheckedExt<'a> for UiStyleUnchecked<'a> {
     fn absolute_position(&'a mut self, position: Vec2) -> &mut UiStyleUnchecked<'a> {
         self.commands.add(SetAbsolutePosition {
-            position,
+            absolute_position: position,
             check_lock: false,
         });
         self

@@ -11,8 +11,8 @@ use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ResetChildrenInUiSurface,
     ui_style::{
-        SetBackgroundColorExt, SetNodeHeightExt, SetNodeLeftExt, SetNodeShowHideExt, SetNodeTopExt,
-        SetNodeWidthExt, UiStyleExt,
+        SetBackgroundColorExt, SetHeightExt, SetLeftExt, SetNodeShowHideExt, SetTopExt,
+        SetWidthExt, UiStyleExt,
     },
 };
 

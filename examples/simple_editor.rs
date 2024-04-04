@@ -7,8 +7,8 @@ use sickle_ui::{
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
-    ui_commands::{LogHierarchyExt, SetCursorExt},
-    ui_style::{SetBackgroundColorExt, SetNodeHeightExt, SetNodeWidthExt},
+    ui_commands::SetCursorExt,
+    ui_style::{SetBackgroundColorExt, SetHeightExt, SetWidthExt},
     widgets::{prelude::*, tab_container::UiTabContainerSubExt, WidgetLibraryUpdate},
     SickleUiPlugin,
 };
@@ -246,8 +246,6 @@ fn setup(
             .height(Val::Percent(100.))
             .background_color(Color::NONE);
     });
-
-    commands.entity(root_entity).log_hierarchy(None);
 }
 
 fn exit_app_on_menu_item(

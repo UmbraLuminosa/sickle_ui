@@ -13,8 +13,8 @@ use bevy::{
 use crate::{
     ui_builder::*,
     ui_style::{
-        SetBackgroundColorExt, SetNodeHeightExt, SetNodeJustifySelfExt, SetNodeMinWidthExt,
-        SetNodePositionTypeExt, SetNodeWidthExt,
+        SetBackgroundColorExt, SetHeightExt, SetJustifySelfExt, SetMinWidthExt, SetPositionTypeExt,
+        SetWidthExt,
     },
     widgets::{
         prelude::{

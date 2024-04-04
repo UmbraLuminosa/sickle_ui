@@ -3,8 +3,8 @@ use bevy::{ecs::system::CommandQueue, prelude::*};
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
-        SetBackgroundColorExt, SetNodeAlignContentExt, SetNodeAlignItemsExt, SetNodeFlexWrapExt,
-        SetNodeMarginExt, SetNodeOverflowExt, SetNodePaddingExt,
+        SetAlignContentExt, SetAlignItemsExt, SetBackgroundColorExt, SetFlexWrapExt, SetMarginExt,
+        SetOverflowExt, SetPaddingExt,
     },
     widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiRowExt},
 };

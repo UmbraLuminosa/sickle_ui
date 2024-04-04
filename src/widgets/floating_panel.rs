@@ -12,9 +12,9 @@ use crate::interactions::InteractiveBackground;
 use crate::resize_interaction::ResizeHandle;
 use crate::ui_builder::UiBuilderExt;
 use crate::ui_style::{
-    SetAbsolutePositionExt, SetBackgroundColorExt, SetEntityVisiblityExt, SetFluxInteractionExt,
-    SetFocusPolicyExt, SetImageExt, SetNodeFlexGrowExt, SetNodeHeightExt, SetNodeMarginExt,
-    SetNodeShowHideExt, SetNodeWidthExt, SetZIndexExt, UiStyleExt,
+    SetAbsolutePositionExt, SetBackgroundColorExt, SetFlexGrowExt, SetFluxInteractionExt,
+    SetFocusPolicyExt, SetHeightExt, SetImageExt, SetMarginExt, SetNodeShowHideExt,
+    SetVisibilityExt, SetWidthExt, SetZIndexExt, UiStyleExt,
 };
 use crate::FluxInteraction;
 use crate::{

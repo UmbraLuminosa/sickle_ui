@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     ui_builder::*,
-    ui_style::{SetNodeFlexGrowExt, SetNodeShowHideExt, UiStyleExt},
+    ui_style::{SetFlexGrowExt, SetNodeShowHideExt, UiStyleExt},
 };
 
 use super::{
