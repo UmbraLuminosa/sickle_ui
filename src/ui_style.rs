@@ -245,36 +245,93 @@ pub struct InteractionAnimationState {
     animation: AnimationProgress,
 }
 
+#[derive(Clone, Copy, Debug, Default)]
 pub struct StaticValueBundle<T: Clone> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
+    pub base: T,
+    pub hover: Option<T>,
+    pub press: Option<T>,
+    pub cancel: Option<T>,
+    // focus: Option<T>,
 }
 
 impl<T: Clone> StaticValueBundle<T> {
     fn to_value(&self, flux_interaction: crate::FluxInteraction) -> T {
-        self.base.clone()
+        match flux_interaction {
+            FluxInteraction::None => self.base.clone(),
+            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PointerLeave => self.base.clone(),
+            FluxInteraction::Pressed => self
+                .press
+                .clone()
+                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
+            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::Disabled => self.base.clone(),
+        }
     }
 }
 
+#[derive(Clone, Copy, Debug, Default)]
 pub struct AnimatedValueBundle<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
+    pub base: T,
+    pub hover: Option<T>,
+    pub press: Option<T>,
+    pub cancel: Option<T>,
+    // focus: Option<T>,
 }
 
 impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
+    fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
+        match flux_interaction {
+            FluxInteraction::None => FluxInteraction::PointerEnter,
+            FluxInteraction::PointerEnter => FluxInteraction::None,
+            FluxInteraction::PointerLeave => FluxInteraction::PointerEnter,
+            FluxInteraction::Pressed => FluxInteraction::PointerEnter,
+            FluxInteraction::Released => FluxInteraction::Pressed,
+            FluxInteraction::PressCanceled => FluxInteraction::Pressed,
+            FluxInteraction::Disabled => FluxInteraction::None,
+        }
+    }
+    fn phase_value(&self, flux_interaction: FluxInteraction) -> T {
+        match flux_interaction {
+            FluxInteraction::None => self.base.clone(),
+            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PointerLeave => self.base.clone(),
+            FluxInteraction::Pressed => self
+                .press
+                .clone()
+                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
+            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::Disabled => self.base.clone(),
+        }
+    }
+
     fn to_value(
         &self,
         transition_base: InteractionAnimationState,
         animation_progress: InteractionAnimationState,
     ) -> T {
-        // TODO: LERP
-        self.base
+        let start_value = if animation_progress.phase == FluxInteraction::Pressed {
+            let prev_value = self.phase_value(FluxInteraction::None);
+            let hover_value = self.phase_value(FluxInteraction::PointerEnter);
+            match transition_base.animation {
+                AnimationProgress::Start => prev_value,
+                AnimationProgress::Inbetween(t) => prev_value.lerp(hover_value, t),
+                AnimationProgress::End => hover_value,
+            }
+        } else {
+            self.phase_value(AnimatedValueBundle::<T>::prev_phase(
+                animation_progress.phase,
+            ))
+        };
+
+        let end_value = self.phase_value(animation_progress.phase);
+        match animation_progress.animation {
+            AnimationProgress::Start => start_value,
+            AnimationProgress::Inbetween(t) => start_value.lerp(end_value, t),
+            AnimationProgress::End => end_value,
+        }
     }
 }
 

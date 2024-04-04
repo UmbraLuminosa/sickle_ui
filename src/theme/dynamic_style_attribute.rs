@@ -44,83 +44,18 @@ DynamicAttribute:
   - Custom animated values:
     - Callback with flux state and animation progress / loop
 
-pub enum StylableAttributeValue {
-    BackgroundColor(Color),
-}
-
-impl StylableAttributeValue {
-    fn apply(self, ui_style) {
-        match self {
-            value -> ui_style.something(value)
-        }
-    }
-}
-
-pub struct AttributeBundle<T> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
-}
-
-impl<T> AttributeBundle<T> {
-    fn to_value(self, flux) -> T {
-        pick -> value
-    }
-}
-
-pub struct LerpAttributeBundle<T: Lerp> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
-}
-
-impl<T: Lerp> LerpAttributeBundle<T: Lerp> {
-    fn to_value(self, transition_base, animation_progress) -> T {
-        lerp -> value
-    }
-}
-
-// equality only on base value
-pub enum StylableAttributeBundle {
-    BackgroundColor(AttributeBundle<Color>),
-}
-
-impl StylableAttributeBundle {
-    fn to_attr(self, flux) -> StylableAttributeValue {
-        match self {
-            bundle -> StylableAttributeValue::Attr(bundle.to_value(flux))
-        }
-    }
-}
-
-pub enum AnimatableStyleAttribute {
-    BackgroundColor(LerpAttributeBundle<Color>),
-}
-
-impl AnimatableStyleAttribute {
-    fn to_attr(self, transition_base, animation_progress) -> StylableAttributeValue {
-        match self {
-            bundle -> StylableAttributeValue::Attr(bundle.to_value(transition_base, animation_progress))
-        }
-    }
-}
-
 pub enum DynamicAttribute {
   // Remove on apply
-  Inert(StylableAttribute),
+  Static(StaticStyleAttribute),
 
   // Needs flux
-  Interactive(StylableAttributeBundle),
+  Interactive(InteractiveStyleAttribute),
 
   // Needs stopwatch
   // None animations are effectively Pop
   // Only Lerp properties
   Animated {
-    attribute: AnimatableStyleAttribute,
+    attribute: AnimatedStyleAttribute,
     // Remove Option<> around animation prop
     controller: DynamicStyleController
   }
