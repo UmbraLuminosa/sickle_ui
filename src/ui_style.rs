@@ -108,6 +108,14 @@ enum _StyleAttributes {
     MinHeight {
         min_height: Val,
     },
+    #[animatable]
+    MaxWidth {
+        max_width: Val,
+    },
+    #[animatable]
+    MaxHeight {
+        max_height: Val,
+    },
     AspectRatio {
         aspect_ratio: Option<f32>,
     },

@@ -52,7 +52,7 @@ fn update_flux_dynamic_styles(
     >,
     mut commands: Commands,
 ) {
-    for (entity, mut style, interaction, stopwatch) in &mut q_styles {
+    for (entity, mut style, _interaction, _stopwatch) in &mut q_styles {
         style.apply(entity, commands.reborrow());
     }
 }
