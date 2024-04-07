@@ -25,7 +25,7 @@ struct StyleAttribute {
     static_style_only: bool,
     skip_enity_command: bool,
     skip_ui_style_ext: bool,
-    skip_styleable_enum: bool,
+    skip_lockable_enum: bool,
     cmd_struct_name: String,
     cmd_struct_ident: Ident,
     target_attr_name: String,
@@ -47,7 +47,7 @@ impl StyleAttribute {
             static_style_only: false,
             skip_enity_command: false,
             skip_ui_style_ext: false,
-            skip_styleable_enum: false,
+            skip_lockable_enum: false,
             cmd_struct_name,
             cmd_struct_ident,
             target_attr_name,
@@ -70,6 +70,7 @@ pub(crate) fn derive_style_commands_macro(ast: &syn::DeriveInput) -> TokenStream
     };
 
     let stylable_attribute = prepare_stylable_attribute(&attributes);
+    let lockable_attribute = prepare_lockable_attribute(&attributes);
     let static_style_attribute = prepare_static_style_attribute(&attributes);
     let interactive_style_attribute = prepare_interactive_style_attribute(&attributes);
     let animated_style_attribute = prepare_animated_style_attribute(&attributes);
@@ -77,6 +78,7 @@ pub(crate) fn derive_style_commands_macro(ast: &syn::DeriveInput) -> TokenStream
 
     quote! {
         #static_style_attribute
+        #lockable_attribute
         #interactive_style_attribute
         #animated_style_attribute
         #stylable_attribute
@@ -157,8 +159,8 @@ fn parse_variant(variant: &Variant) -> Result<StyleAttribute, (proc_macro2::Span
                 attribute.skip_enity_command = true;
             } else if attr.path().is_ident("skip_ui_style_ext") {
                 attribute.skip_ui_style_ext = true;
-            } else if attr.path().is_ident("skip_styleable_enum") {
-                attribute.skip_styleable_enum = true;
+            } else if attr.path().is_ident("skip_lockable_enum") {
+                attribute.skip_lockable_enum = true;
             } else if attr.path().is_ident("target_tupl") {
                 let token_stream = target_tupl(attr)?;
                 attribute.target_tupl = Some(token_stream);
@@ -199,13 +201,27 @@ fn target_tupl(
 fn prepare_stylable_attribute(style_attributes: &Vec<StyleAttribute>) -> proc_macro2::TokenStream {
     let base_variants: Vec<proc_macro2::TokenStream> = style_attributes
         .iter()
-        .filter(|v| !v.skip_styleable_enum)
-        .map(to_style_attribute_variant)
+        .map(to_base_attribute_variant)
         .collect();
 
     quote! {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect)]
         pub enum StylableAttribute {
+            #(#base_variants)*
+        }
+    }
+}
+
+fn prepare_lockable_attribute(style_attributes: &Vec<StyleAttribute>) -> proc_macro2::TokenStream {
+    let base_variants: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| !v.skip_lockable_enum)
+        .map(to_base_attribute_variant)
+        .collect();
+
+    quote! {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Reflect)]
+        pub enum LockableStyleAttribute {
             #(#base_variants)*
         }
     }
@@ -416,7 +432,7 @@ fn to_eq_style_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenSt
     }
 }
 
-fn to_style_attribute_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
+fn to_base_attribute_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
     let ident = &style_attribute.ident;
     quote! {
         #ident,
@@ -536,7 +552,7 @@ fn to_ui_style_command_impl(style_attribute: &StyleAttribute) -> proc_macro2::To
             fn apply(self, entity: Entity, world: &mut World) {
                 if self.check_lock {
                     if let Some(locked_attrs) = world.get::<LockedStyleAttributes>(entity) {
-                        if locked_attrs.contains(StylableAttribute::#ident) {
+                        if locked_attrs.contains(LockableStyleAttribute::#ident) {
                             warn!(
                                 "Failed to style {} property on entity {:?}: Attribute locked!",
                                 #target_attr_name,

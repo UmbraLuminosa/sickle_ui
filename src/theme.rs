@@ -44,6 +44,8 @@ where
     C: Component,
 {
     context: PhantomData<C>,
+    // TODO: Replace (PseudoStates->DynamicStyle) list with builders
+    // Builder should store PseudoState list and builder fn
     styles: Vec<(Option<&'static [PseudoState]>, DynamicStyle)>,
 }
 

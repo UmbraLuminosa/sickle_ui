@@ -350,6 +350,11 @@ where
         let pseudo_states = world.get::<PseudoStates>(entity);
         let mut style = None;
 
+        // TODO: Move styles from data->builder functions.
+        // TODO: Introduce static theme data: Resource<T> (color palette, config values), pass it to builders
+        // TODO: Merge generated style with those higher up in the hierarchy to always apply previous themes
+        // TODO: Rebuild themes when static data changes
+        // TODO: Update flux interaction stopwatch timeout resource
         if let Some(own_theme) = world.get::<Theme<C>>(entity) {
             match pseudo_states {
                 Some(pseudo_states) => {

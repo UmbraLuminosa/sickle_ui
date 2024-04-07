@@ -230,18 +230,19 @@ enum _StyleAttributes {
     FluxInteraction {
         flux_interaction_enabled: bool,
     },
-    #[skip_styleable_enum]
+    #[skip_lockable_enum]
     #[skip_ui_style_ext]
     AbsolutePosition {
         absolute_position: Vec2,
     },
+    // TODO: Add FluxStopwatchLocked((None, f32, Indefinite) -> lockable
 }
 
 #[derive(Component, Debug, Default)]
-pub struct LockedStyleAttributes(HashSet<StylableAttribute>);
+pub struct LockedStyleAttributes(HashSet<LockableStyleAttribute>);
 
 impl LockedStyleAttributes {
-    pub fn contains(&self, attr: StylableAttribute) -> bool {
+    pub fn contains(&self, attr: LockableStyleAttribute) -> bool {
         self.0.contains(&attr)
     }
 }
@@ -384,7 +385,7 @@ macro_rules! check_lock {
 impl EntityCommand for SetZIndex {
     fn apply(self, entity: Entity, world: &mut World) {
         if self.check_lock {
-            check_lock!(world, entity, "z index", StylableAttribute::ZIndex);
+            check_lock!(world, entity, "z index", LockableStyleAttribute::ZIndex);
         }
 
         let Some(mut z_index) = world.get_mut::<ZIndex>(entity) else {
@@ -418,7 +419,7 @@ struct SetImage {
 impl EntityCommand for SetImage {
     fn apply(self, entity: Entity, world: &mut World) {
         if self.check_lock {
-            check_lock!(world, entity, "image", StylableAttribute::Image);
+            check_lock!(world, entity, "image", LockableStyleAttribute::Image);
         }
 
         let handle = if self.path == "" {
@@ -476,7 +477,7 @@ impl EntityCommand for SetImageScaleMode {
                 world,
                 entity,
                 "image scale mode",
-                StylableAttribute::ImageScaleMode
+                LockableStyleAttribute::ImageScaleMode
             );
         }
 
@@ -504,7 +505,7 @@ impl EntityCommand for SetFluxInteractionEnabled {
                 world,
                 entity,
                 "flux interaction",
-                StylableAttribute::FluxInteraction
+                LockableStyleAttribute::FluxInteraction
             );
         }
 
@@ -725,10 +726,15 @@ impl EntityCommand for SetAbsolutePosition {
                 world,
                 entity,
                 "position_type",
-                StylableAttribute::PositionType
+                LockableStyleAttribute::PositionType
             );
-            check_lock!(world, entity, "position: top", StylableAttribute::Top);
-            check_lock!(world, entity, "position: left", StylableAttribute::Left);
+            check_lock!(world, entity, "position: top", LockableStyleAttribute::Top);
+            check_lock!(
+                world,
+                entity,
+                "position: left",
+                LockableStyleAttribute::Left
+            );
         }
 
         let offset = if let Some(parent) = world.get::<Parent>(entity) {

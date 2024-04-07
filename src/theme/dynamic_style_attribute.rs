@@ -61,10 +61,16 @@ pub enum DynamicAttribute {
   }
 
   // apply() returns lock length (None, f32, Indefinite)
+  // -> eval flux lock length on flux interaction change (at DynamicStyle level, iterate over all Animated)
+  // TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
+  // FluxStopwatchLock? Merge lock lengths?
   // impl is_inert, is_interactive, is_animated
 }
 
 */
+
+// TODO: Impl equality between StaticStyleAttribute/InteractiveStyleAttribute/AnimatedStyleAttribute
+// to avoid styling the same attribute
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct DynamicStyleExtremes<T: Lerp + Default + Clone + Copy + PartialEq> {

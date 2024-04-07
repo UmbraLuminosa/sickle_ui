@@ -118,7 +118,7 @@ pub fn style_command_macro_derive(input: TokenStream) -> TokenStream {
         static_style_only,
         skip_enity_command,
         skip_ui_style_ext,
-        skip_styleable_enum,
+        skip_lockable_enum,
         animatable,
         target_enum,
         target_tupl
