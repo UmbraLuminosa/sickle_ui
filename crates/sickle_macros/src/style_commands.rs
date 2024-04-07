@@ -12,6 +12,7 @@ enum ParseError {
     TooManyFields,
     InvalidType,
     InvalidTargetTuplType,
+    StaticAnimatable,
 }
 
 #[derive(Clone, Debug)]
@@ -74,6 +75,7 @@ pub(crate) fn derive_style_commands_macro(ast: &syn::DeriveInput) -> TokenStream
     let static_style_attribute = prepare_static_style_attribute(&attributes);
     let interactive_style_attribute = prepare_interactive_style_attribute(&attributes);
     let animated_style_attribute = prepare_animated_style_attribute(&attributes);
+    let enum_equivalence = prepare_enum_equivalence(&attributes);
     let style_commands = prepare_style_commands(&attributes);
 
     quote! {
@@ -81,6 +83,7 @@ pub(crate) fn derive_style_commands_macro(ast: &syn::DeriveInput) -> TokenStream
         #lockable_attribute
         #interactive_style_attribute
         #animated_style_attribute
+        #enum_equivalence
         #stylable_attribute
         #style_commands
     }
@@ -112,6 +115,11 @@ fn match_error(span: proc_macro2::Span, error: ParseError) -> proc_macro2::Token
         ParseError::InvalidTargetTuplType => {
             return quote_spanned! {
                 span => compile_error!("Unsupported target_tupl value. Must be defined as #[target_tupl(Component)]");
+            }
+        }
+        ParseError::StaticAnimatable => {
+            return quote_spanned! {
+                span => compile_error!("Attribute cannot be static only and animatable at the same time!");
             }
         }
     }
@@ -166,6 +174,10 @@ fn parse_variant(variant: &Variant) -> Result<StyleAttribute, (proc_macro2::Span
                 attribute.target_tupl = Some(token_stream);
             }
         }
+    }
+
+    if attribute.static_style_only && attribute.animatable {
+        return Err((field.ty.span(), ParseError::StaticAnimatable));
     }
 
     Ok(attribute)
@@ -406,6 +418,92 @@ fn prepare_animated_style_attribute(
     }
 }
 
+fn prepare_enum_equivalence(style_attributes: &Vec<StyleAttribute>) -> proc_macro2::TokenStream {
+    let interactive_to_static: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| !v.static_style_only)
+        .map(to_eq_static_variant)
+        .collect();
+    let static_to_interactive: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| !v.static_style_only)
+        .map(to_eq_interactive_variant)
+        .collect();
+
+    let animated_to_interactive: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| v.animatable)
+        .map(to_eq_interactive_variant)
+        .collect();
+    let interactive_to_animated: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| v.animatable)
+        .map(to_eq_animated_variant)
+        .collect();
+
+    let animated_to_static: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| v.animatable)
+        .map(to_eq_static_variant)
+        .collect();
+    let static_to_animated: Vec<proc_macro2::TokenStream> = style_attributes
+        .iter()
+        .filter(|v| v.animatable)
+        .map(to_eq_animated_variant)
+        .collect();
+
+    quote! {
+        impl PartialEq<StaticStyleAttribute> for InteractiveStyleAttribute {
+            fn eq(&self, other: &StaticStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#interactive_to_static)*
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<InteractiveStyleAttribute> for StaticStyleAttribute {
+            fn eq(&self, other: &InteractiveStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#static_to_interactive)*
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<InteractiveStyleAttribute> for AnimatedStyleAttribute {
+            fn eq(&self, other: &InteractiveStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#animated_to_interactive)*
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<AnimatedStyleAttribute> for InteractiveStyleAttribute {
+            fn eq(&self, other: &AnimatedStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#interactive_to_animated)*
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<StaticStyleAttribute> for AnimatedStyleAttribute {
+            fn eq(&self, other: &StaticStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#animated_to_static)*
+                    _ => false,
+                }
+            }
+        }
+        impl PartialEq<AnimatedStyleAttribute> for StaticStyleAttribute {
+            fn eq(&self, other: &AnimatedStyleAttribute) -> bool {
+                match (self, other) {
+                    #(#static_to_animated)*
+                    _ => false,
+                }
+            }
+        }
+    }
+}
+
 fn prepare_style_commands(style_attributes: &Vec<StyleAttribute>) -> proc_macro2::TokenStream {
     let extensions: Vec<proc_macro2::TokenStream> = style_attributes
         .iter()
@@ -429,6 +527,27 @@ fn to_eq_style_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenSt
     let ident = &style_attribute.ident;
     quote! {
         (Self::#ident(_), Self::#ident(_)) => true,
+    }
+}
+
+fn to_eq_static_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
+    let ident = &style_attribute.ident;
+    quote! {
+        (Self::#ident(_), StaticStyleAttribute::#ident(_)) => true,
+    }
+}
+
+fn to_eq_interactive_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
+    let ident = &style_attribute.ident;
+    quote! {
+        (Self::#ident(_), InteractiveStyleAttribute::#ident(_)) => true,
+    }
+}
+
+fn to_eq_animated_variant(style_attribute: &StyleAttribute) -> proc_macro2::TokenStream {
+    let ident = &style_attribute.ident;
+    quote! {
+        (Self::#ident(_), AnimatedStyleAttribute::#ident(_)) => true,
     }
 }
 

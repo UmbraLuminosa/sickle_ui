@@ -3,7 +3,10 @@ use bevy::prelude::*;
 use sickle_math::lerp::Lerp;
 
 use crate::{
-    ui_style::{SetBackgroundColorExt, SetBorderColorExt, UiStyle},
+    ui_style::{
+        AnimatedStyleAttribute, InteractiveStyleAttribute, SetBackgroundColorExt,
+        SetBorderColorExt, StaticStyleAttribute, UiStyle,
+    },
     FluxInteraction, FluxInteractionStopwatch,
 };
 
@@ -68,9 +71,6 @@ pub enum DynamicAttribute {
 }
 
 */
-
-// TODO: Impl equality between StaticStyleAttribute/InteractiveStyleAttribute/AnimatedStyleAttribute
-// to avoid styling the same attribute
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct DynamicStyleExtremes<T: Lerp + Default + Clone + Copy + PartialEq> {
