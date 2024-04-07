@@ -1,11 +1,7 @@
-use bevy::ecs::system::EntityCommand;
-use bevy::prelude::*;
-use sickle_math::lerp::Lerp;
-
 use crate::{
     ui_style::{
-        AnimatedStyleAttribute, InteractiveStyleAttribute, SetBackgroundColorExt,
-        SetBorderColorExt, StaticStyleAttribute, UiStyle,
+        AnimatedStyleAttribute, InteractionAnimationState, InteractiveStyleAttribute,
+        StaticStyleAttribute,
     },
     FluxInteraction, FluxInteractionStopwatch,
 };
@@ -47,204 +43,110 @@ DynamicAttribute:
   - Custom animated values:
     - Callback with flux state and animation progress / loop
 
-pub enum DynamicAttribute {
-  // Remove on apply
-  Static(StaticStyleAttribute),
-
-  // Needs flux
-  Interactive(InteractiveStyleAttribute),
-
-  // Needs stopwatch
-  // None animations are effectively Pop
-  // Only Lerp properties
-  Animated {
-    attribute: AnimatedStyleAttribute,
-    // Remove Option<> around animation prop
-    controller: DynamicStyleController
-  }
-
-  // apply() returns lock length (None, f32, Indefinite)
-  // -> eval flux lock length on flux interaction change (at DynamicStyle level, iterate over all Animated)
-  // TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
-  // FluxStopwatchLock? Merge lock lengths?
-  // impl is_inert, is_interactive, is_animated
-}
-
+// apply() returns lock length (None, f32, Indefinite)
+// -> eval flux lock length on flux interaction change (at DynamicStyle level, iterate over all Animated)
+// TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
+// FluxStopwatchLock? Merge lock lengths?
 */
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct DynamicStyleExtremes<T: Lerp + Default + Clone + Copy + PartialEq> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
+#[derive(Clone, Debug, PartialEq)]
+pub enum DynamicStyleAttribute {
+    // Remove on apply
+    Static(StaticStyleAttribute),
+
+    // Needs flux
+    Interactive(InteractiveStyleAttribute),
+
+    // Needs stopwatch
+    // None animations are effectively Pop
+    // Only Lerp properties
+    Animated {
+        attribute: AnimatedStyleAttribute,
+        controller: DynamicStyleController,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct DynamicStyleState {
-    phase: FluxInteraction,
-    iteration: u8,
-    animation: AnimationProgress,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DynamicStyleController {
-    animation: Option<StyleAnimation>,
-    // Ideally only set when press starts. Otherwise everytime PointerEnter updated
-    transition_base: DynamicStyleState,
-    state: DynamicStyleState,
+    pub animation: StyleAnimation,
+    transition_base: InteractionAnimationState,
+    current_state: InteractionAnimationState,
     dirty: bool,
 }
 
-impl Default for DynamicStyleController {
-    fn default() -> Self {
-        Self {
-            animation: Default::default(),
-            transition_base: Default::default(),
-            state: Default::default(),
-            dirty: true,
+impl DynamicStyleController {
+    pub fn update(
+        &mut self,
+        flux_interaction: &FluxInteraction,
+        stopwatch: &FluxInteractionStopwatch,
+    ) {
+        // TODO: track overflow
+        let (progress, _) = self.animation.to_progress(flux_interaction, stopwatch);
+        if self.transition_base.progress != progress {
+            match *flux_interaction {
+                FluxInteraction::PointerEnter => {
+                    self.transition_base = InteractionAnimationState {
+                        progress,
+                        iteration: 0,
+                        phase: FluxInteraction::PointerEnter,
+                    }
+                }
+                FluxInteraction::Released => {
+                    self.transition_base = InteractionAnimationState {
+                        progress: AnimationProgress::End,
+                        iteration: 0,
+                        phase: FluxInteraction::PointerEnter,
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        if self.current_state.phase != *flux_interaction || self.current_state.progress != progress
+        {
+            self.current_state = InteractionAnimationState {
+                progress,
+                iteration: 0,
+                phase: *flux_interaction,
+            };
+            self.dirty = true;
+        } else {
+            self.dirty = false;
         }
     }
-}
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct DynamicStyleAttribute<T: Lerp + Default + Clone + Copy + PartialEq> {
-    base: T,
-    hover: Option<T>,
-    press: Option<T>,
-    cancel: Option<T>,
-    focus: Option<T>,
-    animation: Option<StyleAnimation>,
-    current: T,
-    dirty: bool,
-}
-
-impl<T: Lerp + Default + Clone + Copy + PartialEq> DynamicStyleAttribute<T> {
-    pub fn new(base: T) -> Self {
-        Self {
-            base,
-            current: base,
-            dirty: true,
-            ..default()
-        }
+    pub fn transition_base(&self) -> InteractionAnimationState {
+        self.transition_base
     }
 
-    pub fn base(&mut self, value: T) -> &mut Self {
-        self.base = value;
-        self
-    }
-
-    pub fn hover(&mut self, value: T) -> &mut Self {
-        self.hover = value.into();
-        self
-    }
-
-    pub fn press(&mut self, value: T) -> &mut Self {
-        self.press = value.into();
-        self
-    }
-
-    pub fn cancel(&mut self, value: T) -> &mut Self {
-        self.cancel = value.into();
-        self
-    }
-
-    pub fn focus(&mut self, value: T) -> &mut Self {
-        self.focus = value.into();
-        self
-    }
-
-    pub fn set_animation(&mut self, animation: StyleAnimation) -> &mut Self {
-        self.animation = Some(animation);
-        self
-    }
-
-    pub fn animate(&mut self) -> &mut StyleAnimation {
-        let animation = StyleAnimation::new();
-        self.animation = Some(animation);
-
-        let Some(ref mut animation) = self.animation else {
-            unreachable!();
-        };
-
-        animation
-    }
-
-    pub fn current(&self) -> &T {
-        &self.current
+    pub fn current_state(&self) -> InteractionAnimationState {
+        self.current_state
     }
 
     pub fn dirty(&self) -> bool {
         self.dirty
     }
-
-    pub fn need_flux_interaction(&self) -> bool {
-        self.hover.is_some()
-            || self.press.is_some()
-            || self.cancel.is_some()
-            || self.focus.is_some()
-    }
-
-    pub fn update(
-        &mut self,
-        flux_interaction: &FluxInteraction,
-        stopwatch: &FluxInteractionStopwatch,
-    ) {
-    }
 }
 
-pub struct CustomDynamicStyle {
-    callback: fn(f32, Entity, &mut World),
-    current_value: f32,
-}
-
-impl EntityCommand for CustomDynamicStyle {
-    fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(self.current_value, id, world);
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum DynamicStyleAttributes {
-    BackgroundColor(DynamicStyleAttribute<Color>),
-    BorderColor(DynamicStyleAttribute<Color>),
-    CustomF32(fn(f32, Entity, &mut World), DynamicStyleAttribute<f32>),
-    // TODO: Implement an additional Custom value that also knows which flux state it is in
-}
-
-impl PartialEq for DynamicStyleAttributes {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::BackgroundColor(_), Self::BackgroundColor(_)) => true,
-            (Self::CustomF32(l0, _), Self::CustomF32(r0, _)) => l0 == r0,
+impl DynamicStyleAttribute {
+    pub fn is_static(&self) -> bool {
+        match self {
+            DynamicStyleAttribute::Static(_) => true,
             _ => false,
         }
     }
-}
 
-impl DynamicStyleAttributes {
-    pub fn need_flux_interaction(&self) -> bool {
+    pub fn is_interactive(&self) -> bool {
         match self {
-            DynamicStyleAttributes::BackgroundColor(attr)
-            | DynamicStyleAttributes::BorderColor(attr) => attr.need_flux_interaction(),
-            DynamicStyleAttributes::CustomF32(_, attr) => attr.need_flux_interaction(),
+            DynamicStyleAttribute::Interactive(_) => true,
+            _ => false,
         }
     }
 
-    pub fn dirty(&self) -> bool {
+    pub fn is_animated(&self) -> bool {
         match self {
-            DynamicStyleAttributes::BackgroundColor(attr)
-            | DynamicStyleAttributes::BorderColor(attr) => attr.dirty,
-            DynamicStyleAttributes::CustomF32(_, attr) => attr.dirty,
-        }
-    }
-
-    fn set_dirty(&mut self, dirty: bool) {
-        match self {
-            DynamicStyleAttributes::BackgroundColor(attr)
-            | DynamicStyleAttributes::BorderColor(attr) => attr.dirty = dirty,
-            DynamicStyleAttributes::CustomF32(_, attr) => attr.dirty = dirty,
+            DynamicStyleAttribute::Animated { .. } => true,
+            _ => false,
         }
     }
 
@@ -253,28 +155,8 @@ impl DynamicStyleAttributes {
         flux_interaction: &FluxInteraction,
         stopwatch: &FluxInteractionStopwatch,
     ) {
-    }
-
-    pub fn apply<'a>(&'a mut self, ui_style: &'a mut UiStyle<'a>) {
-        if !self.dirty() {
-            return;
+        if let DynamicStyleAttribute::Animated { controller, .. } = self {
+            controller.update(flux_interaction, stopwatch);
         }
-
-        match self {
-            DynamicStyleAttributes::BackgroundColor(attr) => {
-                ui_style.background_color(attr.current);
-            }
-            DynamicStyleAttributes::BorderColor(attr) => {
-                ui_style.border_color(attr.current);
-            }
-            DynamicStyleAttributes::CustomF32(callback, attr) => {
-                ui_style.entity_commands().add(CustomDynamicStyle {
-                    callback: *callback,
-                    current_value: attr.current,
-                });
-            }
-        };
-
-        self.set_dirty(false);
     }
 }

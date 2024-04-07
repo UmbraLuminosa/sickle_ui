@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use sickle_math::lerp::Lerp;
 
-use crate::{FluxInteraction, FluxInteractionStopwatch};
+use crate::{ui_style::UiStyleExt, FluxInteraction, FluxInteractionStopwatch};
 
 use super::*;
 
@@ -12,7 +11,13 @@ impl Plugin for DynamicStylePlugin {
         app.configure_sets(Update, DynamicStyleUpdate.after(ThemeUpdate))
             .add_systems(
                 Update,
-                (update_inert_dynamic_styles,).in_set(DynamicStyleUpdate),
+                (
+                    update_dynamic_style_static_attributes,
+                    update_dynamic_style_interactive_attributes,
+                    update_dynamic_style_animated_attributes,
+                )
+                    .chain()
+                    .in_set(DynamicStyleUpdate),
             );
     }
 }
@@ -21,19 +26,55 @@ impl Plugin for DynamicStylePlugin {
 pub struct DynamicStyleUpdate;
 
 // These are dynamic styles with only inert values
-fn update_inert_dynamic_styles(
-    mut q_styles: Query<
-        (Entity, &mut DynamicStyle),
-        (Without<FluxDynamicStyle>, Changed<DynamicStyle>),
-    >,
+fn update_dynamic_style_static_attributes(
+    mut q_styles: Query<(Entity, &mut DynamicStyle), Changed<DynamicStyle>>,
     mut commands: Commands,
 ) {
     for (entity, mut style) in &mut q_styles {
-        style.apply(entity, commands.reborrow());
+        let mut had_static = false;
+        for attribute in &style.0 {
+            let DynamicStyleAttribute::Static(style) = attribute else {
+                continue;
+            };
+
+            style.apply(&mut commands.style(entity));
+            had_static = true;
+        }
+
+        if had_static {
+            style.0 = style
+                .0
+                .iter()
+                .filter(|attr| !attr.is_static())
+                .cloned()
+                .collect();
+
+            if style.0.len() == 0 {
+                commands.entity(entity).remove::<DynamicStyle>();
+            }
+        }
     }
 }
 
-fn update_flux_dynamic_styles(
+fn update_dynamic_style_interactive_attributes(
+    mut q_styles: Query<
+        (Entity, &mut DynamicStyle, &FluxInteraction),
+        Or<(Changed<DynamicStyle>, Changed<FluxInteraction>)>,
+    >,
+    mut commands: Commands,
+) {
+    for (entity, style, interaction) in &mut q_styles {
+        for attribute in &style.0 {
+            let DynamicStyleAttribute::Interactive(style) = attribute else {
+                continue;
+            };
+
+            style.apply(*interaction, &mut commands.style(entity));
+        }
+    }
+}
+
+fn update_dynamic_style_animated_attributes(
     mut q_styles: Query<
         (
             Entity,
@@ -41,30 +82,46 @@ fn update_flux_dynamic_styles(
             &FluxInteraction,
             &FluxInteractionStopwatch,
         ),
-        (
-            With<FluxDynamicStyle>,
-            Or<(
-                Changed<DynamicStyle>,
-                Changed<FluxInteraction>,
-                Changed<FluxInteractionStopwatch>,
-            )>,
-        ),
+        Or<(
+            Changed<DynamicStyle>,
+            Changed<FluxInteraction>,
+            Changed<FluxInteractionStopwatch>,
+        )>,
     >,
     mut commands: Commands,
 ) {
-    for (entity, mut style, _interaction, _stopwatch) in &mut q_styles {
-        style.apply(entity, commands.reborrow());
+    for (entity, mut style, interaction, stopwatch) in &mut q_styles {
+        for attribute in &mut style.0 {
+            let DynamicStyleAttribute::Animated {
+                attribute,
+                ref mut controller,
+            } = attribute
+            else {
+                continue;
+            };
+
+            // TODO: Update stopwatch lock if interaction is_changed
+
+            controller.update(interaction, stopwatch);
+            if controller.dirty() {
+                attribute.apply(
+                    controller.transition_base(),
+                    controller.current_state(),
+                    &mut commands.style(entity),
+                );
+            }
+        }
     }
 }
 
-#[derive(Component, Debug, Reflect)]
-#[reflect(Component)]
-pub struct FluxDynamicStyle;
-
 #[derive(Component, Clone, Debug)]
-pub struct DynamicStyle(Vec<DynamicStyleAttributes>);
+pub struct DynamicStyle(Vec<DynamicStyleAttribute>);
 
 impl DynamicStyle {
+    pub fn new(list: Vec<DynamicStyleAttribute>) -> Self {
+        Self(list)
+    }
+
     pub fn merge(self, other: DynamicStyle) -> Self {
         let mut new_list = other.0;
         for attr in self.0 {
@@ -76,15 +133,12 @@ impl DynamicStyle {
         DynamicStyle(new_list)
     }
 
-    pub fn build(style_builder: impl FnOnce(&mut DynamicStyleBuilder)) -> Self {
-        let mut base_builder = DynamicStyleBuilder::new();
-        style_builder(&mut base_builder);
-
-        DynamicStyle(base_builder.attributes)
+    pub fn is_interactive(&self) -> bool {
+        self.0.iter().any(|attr| attr.is_interactive())
     }
 
-    pub fn need_flux_interaction(&self) -> bool {
-        self.0.iter().any(|attr| attr.need_flux_interaction())
+    pub fn is_animated(&self) -> bool {
+        self.0.iter().any(|attr| attr.is_animated())
     }
 
     pub fn update<'a>(
@@ -95,85 +149,5 @@ impl DynamicStyle {
         for attr in self.0.iter_mut() {
             attr.update(interaction, stopwatch);
         }
-    }
-
-    pub fn apply(&mut self, entity: Entity, mut commands: Commands) {
-        for attr in self.0.iter_mut() {
-            attr.apply(&mut commands.style(entity));
-        }
-    }
-}
-
-pub struct DynamicStyleBuilder {
-    attributes: Vec<DynamicStyleAttributes>,
-}
-
-macro_rules! style_builder {
-    ($func_name:ident, $variant:path, $type:ident) => {
-        pub fn $func_name(&mut self, base: $type) -> &mut DynamicStyleAttribute<$type> {
-            let attribute = DynamicStyleAttribute::new(base);
-            let variant = $variant(attribute);
-
-            if self.attributes.contains(&variant) {
-                let Some(&mut $variant(ref mut unwrapped_attr)) =
-                    self.attributes.iter_mut().find(|item| **item == variant)
-                else {
-                    unreachable!();
-                };
-
-                unwrapped_attr.base(base);
-                return unwrapped_attr;
-            }
-
-            self.attributes.push($variant(attribute));
-
-            let Some(&mut $variant(ref mut unwrapped_attr)) = self.attributes.last_mut() else {
-                unreachable!();
-            };
-
-            unwrapped_attr
-        }
-    };
-}
-
-impl DynamicStyleBuilder {
-    fn new() -> Self {
-        Self { attributes: vec![] }
-    }
-
-    style_builder!(
-        background_color,
-        DynamicStyleAttributes::BackgroundColor,
-        Color
-    );
-
-    pub fn custom(
-        &mut self,
-        base: f32,
-        callback: fn(f32, Entity, &mut World),
-    ) -> &mut DynamicStyleAttribute<f32> {
-        let attribute = DynamicStyleAttribute::new(base);
-        let variant = DynamicStyleAttributes::CustomF32(callback, attribute);
-
-        if self.attributes.contains(&variant) {
-            let Some(&mut DynamicStyleAttributes::CustomF32(_, ref mut unwrapped_attr)) =
-                self.attributes.iter_mut().find(|item| **item == variant)
-            else {
-                unreachable!();
-            };
-
-            unwrapped_attr.base(base);
-            return unwrapped_attr;
-        }
-
-        self.attributes.push(variant);
-
-        let Some(&mut DynamicStyleAttributes::CustomF32(_, ref mut unwrapped_attr)) =
-            self.attributes.last_mut()
-        else {
-            unreachable!();
-        };
-
-        unwrapped_attr
     }
 }

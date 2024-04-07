@@ -249,9 +249,9 @@ impl LockedStyleAttributes {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct InteractionAnimationState {
-    phase: crate::FluxInteraction,
-    iteration: u8,
-    animation: AnimationProgress,
+    pub phase: FluxInteraction,
+    pub iteration: u8,
+    pub progress: AnimationProgress,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -264,7 +264,7 @@ pub struct StaticValueBundle<T: Clone> {
 }
 
 impl<T: Clone> StaticValueBundle<T> {
-    fn to_value(&self, flux_interaction: crate::FluxInteraction) -> T {
+    fn to_value(&self, flux_interaction: FluxInteraction) -> T {
         match flux_interaction {
             FluxInteraction::None => self.base.clone(),
             FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
@@ -292,7 +292,7 @@ pub struct AnimatedValueBundle<T: sickle_math::lerp::Lerp + Default + Clone + Co
 impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
     fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
         match flux_interaction {
-            FluxInteraction::None => FluxInteraction::PointerEnter,
+            FluxInteraction::None => FluxInteraction::None,
             FluxInteraction::PointerEnter => FluxInteraction::None,
             FluxInteraction::PointerLeave => FluxInteraction::PointerEnter,
             FluxInteraction::Pressed => FluxInteraction::PointerEnter,
@@ -324,7 +324,7 @@ impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedVa
         let start_value = if animation_progress.phase == FluxInteraction::Pressed {
             let prev_value = self.phase_value(FluxInteraction::None);
             let hover_value = self.phase_value(FluxInteraction::PointerEnter);
-            match transition_base.animation {
+            match transition_base.progress {
                 AnimationProgress::Start => prev_value,
                 AnimationProgress::Inbetween(t) => prev_value.lerp(hover_value, t),
                 AnimationProgress::End => hover_value,
@@ -336,7 +336,7 @@ impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedVa
         };
 
         let end_value = self.phase_value(animation_progress.phase);
-        match animation_progress.animation {
+        match animation_progress.progress {
             AnimationProgress::Start => start_value,
             AnimationProgress::Inbetween(t) => start_value.lerp(end_value, t),
             AnimationProgress::End => end_value,

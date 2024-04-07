@@ -1,12 +1,8 @@
 use std::marker::PhantomData;
 
 use crate::{
-    theme::{
-        dynamic_style::{DynamicStyle, FluxDynamicStyle},
-        pseudo_state::PseudoStates,
-        Theme,
-    },
-    FluxInteraction,
+    theme::{dynamic_style::DynamicStyle, pseudo_state::PseudoStates, Theme},
+    FluxInteraction, TrackedInteraction,
 };
 use bevy::{
     core::Name,
@@ -20,7 +16,7 @@ use bevy::{
     hierarchy::{Children, Parent},
     log::{info, warn},
     text::{Text, TextSection, TextStyle},
-    ui::UiSurface,
+    ui::{Interaction, UiSurface},
     window::{CursorIcon, PrimaryWindow, Window},
 };
 
@@ -305,15 +301,14 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
     }
 }
 
-pub trait InsertDynamicStyleExt<'a> {
+pub trait RefreshThemeExt<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
         C: Component,
         Theme<C>: Default;
-    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a>;
 }
 
-impl<'a> InsertDynamicStyleExt<'a> for EntityCommands<'a> {
+impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
         C: Component,
@@ -322,17 +317,6 @@ impl<'a> InsertDynamicStyleExt<'a> for EntityCommands<'a> {
         self.add(RefreshEntityTheme::<C> {
             context: PhantomData,
         });
-        self
-    }
-
-    fn insert_dynamic_style(&'a mut self, style: DynamicStyle) -> &mut EntityCommands<'a> {
-        if style.need_flux_interaction() {
-            self.insert((FluxDynamicStyle, style));
-        } else {
-            self.insert(style);
-            self.remove::<FluxDynamicStyle>();
-        }
-
         self
     }
 }
@@ -397,18 +381,21 @@ where
         }
 
         if let Some(style) = style {
-            if style.need_flux_interaction() {
-                world.entity_mut(entity).insert((FluxDynamicStyle, style));
+            if style.is_interactive() || style.is_animated() {
+                world.entity_mut(entity).insert(style);
+                if world.get::<Interaction>(entity).is_none() {
+                    world.entity_mut(entity).insert(Interaction::default());
+                }
                 if world.get::<FluxInteraction>(entity).is_none() {
-                    world.entity_mut(entity).insert(FluxInteraction::default());
+                    world
+                        .entity_mut(entity)
+                        .insert(TrackedInteraction::default());
                 }
             } else {
                 world.entity_mut(entity).insert(style);
-                world.entity_mut(entity).remove::<FluxDynamicStyle>();
             }
         } else {
             world.entity_mut(entity).remove::<DynamicStyle>();
-            world.entity_mut(entity).remove::<FluxDynamicStyle>();
         }
     }
 }

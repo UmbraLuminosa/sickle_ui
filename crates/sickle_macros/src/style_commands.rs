@@ -254,6 +254,7 @@ fn prepare_static_style_attribute(
         .collect();
 
     quote! {
+        #[derive(Clone, Debug)]
         pub enum StaticStyleAttribute {
             #(#base_variants)*
             Custom(fn(Entity, &mut World)),
@@ -270,11 +271,11 @@ fn prepare_static_style_attribute(
         }
 
         impl StaticStyleAttribute {
-            pub fn apply<'a>(self, ui_style: &'a mut UiStyle<'a>) {
+            pub fn apply<'a>(&self, ui_style: &'a mut UiStyle<'a>) {
                 match self {
                     #(#apply_variants)*
                     Self::Custom(callback) => {
-                        ui_style.entity_commands().add(callback);
+                        ui_style.entity_commands().add(*callback);
                     }
                 }
             }
@@ -302,6 +303,7 @@ fn prepare_interactive_style_attribute(
         .collect();
 
     quote! {
+        #[derive(Clone, Debug)]
         pub enum InteractiveStyleAttribute {
             #(#base_variants)*
             Custom(fn(Entity, FluxInteraction, &mut World)),
@@ -364,6 +366,7 @@ fn prepare_animated_style_attribute(
         .collect();
 
     quote! {
+        #[derive(Clone, Debug)]
         pub enum AnimatedStyleAttribute {
             #(#base_variants)*
             Custom(fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World)),
@@ -587,7 +590,7 @@ fn to_static_style_apply_variant(style_attribute: &StyleAttribute) -> proc_macro
     let command = &style_attribute.command;
     quote! {
         Self::#ident(value) => {
-            ui_style.#command(value);
+            ui_style.#command(value.clone());
         }
     }
 }

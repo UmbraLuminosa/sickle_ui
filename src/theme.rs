@@ -8,9 +8,7 @@ use std::marker::PhantomData;
 
 use bevy::prelude::*;
 
-use crate::{
-    ui_commands::InsertDynamicStyleExt, ui_style::UiStyleExt, widgets::WidgetLibraryUpdate,
-};
+use crate::{ui_commands::RefreshThemeExt, widgets::WidgetLibraryUpdate};
 
 use self::{
     default_theme::DefaultThemePlugin, dynamic_style::*, dynamic_style_attribute::*,
