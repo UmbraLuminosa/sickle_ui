@@ -3,10 +3,11 @@ use bevy::prelude::*;
 
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
+    theme::dynamic_style::DynamicStyle,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
-    ui_style::{SetBackgroundColorExt, SetBorderExt, SetWidthExt},
+    ui_style::{SetBackgroundColorExt, SetBorderExt, SetHeightExt, SetWidthExt, StyleBuilder},
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
-    SickleUiPlugin,
+    SickleUiPlugin, TrackedInteraction,
 };
 
 fn main() {
@@ -158,6 +159,30 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     label: format!("Tab {} content", i).into(),
                                     ..default()
                                 });
+
+                                // TODO: Remove test square once theming is done
+                                if i > 0 {
+                                    return;
+                                }
+
+                                let mut style = StyleBuilder::new();
+                                style
+                                    .animated()
+                                    .background_color(Color::ALICE_BLUE, Color::BISQUE)
+                                    .hover(0.3, None, None, None);
+
+                                let dyn_style: DynamicStyle = style.into();
+
+                                panel
+                                    .spawn((
+                                        NodeBundle::default(),
+                                        dyn_style,
+                                        Interaction::default(),
+                                        TrackedInteraction::default(),
+                                    ))
+                                    .style()
+                                    .width(Val::Px(100.))
+                                    .height(Val::Px(100.));
                             });
                         }
                     },

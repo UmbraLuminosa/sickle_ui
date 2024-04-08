@@ -57,13 +57,13 @@ fn update_dynamic_style_static_attributes(
 }
 
 fn update_dynamic_style_interactive_attributes(
-    mut q_styles: Query<
-        (Entity, &mut DynamicStyle, &FluxInteraction),
+    q_styles: Query<
+        (Entity, &DynamicStyle, &FluxInteraction),
         Or<(Changed<DynamicStyle>, Changed<FluxInteraction>)>,
     >,
     mut commands: Commands,
 ) {
-    for (entity, style, interaction) in &mut q_styles {
+    for (entity, style, interaction) in &q_styles {
         for attribute in &style.0 {
             let DynamicStyleAttribute::Interactive(style) = attribute else {
                 continue;

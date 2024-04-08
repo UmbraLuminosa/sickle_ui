@@ -49,7 +49,7 @@ DynamicAttribute:
 // FluxStopwatchLock? Merge lock lengths?
 */
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum DynamicStyleAttribute {
     // Remove on apply
     Static(StaticStyleAttribute),
@@ -64,6 +64,55 @@ pub enum DynamicStyleAttribute {
         attribute: AnimatedStyleAttribute,
         controller: DynamicStyleController,
     },
+}
+
+impl PartialEq for DynamicStyleAttribute {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Static(l0), Self::Static(r0)) => l0 == r0,
+            (Self::Static(l0), Self::Interactive(r0)) => l0 == r0,
+            (
+                Self::Static(l0),
+                Self::Animated {
+                    attribute: r_attribute,
+                    ..
+                },
+            ) => l0 == r_attribute,
+            (Self::Interactive(l0), Self::Interactive(r0)) => l0 == r0,
+            (Self::Interactive(l0), Self::Static(r0)) => l0 == r0,
+            (
+                Self::Interactive(l0),
+                Self::Animated {
+                    attribute: r_attribute,
+                    ..
+                },
+            ) => l0 == r_attribute,
+            (
+                Self::Animated {
+                    attribute: l_attribute,
+                    ..
+                },
+                Self::Animated {
+                    attribute: r_attribute,
+                    ..
+                },
+            ) => l_attribute == r_attribute,
+            (
+                Self::Animated {
+                    attribute: l_attribute,
+                    ..
+                },
+                Self::Static(r0),
+            ) => l_attribute == r0,
+            (
+                Self::Animated {
+                    attribute: l_attribute,
+                    ..
+                },
+                Self::Interactive(r0),
+            ) => l_attribute == r0,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

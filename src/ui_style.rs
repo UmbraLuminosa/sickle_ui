@@ -5,8 +5,16 @@ use bevy::{
     utils::HashSet,
 };
 use sickle_macros::StyleCommands;
+use sickle_math::lerp::Lerp;
 
-use crate::{theme::style_animation::AnimationProgress, FluxInteraction};
+use crate::{
+    theme::{
+        dynamic_style::DynamicStyle,
+        dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
+        style_animation::{AnimationProgress, StyleAnimation},
+    },
+    FluxInteraction,
+};
 
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
@@ -280,8 +288,147 @@ impl<T: Clone> StaticValueBundle<T> {
     }
 }
 
+pub struct InteractiveStyleBuilder<'a> {
+    style_builder: &'a mut StyleBuilder,
+}
+
+impl<'a> InteractiveStyleBuilder<'a> {
+    pub fn background_color(&mut self, base: Color, hover: impl Into<Option<Color>>) -> &mut Self {
+        self.style_builder.add(DynamicStyleAttribute::Interactive(
+            InteractiveStyleAttribute::BackgroundColor(StaticValueBundle {
+                base,
+                hover: hover.into(),
+                ..default()
+            }),
+        ));
+
+        self
+    }
+
+    // TODO: generate fns, add custom
+}
+
+pub struct AnimatedStyleBuilder<'a> {
+    style_builder: &'a mut StyleBuilder,
+}
+
+impl<'a> AnimatedStyleBuilder<'a> {
+    pub fn background_color(
+        &'a mut self,
+        base: Color,
+        hover: impl Into<Option<Color>>,
+    ) -> &'a mut StyleAnimation {
+        let attribute = DynamicStyleAttribute::Animated {
+            attribute: AnimatedStyleAttribute::BackgroundColor(AnimatedValueBundle {
+                base,
+                hover: hover.into(),
+                ..default()
+            }),
+            controller: DynamicStyleController::default(),
+        };
+
+        self.style_builder.add(attribute.clone());
+
+        // Safe unwrap: we just added the entry, they are variant-equal
+        let index = self
+            .style_builder
+            .attributes
+            .iter()
+            .position(|attr| *attr == attribute)
+            .unwrap();
+
+        let DynamicStyleAttribute::Animated {
+            controller: DynamicStyleController {
+                ref mut animation, ..
+            },
+            ..
+        } = self.style_builder.attributes[index]
+        else {
+            unreachable!();
+        };
+
+        animation
+    }
+
+    // TODO: generate fns, add custom
+}
+
+pub struct StyleBuilder {
+    attributes: Vec<DynamicStyleAttribute>,
+}
+
+impl StyleBuilder {
+    pub fn new() -> Self {
+        Self { attributes: vec![] }
+    }
+    pub fn add(&mut self, attribute: DynamicStyleAttribute) {
+        if !self.attributes.contains(&attribute) {
+            self.attributes.push(attribute);
+        } else {
+            // Safe unwrap: checked in if above
+            let index = self
+                .attributes
+                .iter()
+                .position(|dsa| *dsa == attribute)
+                .unwrap();
+
+            warn!(
+                "Overwriting {:?} with {:?}",
+                self.attributes[index], attribute
+            );
+            self.attributes[index] = attribute;
+        }
+    }
+
+    pub fn interactive<'a>(&'a mut self) -> InteractiveStyleBuilder<'a> {
+        InteractiveStyleBuilder {
+            style_builder: self,
+        }
+    }
+
+    pub fn animated<'a>(&'a mut self) -> AnimatedStyleBuilder<'a> {
+        AnimatedStyleBuilder {
+            style_builder: self,
+        }
+    }
+
+    pub fn background_color(&mut self, color: Color) -> &mut Self {
+        self.add(DynamicStyleAttribute::Static(
+            StaticStyleAttribute::BackgroundColor(color),
+        ));
+
+        self
+    }
+
+    // TODO: generate fns, add custom
+}
+
+impl From<StyleBuilder> for DynamicStyle {
+    fn from(value: StyleBuilder) -> Self {
+        DynamicStyle::new(value.attributes)
+    }
+}
+
+impl AnimatedStyleAttribute {
+    pub fn background_color(base: Color, hover: impl Into<Option<Color>>) -> Self {
+        AnimatedStyleAttribute::BackgroundColor(AnimatedValueBundle {
+            base,
+            hover: hover.into(),
+            ..default()
+        })
+    }
+
+    pub fn border(base: UiRect, hover: impl Into<Option<UiRect>>) -> Self {
+        AnimatedStyleAttribute::Border(AnimatedValueBundle {
+            base,
+            hover: hover.into(),
+            ..default()
+        })
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
-pub struct AnimatedValueBundle<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> {
+pub struct AnimatedValueBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
     pub base: T,
     pub hover: Option<T>,
     pub press: Option<T>,
@@ -289,7 +436,41 @@ pub struct AnimatedValueBundle<T: sickle_math::lerp::Lerp + Default + Clone + Co
     // focus: Option<T>,
 }
 
-impl<T: sickle_math::lerp::Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
+impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedValueBundle<T> {
+    fn from(value: T) -> Self {
+        AnimatedValueBundle::new(value)
+    }
+}
+
+impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
+    pub fn new(value: T) -> Self {
+        AnimatedValueBundle {
+            base: value,
+            ..default()
+        }
+    }
+
+    pub fn hover(self, value: T) -> Self {
+        Self {
+            hover: value.into(),
+            ..self
+        }
+    }
+
+    pub fn press(self, value: T) -> Self {
+        Self {
+            press: value.into(),
+            ..self
+        }
+    }
+
+    pub fn cancel(self, value: T) -> Self {
+        Self {
+            cancel: value.into(),
+            ..self
+        }
+    }
+
     fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
         match flux_interaction {
             FluxInteraction::None => FluxInteraction::None,

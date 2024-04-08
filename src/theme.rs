@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 
 use bevy::prelude::*;
 
-use crate::{ui_commands::RefreshThemeExt, widgets::WidgetLibraryUpdate};
+use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder, widgets::WidgetLibraryUpdate};
 
 use self::{
     default_theme::DefaultThemePlugin, dynamic_style::*, dynamic_style_attribute::*,
@@ -35,6 +35,17 @@ pub struct ThemeUpdate;
 
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct CustomThemeUpdate;
+
+pub struct ThemeData {
+    // Colors, floats, bools, strings (image/font path), handles
+    // font data-> text styles -> per weight
+    // should act as a cache for handles
+}
+
+pub struct ThemeBuilder {
+    condition: Option<&'static [PseudoState]>,
+    style_builder: fn(&mut StyleBuilder, &ThemeData),
+}
 
 #[derive(Component, Debug)]
 pub struct Theme<C>
