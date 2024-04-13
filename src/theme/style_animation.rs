@@ -67,15 +67,15 @@ macro_rules! animation_setter {
         pub fn $setter(
             &mut self,
             duration: f32,
-            easing: Option<Ease>,
-            delay: Option<f32>,
-            loop_type: Option<AnimationLoop>,
+            easing: impl Into<Option<Ease>>,
+            delay: impl Into<Option<f32>>,
+            loop_type: impl Into<Option<AnimationLoop>>,
         ) -> &mut StyleAnimation {
             let config = AnimationConfig {
                 duration,
-                easing,
-                delay,
-                loop_type,
+                easing: easing.into(),
+                delay: delay.into(),
+                loop_type: loop_type.into(),
             };
             self.$setter = Some(config);
 
@@ -101,10 +101,13 @@ impl StyleAnimation {
     pub fn hover(
         &mut self,
         duration: f32,
-        easing: Option<Ease>,
-        delay: Option<f32>,
-        loop_type: Option<AnimationLoop>,
+        easing: impl Into<Option<Ease>>,
+        delay: impl Into<Option<f32>>,
+        loop_type: impl Into<Option<AnimationLoop>>,
     ) -> &mut StyleAnimation {
+        let easing = easing.into();
+        let delay = delay.into();
+        let loop_type = loop_type.into();
         self.pointer_enter(duration, easing, delay, loop_type);
         self.pointer_leave(duration, easing, delay, loop_type);
 
@@ -114,15 +117,15 @@ impl StyleAnimation {
     pub fn all(
         &mut self,
         duration: f32,
-        easing: Option<Ease>,
-        delay: Option<f32>,
-        loop_type: Option<AnimationLoop>,
+        easing: impl Into<Option<Ease>>,
+        delay: impl Into<Option<f32>>,
+        loop_type: impl Into<Option<AnimationLoop>>,
     ) -> &mut StyleAnimation {
         let config = AnimationConfig {
             duration,
-            easing,
-            delay,
-            loop_type,
+            easing: easing.into(),
+            delay: delay.into(),
+            loop_type: loop_type.into(),
         };
         self.pointer_enter = Some(config);
         self.pointer_leave = Some(config);

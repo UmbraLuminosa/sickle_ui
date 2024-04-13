@@ -378,17 +378,6 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
         }
     }
 
-    // fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
-    //     match flux_interaction {
-    //         FluxInteraction::None => FluxInteraction::None,
-    //         FluxInteraction::PointerEnter => FluxInteraction::None,
-    //         FluxInteraction::PointerLeave => FluxInteraction::PointerEnter,
-    //         FluxInteraction::Pressed => FluxInteraction::PointerEnter,
-    //         FluxInteraction::Released => FluxInteraction::Pressed,
-    //         FluxInteraction::PressCanceled => FluxInteraction::Pressed,
-    //         FluxInteraction::Disabled => FluxInteraction::None,
-    //     }
-    // }
     fn phase_value(&self, flux_interaction: FluxInteraction) -> T {
         match flux_interaction {
             FluxInteraction::None => self.base.clone(),

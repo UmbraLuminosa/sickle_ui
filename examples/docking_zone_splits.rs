@@ -1,6 +1,7 @@
 //! An example using the widget library to test docking zones and zone splits.
 use bevy::prelude::*;
 
+use sickle_math::ease::Ease;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::dynamic_style::DynamicStyle,
@@ -186,10 +187,10 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                         cancel: Color::RED.into(),
                                         ..default()
                                     })
-                                    .hover(0.3, None, None, None)
+                                    .hover(0.3, Ease::InOutExpo, None, None)
                                     .press(0.3, None, None, None)
                                     .cancel(0.3, None, None, None)
-                                    .cancel_reset(0.3, None, Some(0.3), None);
+                                    .cancel_reset(0.3, None, 0.3, None);
 
                                 let dyn_style: DynamicStyle = style.into();
 
