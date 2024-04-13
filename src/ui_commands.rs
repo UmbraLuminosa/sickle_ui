@@ -1,7 +1,11 @@
 use std::marker::PhantomData;
 
 use crate::{
-    theme::{dynamic_style::DynamicStyle, pseudo_state::PseudoStates, Theme},
+    theme::{
+        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, DynamicStyleBuilder, Theme,
+        ThemeData,
+    },
+    ui_style::StyleBuilder,
     FluxInteraction, TrackedInteraction,
 };
 use bevy::{
@@ -304,15 +308,13 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
 pub trait RefreshThemeExt<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
-        C: Component,
-        Theme<C>: Default;
+        C: Component;
 }
 
 impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
         C: Component,
-        Theme<C>: Default,
     {
         self.add(RefreshEntityTheme::<C> {
             context: PhantomData,
@@ -321,64 +323,135 @@ impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
     }
 }
 
-struct RefreshEntityTheme<C> {
+struct RefreshEntityTheme<C>
+where
+    C: Component,
+{
     context: PhantomData<C>,
+}
+
+impl<C> RefreshEntityTheme<C>
+where
+    C: Component,
+{
+    fn merge_theme_chain(
+        theme_chain: Vec<DynamicStyleBuilder>,
+        base: Option<DynamicStyle>,
+        theme_data: &ThemeData,
+        world: &mut World,
+    ) -> Option<DynamicStyle> {
+        theme_chain
+            .iter()
+            .map(|dynamic_style_builder| match dynamic_style_builder {
+                DynamicStyleBuilder::Static(style) => style.clone(),
+                DynamicStyleBuilder::StyleBuilder(builder) => {
+                    let mut style_builder = StyleBuilder::new();
+                    builder(&mut style_builder, &theme_data);
+
+                    style_builder.into()
+                }
+                DynamicStyleBuilder::WorldStyleBuilder(builder) => {
+                    let mut style_builder = StyleBuilder::new();
+                    builder(&mut style_builder, world);
+
+                    style_builder.into()
+                }
+            })
+            .fold(base, |acc, dynamic_style| match acc {
+                Some(prev_style) => prev_style.merge(dynamic_style).into(),
+                None => dynamic_style.into(),
+            })
+    }
 }
 
 impl<C> EntityCommand for RefreshEntityTheme<C>
 where
     C: Component,
-    Theme<C>: Default,
 {
     fn apply(self, entity: Entity, world: &mut World) {
+        let theme_data = world.resource::<ThemeData>().clone();
         let pseudo_states = world.get::<PseudoStates>(entity);
-        let mut style = None;
+        let mut style: Option<DynamicStyle> = None;
 
-        // TODO: Move styles from data->builder functions.
-        // TODO: Introduce static theme data: Resource<T> (color palette, config values), pass it to builders
-        // TODO: Merge generated style with those higher up in the hierarchy to always apply previous themes
-        // TODO: Rebuild themes when static data changes
-        // TODO: Update flux interaction stopwatch timeout resource
-        if let Some(own_theme) = world.get::<Theme<C>>(entity) {
-            match pseudo_states {
-                Some(pseudo_states) => {
-                    style = own_theme.style(pseudo_states);
+        // Default -> General (App-wide) -> Specialized (Screen) theming is a reasonable guess.
+        // Each might have a base and pseudo-specific theme.
+        let mut pseudo_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
+        let mut base_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
+
+        match pseudo_states {
+            Some(pseudo_states) => {
+                // Add own theme
+                if let Some(own_theme) = world.get::<Theme<C>>(entity) {
+                    if let Some(builder) = own_theme.builder_for(pseudo_states) {
+                        pseudo_theme_chain.push(builder);
+                    }
+
+                    if let Some(builder) = own_theme.base_builder() {
+                        base_theme_chain.push(builder);
+                    }
                 }
-                None => {
-                    style = own_theme.base_style();
-                }
-            }
-        } else {
-            let mut found_theme = false;
-            let mut current_ancestor = entity;
-            while let Some(parent) = world.get::<Parent>(current_ancestor) {
-                current_ancestor = parent.get();
-                if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
-                    match pseudo_states {
-                        Some(pseudo_states) => {
-                            style = ancestor_theme.style(pseudo_states);
+
+                // Add all ancestor themes
+                let mut current_ancestor = entity;
+                while let Some(parent) = world.get::<Parent>(current_ancestor) {
+                    current_ancestor = parent.get();
+                    if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
+                        if let Some(builder) = ancestor_theme.builder_for(pseudo_states) {
+                            pseudo_theme_chain.push(builder);
                         }
-                        None => {
-                            style = ancestor_theme.base_style();
+
+                        if let Some(builder) = ancestor_theme.base_builder() {
+                            base_theme_chain.push(builder);
                         }
                     }
-                    found_theme = true;
-                    break;
                 }
             }
-
-            if !found_theme {
-                let theme = Theme::<C>::default();
-                match pseudo_states {
-                    Some(pseudo_states) => {
-                        style = theme.style(pseudo_states);
+            None => {
+                // Add own theme
+                if let Some(own_theme) = world.get::<Theme<C>>(entity) {
+                    if let Some(builder) = own_theme.base_builder() {
+                        base_theme_chain.push(builder);
                     }
-                    None => {
-                        style = theme.base_style();
+                }
+
+                // Add all ancestor themes
+                let mut current_ancestor = entity;
+                while let Some(parent) = world.get::<Parent>(current_ancestor) {
+                    current_ancestor = parent.get();
+                    if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
+                        if let Some(builder) = ancestor_theme.base_builder() {
+                            base_theme_chain.push(builder);
+                        }
                     }
                 }
             }
         }
+
+        // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
+        if base_theme_chain.len() > 0 {
+            base_theme_chain.reverse();
+            style = RefreshEntityTheme::<C>::merge_theme_chain(
+                base_theme_chain,
+                style,
+                &theme_data,
+                world,
+            );
+        }
+
+        // Merge pseudo-state specific overrides, overwriting per-attribute at each level
+        if pseudo_theme_chain.len() > 0 {
+            pseudo_theme_chain.reverse();
+
+            style = RefreshEntityTheme::<C>::merge_theme_chain(
+                pseudo_theme_chain,
+                style,
+                &theme_data,
+                world,
+            );
+        }
+
+        // TODO: Rebuild themes when static data changes
+        // TODO: Update flux interaction stopwatch timeout resource
 
         if let Some(style) = style {
             if style.is_interactive() || style.is_animated() {

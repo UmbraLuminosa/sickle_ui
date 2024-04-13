@@ -123,10 +123,15 @@ impl DynamicStyle {
     }
 
     pub fn merge(self, other: DynamicStyle) -> Self {
-        let mut new_list = other.0;
-        for attr in self.0 {
+        let mut new_list = self.0;
+
+        for attr in other.0 {
             if !new_list.contains(&attr) {
                 new_list.push(attr);
+            } else {
+                // Safe unwrap: checked in if above
+                let index = new_list.iter().position(|dsa| *dsa == attr).unwrap();
+                new_list[index] = attr;
             }
         }
 

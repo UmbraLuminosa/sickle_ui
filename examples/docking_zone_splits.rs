@@ -4,14 +4,14 @@ use bevy::prelude::*;
 use sickle_math::ease::Ease;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
-    theme::dynamic_style::DynamicStyle,
+    theme::{DynamicStyleBuilder, PseudoTheme, Theme, ThemeData},
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
-        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetHeightExt, SetWidthExt,
+        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetWidthExt, StaticBundle,
         StyleBuilder,
     },
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
-    SickleUiPlugin, TrackedInteraction,
+    SickleUiPlugin,
 };
 
 fn main() {
@@ -28,6 +28,7 @@ fn main() {
         .init_resource::<IconCache>()
         .add_plugins(HierarchyTreeViewPlugin)
         .add_systems(Startup, setup.in_set(UiStartupSet))
+        .add_systems(Update, Theme::<ThemeTestBox>::update())
         .run();
 }
 
@@ -40,6 +41,58 @@ pub struct UiStartupSet;
 #[derive(Resource, Debug, Default, Reflect)]
 #[reflect(Resource)]
 struct IconCache(Vec<Handle<Image>>);
+
+#[derive(Component)]
+pub struct ThemeTestBox;
+
+impl ThemeTestBox {
+    fn base_theme() -> Theme<ThemeTestBox> {
+        let mut style = StyleBuilder::new();
+        style
+            .border(UiRect::all(Val::Px(2.)))
+            .background_color(Color::BLACK)
+            .width(Val::Px(100.))
+            .height(Val::Px(100.));
+
+        style
+            .interactive()
+            .border_color(StaticBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE));
+
+        let base_style = PseudoTheme::new(None, style);
+
+        Theme::<ThemeTestBox>::new(vec![base_style])
+    }
+
+    fn override_theme() -> Theme<ThemeTestBox> {
+        let base_style = PseudoTheme::new(
+            None,
+            DynamicStyleBuilder::StyleBuilder(ThemeTestBox::style_builder),
+        );
+
+        Theme::<ThemeTestBox>::new(vec![base_style])
+    }
+
+    fn style_builder(builder: &mut StyleBuilder, data: &ThemeData) {
+        builder
+            .animated()
+            .border_color(AnimatedBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE))
+            .hover(0.3, None, None, None);
+
+        builder
+            .animated()
+            .background_color(AnimatedBundle {
+                base: data.background_color,
+                hover: Color::GRAY.into(),
+                press: Color::GOLD.into(),
+                cancel: Color::RED.into(),
+                ..default()
+            })
+            .hover(0.3, Ease::InOutExpo, None, None)
+            .press(0.3, None, None, None)
+            .cancel(0.3, None, None, None)
+            .cancel_reset(0.3, None, 0.3, None);
+    }
+}
 
 fn setup(
     asset_server: Res<AssetServer>,
@@ -98,6 +151,7 @@ fn setup(
                 ..default()
             },
             TargetCamera(main_camera),
+            ThemeTestBox::base_theme(),
         ),
         |container| {
             container
@@ -169,42 +223,11 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     return;
                                 }
 
-                                let mut style = StyleBuilder::new();
-                                style.border(UiRect::all(Val::Px(2.)));
-
-                                style
-                                    .animated()
-                                    .border_color(
-                                        AnimatedBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE),
-                                    )
-                                    .hover(0.3, None, None, None);
-                                style
-                                    .animated()
-                                    .background_color(AnimatedBundle {
-                                        base: Color::BISQUE,
-                                        hover: Color::BLUE.into(),
-                                        press: Color::GOLD.into(),
-                                        cancel: Color::RED.into(),
-                                        ..default()
-                                    })
-                                    .hover(0.3, Ease::InOutExpo, None, None)
-                                    .press(0.3, None, None, None)
-                                    .cancel(0.3, None, None, None)
-                                    .cancel_reset(0.3, None, 0.3, None);
-
-                                let dyn_style: DynamicStyle = style.into();
-
-                                panel
-                                    .spawn((
-                                        NodeBundle::default(),
-                                        dyn_style,
-                                        Interaction::default(),
-                                        TrackedInteraction::default(),
-                                    ))
-                                    .style()
-                                    //.border(UiRect::all(Val::Px(2.)))
-                                    .width(Val::Px(100.))
-                                    .height(Val::Px(100.));
+                                panel.spawn((
+                                    NodeBundle::default(),
+                                    ThemeTestBox,
+                                    ThemeTestBox::override_theme(),
+                                ));
                             });
                         }
                     },

@@ -26,6 +26,7 @@ impl Plugin for ThemePlugin {
                 CustomThemeUpdate.after(ThemeUpdate),
             ),
         )
+        .init_resource::<ThemeData>()
         .add_plugins((DefaultThemePlugin, DynamicStylePlugin));
     }
 }
@@ -36,18 +37,81 @@ pub struct ThemeUpdate;
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct CustomThemeUpdate;
 
+#[derive(Resource, Clone, Debug, Reflect)]
 pub struct ThemeData {
+    pub background_color: Color,
     // Colors, floats, bools, strings (image/font path), handles
     // font data-> text styles -> per weight
     // should act as a cache for handles
 }
 
-pub struct ThemeBuilder {
-    condition: Option<&'static [PseudoState]>,
-    style_builder: fn(&mut StyleBuilder, &ThemeData),
-    // static list variant
-    // builder / theme data variant
-    // WorldCallback variant
+impl Default for ThemeData {
+    fn default() -> Self {
+        Self {
+            background_color: Color::BLUE,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum DynamicStyleBuilder {
+    Static(DynamicStyle),
+    StyleBuilder(fn(&mut StyleBuilder, &ThemeData)),
+    WorldStyleBuilder(fn(&mut StyleBuilder, &mut World)),
+}
+
+impl From<StyleBuilder> for DynamicStyleBuilder {
+    fn from(value: StyleBuilder) -> Self {
+        Self::Static(value.into())
+    }
+}
+
+impl From<DynamicStyle> for DynamicStyleBuilder {
+    fn from(value: DynamicStyle) -> Self {
+        Self::Static(value)
+    }
+}
+
+// TODO: investigate proper From implementation so it accepts static functions
+impl From<fn(&mut StyleBuilder, &ThemeData)> for DynamicStyleBuilder {
+    fn from(value: fn(&mut StyleBuilder, &ThemeData)) -> Self {
+        Self::StyleBuilder(value)
+    }
+}
+
+impl From<fn(&mut StyleBuilder, &mut World)> for DynamicStyleBuilder {
+    fn from(value: fn(&mut StyleBuilder, &mut World)) -> Self {
+        Self::WorldStyleBuilder(value)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PseudoTheme {
+    state: Option<&'static [PseudoState]>,
+    builder: DynamicStyleBuilder,
+}
+
+impl PseudoTheme {
+    pub fn new(
+        state: impl Into<Option<&'static [PseudoState]>>,
+        theme: impl Into<DynamicStyleBuilder>,
+    ) -> Self {
+        Self {
+            state: state.into(),
+            builder: theme.into(),
+        }
+    }
+
+    pub fn is_base_theme(&self) -> bool {
+        self.state.is_none()
+    }
+
+    pub fn for_state(&self, pseudo_states: &PseudoStates) -> bool {
+        match self.state {
+            Some(states) => pseudo_states.in_state(states),
+            None => false,
+        }
+    }
 }
 
 #[derive(Component, Debug)]
@@ -56,16 +120,39 @@ where
     C: Component,
 {
     context: PhantomData<C>,
-    // TODO: Replace (PseudoStates->DynamicStyle) list with builders
-    // Builder should store PseudoState list and builder fn
-    styles: Vec<(Option<&'static [PseudoState]>, DynamicStyle)>,
+    styles: Vec<PseudoTheme>,
 }
 
 impl<C> Theme<C>
 where
     C: Component,
-    Theme<C>: Default,
 {
+    pub fn new(styles: Vec<PseudoTheme>) -> Self {
+        Self {
+            context: PhantomData,
+            styles,
+        }
+    }
+}
+
+impl<C> Theme<C>
+where
+    C: Component,
+{
+    pub fn base_builder(&self) -> Option<DynamicStyleBuilder> {
+        self.styles
+            .iter()
+            .find(|pseudo_theme| pseudo_theme.is_base_theme())
+            .map(|pseudo_theme| pseudo_theme.builder.clone())
+    }
+
+    pub fn builder_for(&self, pseudo_states: &PseudoStates) -> Option<DynamicStyleBuilder> {
+        self.styles
+            .iter()
+            .find(|pseudo_theme| pseudo_theme.for_state(pseudo_states))
+            .map(|pseudo_theme| pseudo_theme.builder.clone())
+    }
+
     pub fn update() -> impl IntoSystemConfigs<()> {
         Theme::<C>::update_in(ThemeUpdate)
     }
@@ -78,32 +165,6 @@ where
             .in_set(set)
     }
 
-    pub fn base_style(&self) -> Option<DynamicStyle> {
-        self.styles
-            .iter()
-            .find(|(states, _)| states.is_none())
-            .map(|(_, style)| style.clone())
-    }
-
-    pub fn style(&self, pseudo_states: &PseudoStates) -> Option<DynamicStyle> {
-        let base_style = self.base_style();
-        let override_style = self
-            .styles
-            .iter()
-            .find(|(states, _)| states.is_some() && pseudo_states.in_state(states.unwrap()))
-            .map(|(_, style)| style.clone());
-
-        if let Some(override_style) = override_style {
-            if let Some(base_style) = base_style {
-                Some(base_style.merge(override_style))
-            } else {
-                Some(override_style)
-            }
-        } else {
-            base_style
-        }
-    }
-
     fn process_theme_update(
         q_targets: Query<Entity, With<C>>,
         q_added_targets: Query<Entity, Added<C>>,
@@ -113,11 +174,11 @@ where
     ) {
         if q_removed_themes.len() > 0 || q_changed_themes.iter().count() > 0 {
             for entity in &q_targets {
-                commands.entity(entity).refresh_theme();
+                commands.entity(entity).refresh_theme::<C>();
             }
         } else {
             for entity in &q_added_targets {
-                commands.entity(entity).refresh_theme();
+                commands.entity(entity).refresh_theme::<C>();
             }
         }
     }
@@ -128,11 +189,11 @@ where
         mut commands: Commands,
     ) {
         for entity in &q_changed_targets {
-            commands.entity(entity).refresh_theme();
+            commands.entity(entity).refresh_theme::<C>();
         }
 
         for entity in q_removed_targets.read() {
-            commands.entity(entity).refresh_theme();
+            commands.entity(entity).refresh_theme::<C>();
         }
     }
 }
