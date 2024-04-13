@@ -210,6 +210,7 @@ enum _StyleAttributes {
         background_color: Color,
     },
     #[target_tupl(BorderColor)]
+    #[animatable]
     BorderColor {
         border_color: Color,
     },
@@ -231,7 +232,7 @@ enum _StyleAttributes {
     },
     #[skip_enity_command]
     ImageScaleMode {
-        image_scale_mode: ImageScaleMode,
+        image_scale_mode: Option<ImageScaleMode>,
     },
     #[static_style_only]
     #[skip_ui_style_ext]
@@ -257,13 +258,12 @@ impl LockedStyleAttributes {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct InteractionAnimationState {
-    pub phase: FluxInteraction,
     pub iteration: u8,
     pub progress: AnimationProgress,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct StaticValueBundle<T: Clone> {
+pub struct StaticBundle<T: Clone + Default> {
     pub base: T,
     pub hover: Option<T>,
     pub press: Option<T>,
@@ -271,7 +271,41 @@ pub struct StaticValueBundle<T: Clone> {
     // focus: Option<T>,
 }
 
-impl<T: Clone> StaticValueBundle<T> {
+impl<T: Default + Clone> From<T> for StaticBundle<T> {
+    fn from(value: T) -> Self {
+        StaticBundle::new(value)
+    }
+}
+
+impl<T: Clone + Default> StaticBundle<T> {
+    pub fn new(value: T) -> Self {
+        StaticBundle {
+            base: value,
+            ..default()
+        }
+    }
+
+    pub fn hover(self, value: T) -> Self {
+        Self {
+            hover: value.into(),
+            ..self
+        }
+    }
+
+    pub fn press(self, value: T) -> Self {
+        Self {
+            press: value.into(),
+            ..self
+        }
+    }
+
+    pub fn cancel(self, value: T) -> Self {
+        Self {
+            cancel: value.into(),
+            ..self
+        }
+    }
+
     fn to_value(&self, flux_interaction: FluxInteraction) -> T {
         match flux_interaction {
             FluxInteraction::None => self.base.clone(),
@@ -288,24 +322,136 @@ impl<T: Clone> StaticValueBundle<T> {
     }
 }
 
-pub struct InteractiveStyleBuilder<'a> {
-    style_builder: &'a mut StyleBuilder,
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
+    pub base: T,
+    pub hover: Option<T>,
+    pub press: Option<T>,
+    pub cancel: Option<T>,
+    // focus: Option<T>,
 }
 
-impl<'a> InteractiveStyleBuilder<'a> {
-    pub fn background_color(&mut self, base: Color, hover: impl Into<Option<Color>>) -> &mut Self {
-        self.style_builder.add(DynamicStyleAttribute::Interactive(
-            InteractiveStyleAttribute::BackgroundColor(StaticValueBundle {
-                base,
-                hover: hover.into(),
-                ..default()
-            }),
-        ));
+impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T> {
+    fn from(value: T) -> Self {
+        AnimatedBundle::new(value)
+    }
+}
 
-        self
+impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
+    fn from(value: StaticBundle<T>) -> Self {
+        Self {
+            base: value.base,
+            hover: value.hover,
+            press: value.press,
+            cancel: value.cancel,
+            ..default()
+        }
+    }
+}
+
+impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
+    pub fn new(value: T) -> Self {
+        AnimatedBundle {
+            base: value,
+            ..default()
+        }
     }
 
-    // TODO: generate fns, add custom
+    pub fn hover(self, value: T) -> Self {
+        Self {
+            hover: value.into(),
+            ..self
+        }
+    }
+
+    pub fn press(self, value: T) -> Self {
+        Self {
+            press: value.into(),
+            ..self
+        }
+    }
+
+    pub fn cancel(self, value: T) -> Self {
+        Self {
+            cancel: value.into(),
+            ..self
+        }
+    }
+
+    // fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
+    //     match flux_interaction {
+    //         FluxInteraction::None => FluxInteraction::None,
+    //         FluxInteraction::PointerEnter => FluxInteraction::None,
+    //         FluxInteraction::PointerLeave => FluxInteraction::PointerEnter,
+    //         FluxInteraction::Pressed => FluxInteraction::PointerEnter,
+    //         FluxInteraction::Released => FluxInteraction::Pressed,
+    //         FluxInteraction::PressCanceled => FluxInteraction::Pressed,
+    //         FluxInteraction::Disabled => FluxInteraction::None,
+    //     }
+    // }
+    fn phase_value(&self, flux_interaction: FluxInteraction) -> T {
+        match flux_interaction {
+            FluxInteraction::None => self.base.clone(),
+            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PointerLeave => self.base.clone(),
+            FluxInteraction::Pressed => self
+                .press
+                .clone()
+                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
+            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
+            FluxInteraction::Disabled => self.base.clone(),
+        }
+    }
+
+    fn to_value(
+        &self,
+        transition_base: InteractionAnimationState,
+        animation_progress: InteractionAnimationState,
+    ) -> T {
+        let start_value = match transition_base.progress {
+            AnimationProgress::Start(phase) => self.phase_value(phase),
+            AnimationProgress::Inbetween(start_phase, end_phase, t) => self
+                .phase_value(start_phase)
+                .lerp(self.phase_value(end_phase), t),
+            AnimationProgress::End(phase) => self.phase_value(phase),
+        };
+
+        match animation_progress.progress {
+            AnimationProgress::Start(_) => start_value,
+            AnimationProgress::Inbetween(_, end_phase, t) => {
+                start_value.lerp(self.phase_value(end_phase), t)
+            }
+            AnimationProgress::End(phase) => self.phase_value(phase),
+        }
+    }
+}
+
+pub struct CustomInteractiveStyleAttribute {
+    callback: fn(Entity, FluxInteraction, &mut World),
+    flux_interaction: FluxInteraction,
+}
+
+impl EntityCommand for CustomInteractiveStyleAttribute {
+    fn apply(self, id: Entity, world: &mut World) {
+        (self.callback)(id, self.flux_interaction, world);
+    }
+}
+
+pub struct CustomAnimatableStyleAttribute {
+    callback: fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
+    transition_base: InteractionAnimationState,
+    animation_progress: InteractionAnimationState,
+}
+
+impl EntityCommand for CustomAnimatableStyleAttribute {
+    fn apply(self, id: Entity, world: &mut World) {
+        (self.callback)(id, self.transition_base, self.animation_progress, world);
+    }
+}
+
+pub struct InteractiveStyleBuilder<'a> {
+    style_builder: &'a mut StyleBuilder,
 }
 
 pub struct AnimatedStyleBuilder<'a> {
@@ -313,20 +459,10 @@ pub struct AnimatedStyleBuilder<'a> {
 }
 
 impl<'a> AnimatedStyleBuilder<'a> {
-    pub fn background_color(
+    fn add_and_extract_animation(
         &'a mut self,
-        base: Color,
-        hover: impl Into<Option<Color>>,
+        attribute: DynamicStyleAttribute,
     ) -> &'a mut StyleAnimation {
-        let attribute = DynamicStyleAttribute::Animated {
-            attribute: AnimatedStyleAttribute::BackgroundColor(AnimatedValueBundle {
-                base,
-                hover: hover.into(),
-                ..default()
-            }),
-            controller: DynamicStyleController::default(),
-        };
-
         self.style_builder.add(attribute.clone());
 
         // Safe unwrap: we just added the entry, they are variant-equal
@@ -350,7 +486,19 @@ impl<'a> AnimatedStyleBuilder<'a> {
         animation
     }
 
-    // TODO: generate fns, add custom
+    pub fn custom(
+        &'a mut self,
+        callback: impl Into<
+            fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
+        >,
+    ) -> &'a mut StyleAnimation {
+        let attribute = DynamicStyleAttribute::Animated {
+            attribute: AnimatedStyleAttribute::Custom(callback.into()),
+            controller: DynamicStyleController::default(),
+        };
+
+        self.add_and_extract_animation(attribute)
+    }
 }
 
 pub struct StyleBuilder {
@@ -391,160 +539,11 @@ impl StyleBuilder {
             style_builder: self,
         }
     }
-
-    pub fn background_color(&mut self, color: Color) -> &mut Self {
-        self.add(DynamicStyleAttribute::Static(
-            StaticStyleAttribute::BackgroundColor(color),
-        ));
-
-        self
-    }
-
-    // TODO: generate fns, add custom
 }
 
 impl From<StyleBuilder> for DynamicStyle {
     fn from(value: StyleBuilder) -> Self {
         DynamicStyle::new(value.attributes)
-    }
-}
-
-impl AnimatedStyleAttribute {
-    pub fn background_color(base: Color, hover: impl Into<Option<Color>>) -> Self {
-        AnimatedStyleAttribute::BackgroundColor(AnimatedValueBundle {
-            base,
-            hover: hover.into(),
-            ..default()
-        })
-    }
-
-    pub fn border(base: UiRect, hover: impl Into<Option<UiRect>>) -> Self {
-        AnimatedStyleAttribute::Border(AnimatedValueBundle {
-            base,
-            hover: hover.into(),
-            ..default()
-        })
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AnimatedValueBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
-    pub base: T,
-    pub hover: Option<T>,
-    pub press: Option<T>,
-    pub cancel: Option<T>,
-    // focus: Option<T>,
-}
-
-impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedValueBundle<T> {
-    fn from(value: T) -> Self {
-        AnimatedValueBundle::new(value)
-    }
-}
-
-impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedValueBundle<T> {
-    pub fn new(value: T) -> Self {
-        AnimatedValueBundle {
-            base: value,
-            ..default()
-        }
-    }
-
-    pub fn hover(self, value: T) -> Self {
-        Self {
-            hover: value.into(),
-            ..self
-        }
-    }
-
-    pub fn press(self, value: T) -> Self {
-        Self {
-            press: value.into(),
-            ..self
-        }
-    }
-
-    pub fn cancel(self, value: T) -> Self {
-        Self {
-            cancel: value.into(),
-            ..self
-        }
-    }
-
-    fn prev_phase(flux_interaction: FluxInteraction) -> FluxInteraction {
-        match flux_interaction {
-            FluxInteraction::None => FluxInteraction::None,
-            FluxInteraction::PointerEnter => FluxInteraction::None,
-            FluxInteraction::PointerLeave => FluxInteraction::PointerEnter,
-            FluxInteraction::Pressed => FluxInteraction::PointerEnter,
-            FluxInteraction::Released => FluxInteraction::Pressed,
-            FluxInteraction::PressCanceled => FluxInteraction::Pressed,
-            FluxInteraction::Disabled => FluxInteraction::None,
-        }
-    }
-    fn phase_value(&self, flux_interaction: FluxInteraction) -> T {
-        match flux_interaction {
-            FluxInteraction::None => self.base.clone(),
-            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PointerLeave => self.base.clone(),
-            FluxInteraction::Pressed => self
-                .press
-                .clone()
-                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
-            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::Disabled => self.base.clone(),
-        }
-    }
-
-    fn to_value(
-        &self,
-        transition_base: InteractionAnimationState,
-        animation_progress: InteractionAnimationState,
-    ) -> T {
-        let start_value = if animation_progress.phase == FluxInteraction::Pressed {
-            let prev_value = self.phase_value(FluxInteraction::None);
-            let hover_value = self.phase_value(FluxInteraction::PointerEnter);
-            match transition_base.progress {
-                AnimationProgress::Start => prev_value,
-                AnimationProgress::Inbetween(t) => prev_value.lerp(hover_value, t),
-                AnimationProgress::End => hover_value,
-            }
-        } else {
-            self.phase_value(AnimatedValueBundle::<T>::prev_phase(
-                animation_progress.phase,
-            ))
-        };
-
-        let end_value = self.phase_value(animation_progress.phase);
-        match animation_progress.progress {
-            AnimationProgress::Start => start_value,
-            AnimationProgress::Inbetween(t) => start_value.lerp(end_value, t),
-            AnimationProgress::End => end_value,
-        }
-    }
-}
-
-pub struct CustomInteractiveStyleAttribute {
-    callback: fn(Entity, FluxInteraction, &mut World),
-    flux_interaction: FluxInteraction,
-}
-
-impl EntityCommand for CustomInteractiveStyleAttribute {
-    fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(id, self.flux_interaction, world);
-    }
-}
-
-pub struct CustomAnimatableStyleAttribute {
-    callback: fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
-    transition_base: InteractionAnimationState,
-    animation_progress: InteractionAnimationState,
-}
-
-impl EntityCommand for CustomAnimatableStyleAttribute {
-    fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(id, self.transition_base, self.animation_progress, world);
     }
 }
 
@@ -662,15 +661,15 @@ impl EntityCommand for SetImageScaleMode {
             );
         }
 
-        let Some(mut scale_mode) = world.get_mut::<ImageScaleMode>(entity) else {
-            warn!(
-                "Failed to set image scale mode on entity {:?}: No ImageScaleMode component found!",
-                entity
-            );
-            return;
-        };
-
-        *scale_mode = self.image_scale_mode;
+        if let Some(image_scale_mode) = self.image_scale_mode {
+            if let Some(mut scale_mode) = world.get_mut::<ImageScaleMode>(entity) {
+                *scale_mode = image_scale_mode;
+            } else {
+                world.entity_mut(entity).insert(image_scale_mode);
+            }
+        } else if let Some(_) = world.get::<ImageScaleMode>(entity) {
+            world.entity_mut(entity).remove::<ImageScaleMode>();
+        }
     }
 }
 

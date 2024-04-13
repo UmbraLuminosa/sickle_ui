@@ -9,42 +9,6 @@ use crate::{
 use super::{AnimationProgress, StyleAnimation};
 
 /*
-DynamicStyle::build(|builder| {
-    builder
-        .inert() // InertDynamicStyleBuilder
-        .background_color(Color::BLUE)
-        .border_color(Color::BLUE);
-    builder
-        .interactive() // InteractiveDynamicStyleBuilder
-        // ideally cached as part of theming commons
-        .background_color(AttributeBundle<Color>{ Color::BLUE, Color::RED.into(), None, None, None });
-    builder
-        .animated() // AnimatedDynamicStyleBuilder
-        .background_color(LerpAttributeBundle<Color>{ Color::BLUE, Color::RED.into(), None, None, None })
-        .pointer_enter(0.2, Ease::InOutExpo, None, LoopType::Continous)
-        .pointer_leave(0.2, Ease::InOutExpo, Some(0.2), None);
-});
-
-DynamicAttribute:
-- Inert values:
-  - No update after initial setting
-  - Any stylable attribute
-  - Custom inert value:
-    - Single callback
-- Flux-static values
-  - Update per flux status change
-  - Any stylable attribute
-  - Custom flux-static values:
-    - Callback with flux state
-- Animated interactive values
-  - Update per frame
-  - Potentially locking stopwatch
-  - Any stylable Lerp attribute
-  - Custom animated values:
-    - Callback with flux state and animation progress / loop
-
-// apply() returns lock length (None, f32, Indefinite)
-// -> eval flux lock length on flux interaction change (at DynamicStyle level, iterate over all Animated)
 // TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
 // FluxStopwatchLock? Merge lock lengths?
 */
@@ -131,37 +95,46 @@ impl DynamicStyleController {
     ) {
         // TODO: track overflow
         let (progress, _) = self.animation.to_progress(flux_interaction, stopwatch);
-        if self.transition_base.progress != progress {
-            match *flux_interaction {
-                FluxInteraction::PointerEnter => {
-                    self.transition_base = InteractionAnimationState {
-                        progress,
-                        iteration: 0,
-                        phase: FluxInteraction::PointerEnter,
-                    }
-                }
-                FluxInteraction::Released => {
-                    self.transition_base = InteractionAnimationState {
-                        progress: AnimationProgress::End,
-                        iteration: 0,
-                        phase: FluxInteraction::PointerEnter,
-                    }
-                }
-                _ => (),
+        let update_transition_base = match (self.current_state.progress, progress) {
+            (AnimationProgress::Start(l_phase), AnimationProgress::Start(r_phase)) => {
+                l_phase != r_phase
             }
+            (AnimationProgress::End(l_phase), AnimationProgress::End(r_phase)) => {
+                l_phase != r_phase
+            }
+            (
+                AnimationProgress::Inbetween(l_start_phase, l_end_phase, _),
+                AnimationProgress::Inbetween(r_start_phase, r_end_phase, _),
+            ) => l_start_phase != r_start_phase || l_end_phase != r_end_phase,
+            _ => true,
+        };
+
+        let update_current = match (self.current_state.progress, progress) {
+            (AnimationProgress::Start(l_phase), AnimationProgress::Start(r_phase)) => {
+                l_phase != r_phase
+            }
+            (AnimationProgress::End(l_phase), AnimationProgress::End(r_phase)) => {
+                l_phase != r_phase
+            }
+            (
+                AnimationProgress::Inbetween(l_start_phase, l_end_phase, l_t),
+                AnimationProgress::Inbetween(r_start_phase, r_end_phase, r_t),
+            ) => l_start_phase != r_start_phase || l_end_phase != r_end_phase || l_t != r_t,
+            _ => true,
+        };
+
+        if update_transition_base {
+            self.transition_base = self.current_state;
         }
 
-        if self.current_state.phase != *flux_interaction || self.current_state.progress != progress
-        {
+        if update_current {
             self.current_state = InteractionAnimationState {
                 progress,
                 iteration: 0,
-                phase: *flux_interaction,
             };
-            self.dirty = true;
-        } else {
-            self.dirty = false;
         }
+
+        self.dirty = update_transition_base || update_current;
     }
 
     pub fn transition_base(&self) -> InteractionAnimationState {

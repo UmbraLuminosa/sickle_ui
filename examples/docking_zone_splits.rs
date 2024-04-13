@@ -5,7 +5,10 @@ use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::dynamic_style::DynamicStyle,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
-    ui_style::{SetBackgroundColorExt, SetBorderExt, SetHeightExt, SetWidthExt, StyleBuilder},
+    ui_style::{
+        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetHeightExt, SetWidthExt,
+        StyleBuilder,
+    },
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
     SickleUiPlugin, TrackedInteraction,
 };
@@ -166,10 +169,27 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                 }
 
                                 let mut style = StyleBuilder::new();
+                                style.border(UiRect::all(Val::Px(2.)));
+
                                 style
                                     .animated()
-                                    .background_color(Color::ALICE_BLUE, Color::BISQUE)
+                                    .border_color(
+                                        AnimatedBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE),
+                                    )
                                     .hover(0.3, None, None, None);
+                                style
+                                    .animated()
+                                    .background_color(AnimatedBundle {
+                                        base: Color::BISQUE,
+                                        hover: Color::BLUE.into(),
+                                        press: Color::GOLD.into(),
+                                        cancel: Color::RED.into(),
+                                        ..default()
+                                    })
+                                    .hover(0.3, None, None, None)
+                                    .press(0.3, None, None, None)
+                                    .cancel(0.3, None, None, None)
+                                    .cancel_reset(0.3, None, Some(0.3), None);
 
                                 let dyn_style: DynamicStyle = style.into();
 
@@ -181,6 +201,7 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                         TrackedInteraction::default(),
                                     ))
                                     .style()
+                                    //.border(UiRect::all(Val::Px(2.)))
                                     .width(Val::Px(100.))
                                     .height(Val::Px(100.));
                             });

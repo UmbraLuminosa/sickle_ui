@@ -45,6 +45,9 @@ pub struct ThemeData {
 pub struct ThemeBuilder {
     condition: Option<&'static [PseudoState]>,
     style_builder: fn(&mut StyleBuilder, &ThemeData),
+    // static list variant
+    // builder / theme data variant
+    // WorldCallback variant
 }
 
 #[derive(Component, Debug)]
