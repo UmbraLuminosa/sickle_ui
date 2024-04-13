@@ -14,7 +14,7 @@ use super::{
     prelude::{UiContainerExt, UiLabelExt},
 };
 
-const CHECK_MARK: &'static str = "sickle_ui://icons/checkmark.png";
+const CHECK_MARK: &'static str = "embedded://sickle_ui/icons/checkmark.png";
 
 pub struct CheckboxPlugin;
 

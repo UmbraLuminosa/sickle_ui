@@ -263,7 +263,7 @@ impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                         .menu_item(MenuItemConfig {
                                             name: "Refresh".into(),
                                             trailing_icon: Some(
-                                                "sickle_ui://icons/redo_white.png".into(),
+                                                "embedded://sickle_ui/icons/redo_white.png".into(),
                                             ),
                                             ..default()
                                         })

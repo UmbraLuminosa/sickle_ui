@@ -274,7 +274,9 @@ impl Into<MenuItemConfig> for SubmenuConfig {
             name: self.name,
             alt_code: self.alt_code,
             leading_icon: self.leading_icon,
-            trailing_icon: "sickle_ui://icons/submenu_white.png".to_string().into(),
+            trailing_icon: "embedded://sickle_ui/icons/submenu_white.png"
+                .to_string()
+                .into(),
             ..default()
         }
     }

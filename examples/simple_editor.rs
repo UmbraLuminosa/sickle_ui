@@ -15,7 +15,6 @@ use sickle_ui::{
 
 fn main() {
     App::new()
-        .add_plugins(SickleUiPlugin)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Sickle UI -  Simple Editor".into(),
@@ -24,6 +23,7 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(SickleUiPlugin)
         .init_resource::<CurrentPage>()
         .init_resource::<IconCache>()
         .init_state::<Page>()
@@ -98,16 +98,16 @@ fn setup(
     // Workaround for disappearing icons when they are despawned and spawned back in during the same frame
     // Should be fixed in Bevy > 0.13
     let icons_to_cache: Vec<&str> = vec![
-        "sickle_ui://icons/checkmark.png",
-        "sickle_ui://icons/chevron_down.png",
-        "sickle_ui://icons/chevron_left.png",
-        "sickle_ui://icons/chevron_right.png",
-        "sickle_ui://icons/chevron_up.png",
-        "sickle_ui://icons/close.png",
-        "sickle_ui://icons/exit_white.png",
-        "sickle_ui://icons/popout_white.png",
-        "sickle_ui://icons/redo_white.png",
-        "sickle_ui://icons/submenu_white.png",
+        "embedded://sickle_ui/icons/checkmark.png",
+        "embedded://sickle_ui/icons/chevron_down.png",
+        "embedded://sickle_ui/icons/chevron_left.png",
+        "embedded://sickle_ui/icons/chevron_right.png",
+        "embedded://sickle_ui/icons/chevron_up.png",
+        "embedded://sickle_ui/icons/close.png",
+        "embedded://sickle_ui/icons/exit_white.png",
+        "embedded://sickle_ui/icons/popout_white.png",
+        "embedded://sickle_ui/icons/redo_white.png",
+        "embedded://sickle_ui/icons/submenu_white.png",
     ];
 
     for icon in icons_to_cache.iter() {
@@ -220,7 +220,9 @@ fn setup(
                     menu.menu_item_separator();
                     menu.menu_item(MenuItemConfig {
                         name: "Exit".into(),
-                        leading_icon: "sickle_ui://icons/exit_white.png".to_string().into(),
+                        leading_icon: "embedded://sickle_ui/icons/exit_white.png"
+                            .to_string()
+                            .into(),
                         ..default()
                     })
                     .insert(ExitAppButton);
