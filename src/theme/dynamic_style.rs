@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::UiSystem};
 
 use crate::{ui_style::UiStyleExt, FluxInteraction, FluxInteractionStopwatch};
 
@@ -8,23 +8,29 @@ pub struct DynamicStylePlugin;
 
 impl Plugin for DynamicStylePlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(Update, DynamicStyleUpdate.after(ThemeUpdate))
-            .add_systems(
-                Update,
-                (
-                    update_dynamic_style_static_attributes,
-                    update_dynamic_style_interactive_attributes,
-                    update_dynamic_style_animated_attributes,
-                )
-                    .chain()
-                    .in_set(DynamicStyleUpdate),
-            );
+        app.configure_sets(
+            PostUpdate,
+            DynamicStyleUpdate
+                .after(CustomThemeUpdate)
+                .before(UiSystem::Layout),
+        )
+        .add_systems(
+            PostUpdate,
+            (
+                update_dynamic_style_static_attributes,
+                update_dynamic_style_on_flux_change,
+                update_dynamic_style_on_stopwatch_change,
+            )
+                .chain()
+                .in_set(DynamicStyleUpdate),
+        );
     }
 }
 
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct DynamicStyleUpdate;
 
+// TODO: Apply interactive and Animated styles on ChangedDynamic styles
 // These are dynamic styles with only inert values
 fn update_dynamic_style_static_attributes(
     mut q_styles: Query<(Entity, &mut DynamicStyle), Changed<DynamicStyle>>,
@@ -56,7 +62,7 @@ fn update_dynamic_style_static_attributes(
     }
 }
 
-fn update_dynamic_style_interactive_attributes(
+fn update_dynamic_style_on_flux_change(
     q_styles: Query<
         (Entity, &DynamicStyle, &FluxInteraction),
         Or<(Changed<DynamicStyle>, Changed<FluxInteraction>)>,
@@ -74,13 +80,16 @@ fn update_dynamic_style_interactive_attributes(
     }
 }
 
-fn update_dynamic_style_animated_attributes(
+// NOTE: Updating the dynamic style for mid-transition animations could cause a visual pop.
+// This is because the controller state is not kept from the previous state.
+// TODO: keep old controllers when possible or separate controllers
+fn update_dynamic_style_on_stopwatch_change(
     mut q_styles: Query<
         (
             Entity,
             &mut DynamicStyle,
             &FluxInteraction,
-            &FluxInteractionStopwatch,
+            Option<&FluxInteractionStopwatch>,
         ),
         Or<(
             Changed<DynamicStyle>,
@@ -100,10 +109,17 @@ fn update_dynamic_style_animated_attributes(
                 continue;
             };
 
-            // TODO: Update stopwatch lock if interaction is_changed
-
-            controller.update(interaction, stopwatch);
-            if controller.dirty() {
+            if let Some(stopwatch) = stopwatch {
+                // TODO: Update stopwatch lock if interaction is_changed
+                controller.update(interaction, stopwatch);
+                if controller.dirty() {
+                    attribute.apply(
+                        controller.transition_base(),
+                        controller.current_state(),
+                        &mut commands.style(entity),
+                    );
+                }
+            } else {
                 attribute.apply(
                     controller.transition_base(),
                     controller.current_state(),
@@ -125,17 +141,42 @@ impl DynamicStyle {
     pub fn merge(self, other: DynamicStyle) -> Self {
         let mut new_list = self.0;
 
-        for attr in other.0 {
-            if !new_list.contains(&attr) {
-                new_list.push(attr);
+        for attribute in other.0 {
+            if !new_list.contains(&attribute) {
+                new_list.push(attribute);
             } else {
                 // Safe unwrap: checked in if above
-                let index = new_list.iter().position(|dsa| *dsa == attr).unwrap();
-                new_list[index] = attr;
+                let index = new_list.iter().position(|dsa| *dsa == attribute).unwrap();
+                new_list[index] = attribute;
             }
         }
 
         DynamicStyle(new_list)
+    }
+
+    pub fn copy_controllers(&mut self, other: &DynamicStyle) {
+        for attribute in self.0.iter_mut() {
+            if !attribute.is_animated() {
+                continue;
+            }
+
+            let Some(old_attribute) = other
+                .0
+                .iter()
+                .filter(|other_attr| other_attr.is_animated())
+                .find(|other_attr| **other_attr == attribute.clone())
+            else {
+                continue;
+            };
+
+            let Ok(controller) = attribute.controller_mut() else {
+                continue;
+            };
+
+            // Safe unwrap: attribute type already checked ^^
+            let old_controller = old_attribute.controller().unwrap();
+            controller.copy_state_from(old_controller);
+        }
     }
 
     pub fn is_interactive(&self) -> bool {
@@ -151,8 +192,8 @@ impl DynamicStyle {
         interaction: &FluxInteraction,
         stopwatch: &FluxInteractionStopwatch,
     ) {
-        for attr in self.0.iter_mut() {
-            attr.update(interaction, stopwatch);
+        for attribute in self.0.iter_mut() {
+            attribute.update(interaction, stopwatch);
         }
     }
 }

@@ -79,6 +79,58 @@ impl PartialEq for DynamicStyleAttribute {
     }
 }
 
+impl DynamicStyleAttribute {
+    pub fn is_static(&self) -> bool {
+        match self {
+            DynamicStyleAttribute::Static(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_interactive(&self) -> bool {
+        match self {
+            DynamicStyleAttribute::Interactive(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_animated(&self) -> bool {
+        match self {
+            DynamicStyleAttribute::Animated { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn controller(&self) -> Result<&DynamicStyleController, &'static str> {
+        let DynamicStyleAttribute::Animated { ref controller, .. } = self else {
+            return Err("DynamicStyleAttribute isn't animated!");
+        };
+
+        Ok(controller)
+    }
+
+    pub fn controller_mut(&mut self) -> Result<&mut DynamicStyleController, &'static str> {
+        let DynamicStyleAttribute::Animated {
+            ref mut controller, ..
+        } = self
+        else {
+            return Err("DynamicStyleAttribute isn't animated!");
+        };
+
+        Ok(controller)
+    }
+
+    pub fn update(
+        &mut self,
+        flux_interaction: &FluxInteraction,
+        stopwatch: &FluxInteractionStopwatch,
+    ) {
+        if let DynamicStyleAttribute::Animated { controller, .. } = self {
+            controller.update(flux_interaction, stopwatch);
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct DynamicStyleController {
     pub animation: StyleAnimation,
@@ -94,6 +146,7 @@ impl DynamicStyleController {
         stopwatch: &FluxInteractionStopwatch,
     ) {
         // TODO: track overflow
+        // TODO: fix issue with animation when the cursor briefly passes over an element that has a delay on pointer_leave
         let (progress, _) = self.animation.to_progress(flux_interaction, stopwatch);
         let update_transition_base = match (self.current_state.progress, progress) {
             (AnimationProgress::Start(l_phase), AnimationProgress::Start(r_phase)) => {
@@ -148,37 +201,10 @@ impl DynamicStyleController {
     pub fn dirty(&self) -> bool {
         self.dirty
     }
-}
 
-impl DynamicStyleAttribute {
-    pub fn is_static(&self) -> bool {
-        match self {
-            DynamicStyleAttribute::Static(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_interactive(&self) -> bool {
-        match self {
-            DynamicStyleAttribute::Interactive(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_animated(&self) -> bool {
-        match self {
-            DynamicStyleAttribute::Animated { .. } => true,
-            _ => false,
-        }
-    }
-
-    pub fn update(
-        &mut self,
-        flux_interaction: &FluxInteraction,
-        stopwatch: &FluxInteractionStopwatch,
-    ) {
-        if let DynamicStyleAttribute::Animated { controller, .. } = self {
-            controller.update(flux_interaction, stopwatch);
-        }
+    pub fn copy_state_from(&mut self, other: &DynamicStyleController) {
+        self.transition_base = other.transition_base();
+        self.current_state = other.current_state();
+        self.dirty = other.dirty();
     }
 }

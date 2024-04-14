@@ -61,6 +61,30 @@ pub enum FluxInteraction {
     Disabled,
 }
 
+impl FluxInteraction {
+    pub fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+    pub fn is_pointer_enter(&self) -> bool {
+        matches!(self, Self::PointerEnter)
+    }
+    pub fn is_pointer_leave(&self) -> bool {
+        matches!(self, Self::PointerLeave)
+    }
+    pub fn is_pressed(&self) -> bool {
+        matches!(self, Self::Pressed)
+    }
+    pub fn is_released(&self) -> bool {
+        matches!(self, Self::Released)
+    }
+    pub fn is_canceled(&self) -> bool {
+        matches!(self, Self::PressCanceled)
+    }
+    pub fn is_disabled(&self) -> bool {
+        matches!(self, Self::Disabled)
+    }
+}
+
 #[derive(Component, Clone, Debug, Default)]
 #[component(storage = "SparseSet")]
 pub struct FluxInteractionStopwatch(pub Stopwatch);

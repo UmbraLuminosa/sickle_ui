@@ -1,3 +1,4 @@
+pub mod color_palette;
 pub mod default_theme;
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
@@ -6,9 +7,9 @@ pub mod style_animation;
 
 use std::marker::PhantomData;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::UiSystem};
 
-use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder, widgets::WidgetLibraryUpdate};
+use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder};
 
 use self::{
     default_theme::DefaultThemePlugin, dynamic_style::*, dynamic_style_attribute::*,
@@ -17,14 +18,12 @@ use self::{
 
 pub struct ThemePlugin;
 
+// TODO: move to post updates
 impl Plugin for ThemePlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(
-            Update,
-            (
-                ThemeUpdate.after(WidgetLibraryUpdate),
-                CustomThemeUpdate.after(ThemeUpdate),
-            ),
+            PostUpdate,
+            (ThemeUpdate, CustomThemeUpdate.after(ThemeUpdate)).before(UiSystem::Layout),
         )
         .init_resource::<ThemeData>()
         .add_plugins((DefaultThemePlugin, DynamicStylePlugin));
@@ -53,6 +52,7 @@ impl Default for ThemeData {
     }
 }
 
+// TODO: Add support for enter/exit pseudo state animations
 #[derive(Clone, Debug)]
 pub enum DynamicStyleBuilder {
     Static(DynamicStyle),
@@ -87,13 +87,13 @@ impl From<fn(&mut StyleBuilder, &mut World)> for DynamicStyleBuilder {
 
 #[derive(Clone, Debug)]
 pub struct PseudoTheme {
-    state: Option<&'static [PseudoState]>,
+    state: Option<Vec<PseudoState>>,
     builder: DynamicStyleBuilder,
 }
 
 impl PseudoTheme {
     pub fn new(
-        state: impl Into<Option<&'static [PseudoState]>>,
+        state: impl Into<Option<Vec<PseudoState>>>,
         theme: impl Into<DynamicStyleBuilder>,
     ) -> Self {
         Self {
@@ -102,12 +102,45 @@ impl PseudoTheme {
         }
     }
 
+    pub fn build(
+        state: impl Into<Option<Vec<PseudoState>>>,
+        builder: fn(&mut StyleBuilder),
+    ) -> Self {
+        let mut style_builder = StyleBuilder::new();
+        builder(&mut style_builder);
+
+        Self {
+            state: state.into(),
+            builder: style_builder.into(),
+        }
+    }
+
+    pub fn deferred(
+        state: impl Into<Option<Vec<PseudoState>>>,
+        builder: fn(&mut StyleBuilder, &ThemeData),
+    ) -> Self {
+        Self {
+            state: state.into(),
+            builder: DynamicStyleBuilder::StyleBuilder(builder),
+        }
+    }
+
+    pub fn deferred_world(
+        state: impl Into<Option<Vec<PseudoState>>>,
+        builder: fn(&mut StyleBuilder, &mut World),
+    ) -> Self {
+        Self {
+            state: state.into(),
+            builder: DynamicStyleBuilder::WorldStyleBuilder(builder),
+        }
+    }
+
     pub fn is_base_theme(&self) -> bool {
         self.state.is_none()
     }
 
     pub fn for_state(&self, pseudo_states: &PseudoStates) -> bool {
-        match self.state {
+        match &self.state {
             Some(states) => pseudo_states.in_state(states),
             None => false,
         }
@@ -127,10 +160,10 @@ impl<C> Theme<C>
 where
     C: Component,
 {
-    pub fn new(styles: Vec<PseudoTheme>) -> Self {
+    pub fn new(styles: impl Into<Vec<PseudoTheme>>) -> Self {
         Self {
             context: PhantomData,
-            styles,
+            styles: styles.into(),
         }
     }
 }
@@ -153,11 +186,11 @@ where
             .map(|pseudo_theme| pseudo_theme.builder.clone())
     }
 
-    pub fn update() -> impl IntoSystemConfigs<()> {
-        Theme::<C>::update_in(ThemeUpdate)
+    pub fn post_update() -> impl IntoSystemConfigs<()> {
+        Theme::<C>::post_update_in(ThemeUpdate)
     }
 
-    pub fn update_in(set: impl SystemSet) -> impl IntoSystemConfigs<()> {
+    pub fn post_update_in(set: impl SystemSet) -> impl IntoSystemConfigs<()> {
         (
             Theme::<C>::process_theme_update,
             Theme::<C>::process_updated_pseudo_states,
@@ -165,14 +198,19 @@ where
             .in_set(set)
     }
 
+    // TODO: Implement ui_builder.themed_root(theme) extension?
     fn process_theme_update(
         q_targets: Query<Entity, With<C>>,
         q_added_targets: Query<Entity, Added<C>>,
         q_removed_themes: RemovedComponents<Theme<C>>,
         q_changed_themes: Query<(Entity, &Theme<C>), Changed<Theme<C>>>,
+        theme_data: Res<ThemeData>,
         mut commands: Commands,
     ) {
-        if q_removed_themes.len() > 0 || q_changed_themes.iter().count() > 0 {
+        if theme_data.is_changed()
+            || q_removed_themes.len() > 0
+            || q_changed_themes.iter().count() > 0
+        {
             for entity in &q_targets {
                 commands.entity(entity).refresh_theme::<C>();
             }

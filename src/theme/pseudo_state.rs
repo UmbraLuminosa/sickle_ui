@@ -26,6 +26,10 @@ pub enum PseudoState {
 pub struct PseudoStates(Vec<PseudoState>);
 
 impl PseudoStates {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+
     pub fn add(&mut self, state: PseudoState) {
         if !self.0.contains(&state) {
             self.0.push(state);
@@ -42,7 +46,7 @@ impl PseudoStates {
 
     /// Compares the current list of PseudoStates with the provided `set`
     /// Returns `true` only when the contents of the set and the list is the same (order doesn't matter)
-    pub fn in_state(&self, set: &[PseudoState]) -> bool {
+    pub fn in_state(&self, set: &Vec<PseudoState>) -> bool {
         set.iter().all(|s| self.0.contains(s)) && self.0.iter().all(|s| set.contains(s))
     }
 

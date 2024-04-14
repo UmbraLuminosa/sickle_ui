@@ -4,14 +4,17 @@ use bevy::prelude::*;
 use sickle_math::ease::Ease;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
-    theme::{DynamicStyleBuilder, PseudoTheme, Theme, ThemeData},
+    theme::{
+        pseudo_state::{PseudoState, PseudoStates},
+        PseudoTheme, Theme, ThemeData,
+    },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
-        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetWidthExt, StaticBundle,
-        StyleBuilder,
+        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt, SetWidthExt,
+        StaticBundle, StyleBuilder,
     },
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
-    SickleUiPlugin,
+    FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
 };
 
 fn main() {
@@ -28,7 +31,15 @@ fn main() {
         .init_resource::<IconCache>()
         .add_plugins(HierarchyTreeViewPlugin)
         .add_systems(Startup, setup.in_set(UiStartupSet))
-        .add_systems(Update, Theme::<ThemeTestBox>::update())
+        .add_systems(PostUpdate, Theme::<ThemeTestBox>::post_update())
+        .add_systems(
+            Update,
+            (
+                update_theme_data_on_press,
+                update_test_pseudo_state_on_press,
+            )
+                .after(FluxInteractionUpdate),
+        )
         .run();
 }
 
@@ -45,52 +56,88 @@ struct IconCache(Vec<Handle<Image>>);
 #[derive(Component)]
 pub struct ThemeTestBox;
 
+#[derive(Component)]
+pub struct ThemeTestBoxToggle;
+
 impl ThemeTestBox {
     fn base_theme() -> Theme<ThemeTestBox> {
-        let mut style = StyleBuilder::new();
-        style
-            .border(UiRect::all(Val::Px(2.)))
-            .background_color(Color::BLACK)
-            .width(Val::Px(100.))
-            .height(Val::Px(100.));
+        let base_style = PseudoTheme::build(None, |base_style| {
+            base_style
+                .border(UiRect::all(Val::Px(2.)))
+                .background_color(Color::BLACK)
+                .width(Val::Px(100.))
+                .height(Val::Px(100.));
 
-        style
-            .interactive()
-            .border_color(StaticBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE));
+            base_style
+                .interactive()
+                .border_color(StaticBundle::new(Color::DARK_GRAY).hover(Color::BEIGE));
+        });
 
-        let base_style = PseudoTheme::new(None, style);
+        let checked_style = PseudoTheme::build(vec![PseudoState::Checked], |checked_style| {
+            checked_style.background_color(Color::GRAY);
+        });
 
-        Theme::<ThemeTestBox>::new(vec![base_style])
+        Theme::<ThemeTestBox>::new(vec![base_style, checked_style])
     }
 
     fn override_theme() -> Theme<ThemeTestBox> {
-        let base_style = PseudoTheme::new(
-            None,
-            DynamicStyleBuilder::StyleBuilder(ThemeTestBox::style_builder),
-        );
-
+        let base_style = PseudoTheme::deferred(None, ThemeTestBox::style_builder);
         Theme::<ThemeTestBox>::new(vec![base_style])
     }
 
     fn style_builder(builder: &mut StyleBuilder, data: &ThemeData) {
-        builder
-            .animated()
-            .border_color(AnimatedBundle::new(Color::ALICE_BLUE).hover(Color::BISQUE))
-            .hover(0.3, None, None, None);
+        builder.border_color(Color::ALICE_BLUE);
 
         builder
             .animated()
             .background_color(AnimatedBundle {
                 base: data.background_color,
-                hover: Color::GRAY.into(),
-                press: Color::GOLD.into(),
+                hover: Color::GOLD.into(),
+                press: Color::GREEN.into(),
                 cancel: Color::RED.into(),
                 ..default()
             })
-            .hover(0.3, Ease::InOutExpo, None, None)
+            .pointer_enter(0.5, Ease::Linear, None, None)
+            .pointer_leave(0.5, Ease::Linear, 0.5, None)
             .press(0.3, None, None, None)
             .cancel(0.3, None, None, None)
             .cancel_reset(0.3, None, 0.3, None);
+    }
+}
+
+fn update_theme_data_on_press(
+    q_test_boxes: Query<&Interaction, (With<ThemeTestBoxToggle>, Changed<Interaction>)>,
+    mut theme_data: ResMut<ThemeData>,
+) {
+    for interaction in &q_test_boxes {
+        if *interaction == Interaction::Pressed {
+            if theme_data.background_color == Color::CRIMSON {
+                theme_data.background_color = Color::BLUE;
+            } else {
+                theme_data.background_color = Color::CRIMSON;
+            }
+        }
+    }
+}
+
+fn update_test_pseudo_state_on_press(
+    q_test_boxes: Query<
+        (Entity, &FluxInteraction, Option<&PseudoStates>),
+        (With<ThemeTestBox>, Changed<FluxInteraction>),
+    >,
+    mut commands: Commands,
+) {
+    for (entity, interaction, pseudo_states) in &q_test_boxes {
+        if interaction.is_released() {
+            if let Some(_) = pseudo_states {
+                commands.entity(entity).remove::<PseudoStates>();
+            } else {
+                let mut new_state = PseudoStates::new();
+                new_state.add(PseudoState::Checked);
+
+                commands.entity(entity).insert(new_state);
+            }
+        }
     }
 }
 
@@ -213,6 +260,8 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                     |tab_container| {
                         for i in 0..10 {
                             tab_container.add_tab(format!("Tab {}", i).into(), |panel| {
+                                panel.style().flex_direction(FlexDirection::Row);
+
                                 panel.label(LabelConfig {
                                     label: format!("Tab {} content", i).into(),
                                     ..default()
@@ -223,10 +272,23 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     return;
                                 }
 
+                                panel.spawn((NodeBundle::default(), ThemeTestBox));
                                 panel.spawn((
                                     NodeBundle::default(),
                                     ThemeTestBox,
                                     ThemeTestBox::override_theme(),
+                                ));
+                                panel.spawn((
+                                    ButtonBundle {
+                                        style: Style {
+                                            width: Val::Px(100.),
+                                            height: Val::Px(100.),
+                                            ..default()
+                                        },
+                                        background_color: Color::BISQUE.into(),
+                                        ..default()
+                                    },
+                                    ThemeTestBoxToggle,
                                 ));
                             });
                         }

@@ -450,10 +450,13 @@ where
             );
         }
 
-        // TODO: Rebuild themes when static data changes
         // TODO: Update flux interaction stopwatch timeout resource
 
-        if let Some(style) = style {
+        if let Some(mut style) = style {
+            if let Some(current_style) = world.get::<DynamicStyle>(entity) {
+                style.copy_controllers(current_style);
+            }
+
             if style.is_interactive() || style.is_animated() {
                 world.entity_mut(entity).insert(style);
                 if world.get::<Interaction>(entity).is_none() {
