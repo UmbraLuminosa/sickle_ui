@@ -6,7 +6,7 @@ use crate::{
         ThemeData,
     },
     ui_style::StyleBuilder,
-    FluxInteraction, TrackedInteraction,
+    FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,
 };
 use bevy::{
     core::Name,
@@ -473,6 +473,44 @@ where
         } else {
             world.entity_mut(entity).remove::<DynamicStyle>();
         }
+    }
+}
+
+pub trait ManageFluxInteractionStopwatchLockExt<'a> {
+    fn lock_stopwatch(
+        &'a mut self,
+        owner: &'static str,
+        duration: StopwatchLock,
+    ) -> &mut EntityCommands<'a>;
+
+    fn try_release_stopwatch_lock(&'a mut self, lock_of: &'static str) -> &mut EntityCommands<'a>;
+}
+
+impl<'a> ManageFluxInteractionStopwatchLockExt<'a> for EntityCommands<'a> {
+    fn lock_stopwatch(
+        &'a mut self,
+        owner: &'static str,
+        duration: StopwatchLock,
+    ) -> &mut EntityCommands<'a> {
+        self.add(move |entity: Entity, world: &mut World| {
+            if let Some(mut lock) = world.get_mut::<FluxInteractionStopwatchLock>(entity) {
+                lock.lock(owner, duration);
+            } else {
+                let mut lock = FluxInteractionStopwatchLock::new();
+                lock.lock(owner, duration);
+                world.entity_mut(entity).insert(lock);
+            }
+        });
+        self
+    }
+
+    fn try_release_stopwatch_lock(&'a mut self, lock_of: &'static str) -> &mut EntityCommands<'a> {
+        self.add(move |entity: Entity, world: &mut World| {
+            if let Some(mut lock) = world.get_mut::<FluxInteractionStopwatchLock>(entity) {
+                lock.release(lock_of);
+            }
+        });
+        self
     }
 }
 

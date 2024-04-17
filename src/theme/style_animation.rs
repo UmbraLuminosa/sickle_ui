@@ -1,4 +1,4 @@
-use std::{num::NonZeroU8, vec};
+use std::{num::NonZeroU8, time::Duration, vec};
 
 use bevy::prelude::*;
 use sickle_math::{
@@ -6,7 +6,7 @@ use sickle_math::{
     lerp::Lerp,
 };
 
-use crate::{ui_style::AnimatedBundle, FluxInteraction, FluxInteractionStopwatch};
+use crate::{ui_style::AnimatedBundle, FluxInteraction, FluxInteractionStopwatch, StopwatchLock};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InteractionStyle {
@@ -98,6 +98,7 @@ impl AnimationResult {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AnimationLoop {
     #[default]
+    None,
     Continous,
     Times(NonZeroU8),
     PingPongContinous,
@@ -112,6 +113,29 @@ pub struct AnimationConfig {
     loop_type: Option<AnimationLoop>,
 }
 
+impl AnimationConfig {
+    fn delay(&self) -> f32 {
+        match self.delay {
+            Some(delay) => delay,
+            None => 0.,
+        }
+    }
+
+    fn easing(&self) -> Ease {
+        match self.easing {
+            Some(ease) => ease,
+            None => Ease::Linear,
+        }
+    }
+
+    fn loop_type(&self) -> AnimationLoop {
+        match self.loop_type {
+            Some(loop_type) => loop_type,
+            None => AnimationLoop::None,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct StyleAnimation {
     pointer_enter: Option<AnimationConfig>,
@@ -120,8 +144,6 @@ pub struct StyleAnimation {
     release: Option<AnimationConfig>,
     cancel: Option<AnimationConfig>,
     cancel_reset: Option<AnimationConfig>,
-    focus: Option<AnimationConfig>,
-    focus_lost: Option<AnimationConfig>,
 }
 
 macro_rules! animation_setter {
@@ -157,8 +179,6 @@ impl StyleAnimation {
     animation_setter!(release);
     animation_setter!(cancel);
     animation_setter!(cancel_reset);
-    animation_setter!(focus);
-    animation_setter!(focus_lost);
 
     pub fn hover(
         &mut self,
@@ -195,8 +215,6 @@ impl StyleAnimation {
         self.release = Some(config);
         self.cancel = Some(config);
         self.cancel_reset = Some(config);
-        self.focus = Some(config);
-        self.focus_lost = Some(config);
 
         self
     }
@@ -213,6 +231,27 @@ impl StyleAnimation {
         }
     }
 
+    pub fn lock_duration(&self, flux_interaction: &FluxInteraction) -> StopwatchLock {
+        let Some(tween) = self.to_tween(flux_interaction) else {
+            return StopwatchLock::None;
+        };
+
+        let loop_type = tween.loop_type();
+        match loop_type {
+            AnimationLoop::None => {
+                StopwatchLock::Duration(Duration::from_secs_f32(tween.delay() + tween.duration))
+            }
+            AnimationLoop::Continous => StopwatchLock::Infinite,
+            AnimationLoop::Times(n) => StopwatchLock::Duration(Duration::from_secs_f32(
+                tween.delay() + (tween.duration * n.get() as f32),
+            )),
+            AnimationLoop::PingPongContinous => StopwatchLock::Infinite,
+            AnimationLoop::PingPong(n) => StopwatchLock::Duration(Duration::from_secs_f32(
+                tween.delay() + (tween.duration * n.get() as f32),
+            )),
+        }
+    }
+
     pub fn update(
         &self,
         prev_state: &AnimationState,
@@ -225,11 +264,7 @@ impl StyleAnimation {
 
         if target_style == InteractionStyle::Cancel {
             if let Some(cancel_tween) = tween {
-                let cancel_tween_length = cancel_tween.duration
-                    + match cancel_tween.delay {
-                        Some(delay) => delay,
-                        None => 0.,
-                    };
+                let cancel_tween_length = cancel_tween.duration + cancel_tween.delay();
 
                 if elapsed >= cancel_tween_length {
                     target_style = InteractionStyle::Base;
@@ -250,16 +285,10 @@ impl StyleAnimation {
             };
         };
 
-        let delay = match tween.delay {
-            Some(delay) => delay,
-            None => 0.,
-        };
+        let delay = tween.delay();
         let base_tween_length = tween.duration + delay;
         let tween_time = tween.duration.max(0.);
-        let easing = match tween.easing {
-            Some(ease) => ease,
-            None => Ease::Linear,
-        };
+        let easing = tween.easing();
 
         // Includes elapsed == 0.
         if elapsed <= delay {

@@ -1,4 +1,6 @@
-use bevy::{prelude::*, time::Stopwatch};
+use std::{cmp::Ordering, time::Duration};
+
+use bevy::{prelude::*, time::Stopwatch, utils::HashMap};
 use bevy_reflect::Reflect;
 
 pub struct FluxInteractionPlugin;
@@ -89,6 +91,79 @@ impl FluxInteraction {
 #[component(storage = "SparseSet")]
 pub struct FluxInteractionStopwatch(pub Stopwatch);
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum StopwatchLock {
+    #[default]
+    None,
+    Infinite,
+    Duration(Duration),
+}
+
+impl Ord for StopwatchLock {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (StopwatchLock::None, StopwatchLock::None) => Ordering::Equal,
+            (StopwatchLock::None, StopwatchLock::Infinite) => Ordering::Less,
+            (StopwatchLock::None, StopwatchLock::Duration(_)) => Ordering::Less,
+            (StopwatchLock::Infinite, StopwatchLock::None) => Ordering::Greater,
+            (StopwatchLock::Infinite, StopwatchLock::Infinite) => Ordering::Equal,
+            (StopwatchLock::Infinite, StopwatchLock::Duration(_)) => Ordering::Greater,
+            (StopwatchLock::Duration(_), StopwatchLock::None) => Ordering::Greater,
+            (StopwatchLock::Duration(_), StopwatchLock::Infinite) => Ordering::Less,
+            (StopwatchLock::Duration(lv), StopwatchLock::Duration(rv)) => lv.cmp(rv),
+        }
+    }
+}
+
+impl PartialOrd for StopwatchLock {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (StopwatchLock::None, StopwatchLock::None) => Some(Ordering::Equal),
+            (StopwatchLock::None, StopwatchLock::Infinite) => Some(Ordering::Less),
+            (StopwatchLock::None, StopwatchLock::Duration(_)) => Some(Ordering::Less),
+            (StopwatchLock::Infinite, StopwatchLock::None) => Some(Ordering::Greater),
+            (StopwatchLock::Infinite, StopwatchLock::Infinite) => Some(Ordering::Equal),
+            (StopwatchLock::Infinite, StopwatchLock::Duration(_)) => Some(Ordering::Greater),
+            (StopwatchLock::Duration(_), StopwatchLock::None) => Some(Ordering::Greater),
+            (StopwatchLock::Duration(_), StopwatchLock::Infinite) => Some(Ordering::Less),
+            (StopwatchLock::Duration(lv), StopwatchLock::Duration(rv)) => lv.partial_cmp(rv),
+        }
+    }
+}
+
+#[derive(Component, Clone, Debug, Default)]
+#[component(storage = "SparseSet")]
+pub struct FluxInteractionStopwatchLock(HashMap<&'static str, StopwatchLock>);
+
+impl FluxInteractionStopwatchLock {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn min_duration(&self) -> StopwatchLock {
+        if self.is_empty() {
+            return StopwatchLock::None;
+        }
+
+        let mut values: Vec<StopwatchLock> = self.0.values().into_iter().copied().collect();
+        values.sort();
+
+        // Safe unwrap: empty checked above
+        *(values.last().unwrap())
+    }
+
+    pub fn lock(&mut self, owner: &'static str, duration: StopwatchLock) {
+        self.0.insert(owner, duration);
+    }
+
+    pub fn release(&mut self, lock_of: &'static str) {
+        self.0.remove(lock_of);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
 // TODO: Add FluxInteractionStopwatchLock (sparse set)
 
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq, Reflect)]
@@ -103,15 +178,31 @@ pub enum PrevInteraction {
 fn tick_flux_interaction_stopwatch(
     config: Res<FluxInteractionConfig>,
     time: Res<Time<Real>>,
-    mut q_stopwatch: Query<(Entity, &mut FluxInteractionStopwatch)>,
+    mut q_stopwatch: Query<(
+        Entity,
+        &mut FluxInteractionStopwatch,
+        Option<&FluxInteractionStopwatchLock>,
+    )>,
     mut commands: Commands,
 ) {
-    for (entity, mut stopwatch) in &mut q_stopwatch {
-        if stopwatch.0.elapsed().as_secs_f32() > config.max_interaction_duration {
-            commands.entity(entity).remove::<FluxInteractionStopwatch>();
+    for (entity, mut stopwatch, lock) in &mut q_stopwatch {
+        let remove_stopwatch = if let Some(lock) = lock {
+            match lock.min_duration() {
+                StopwatchLock::None => {
+                    stopwatch.0.elapsed().as_secs_f32() > config.max_interaction_duration
+                }
+                StopwatchLock::Infinite => false,
+                StopwatchLock::Duration(length) => stopwatch.0.elapsed() > length,
+            }
         } else {
-            stopwatch.0.tick(time.delta());
+            stopwatch.0.elapsed().as_secs_f32() > config.max_interaction_duration
+        };
+
+        if remove_stopwatch {
+            commands.entity(entity).remove::<FluxInteractionStopwatch>();
         }
+
+        stopwatch.0.tick(time.delta());
     }
 }
 

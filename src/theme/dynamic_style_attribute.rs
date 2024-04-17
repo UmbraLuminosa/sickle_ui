@@ -148,7 +148,7 @@ impl DynamicStyleController {
             .update(&self.current_state, flux_interaction, stopwatch);
 
         if new_state != self.current_state {
-            // info!("{:?}", new_state);
+            info!("{:?}", new_state);
             self.current_state = new_state;
             self.dirty = true;
         }

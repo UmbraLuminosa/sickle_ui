@@ -1,8 +1,13 @@
 use bevy::{prelude::*, ui::UiSystem};
 
-use crate::{ui_style::UiStyleExt, FluxInteraction, FluxInteractionStopwatch};
+use crate::{
+    ui_commands::ManageFluxInteractionStopwatchLockExt, ui_style::UiStyleExt, FluxInteraction,
+    FluxInteractionStopwatch, StopwatchLock,
+};
 
 use super::*;
+
+const DYNAMIC_STYLE_STOPWATCH_LOCK: &'static str = "DynamicStyle";
 
 pub struct DynamicStylePlugin;
 
@@ -68,12 +73,34 @@ fn update_dynamic_style_on_flux_change(
     mut commands: Commands,
 ) {
     for (entity, style, interaction) in &q_styles {
-        for attribute in &style.0 {
-            let DynamicStyleAttribute::Interactive(style) = attribute else {
-                continue;
-            };
+        let mut lock_needed = StopwatchLock::None;
 
-            style.apply(*interaction, &mut commands.style(entity));
+        for attribute in &style.0 {
+            match attribute {
+                DynamicStyleAttribute::Interactive(style) => {
+                    style.apply(*interaction, &mut commands.style(entity));
+                }
+                DynamicStyleAttribute::Animated {
+                    controller: DynamicStyleController { animation, .. },
+                    ..
+                } => {
+                    let animation_lock = animation.lock_duration(interaction);
+                    if animation_lock > lock_needed {
+                        lock_needed = animation_lock;
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        if lock_needed > StopwatchLock::None {
+            commands
+                .entity(entity)
+                .lock_stopwatch(DYNAMIC_STYLE_STOPWATCH_LOCK, lock_needed);
+        } else {
+            commands
+                .entity(entity)
+                .try_release_stopwatch_lock(DYNAMIC_STYLE_STOPWATCH_LOCK);
         }
     }
 }
