@@ -11,7 +11,7 @@ use crate::{
     theme::{
         dynamic_style::DynamicStyle,
         dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
-        style_animation::{AnimationProgress, StyleAnimation},
+        style_animation::{AnimationState, InteractionStyle, StyleAnimation},
     },
     FluxInteraction,
 };
@@ -256,19 +256,12 @@ impl LockedStyleAttributes {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct InteractionAnimationState {
-    pub iteration: u8,
-    pub progress: AnimationProgress,
-}
-
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StaticBundle<T: Clone + Default> {
     pub base: T,
     pub hover: Option<T>,
     pub press: Option<T>,
     pub cancel: Option<T>,
-    // focus: Option<T>,
 }
 
 impl<T: Default + Clone> From<T> for StaticBundle<T> {
@@ -328,7 +321,6 @@ pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
     pub hover: Option<T>,
     pub press: Option<T>,
     pub cancel: Option<T>,
-    // focus: Option<T>,
 }
 
 impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T> {
@@ -378,41 +370,20 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
         }
     }
 
-    fn phase_value(&self, flux_interaction: FluxInteraction) -> T {
-        match flux_interaction {
-            FluxInteraction::None => self.base.clone(),
-            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PointerLeave => self.base.clone(),
-            FluxInteraction::Pressed => self
+    pub fn interaction_style(&self, interaction: InteractionStyle) -> T {
+        match interaction {
+            InteractionStyle::Base => self.base.clone(),
+            InteractionStyle::Hover => self.hover.clone().unwrap_or(self.base.clone()),
+            InteractionStyle::Press => self
                 .press
                 .clone()
                 .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
-            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::Disabled => self.base.clone(),
+            InteractionStyle::Cancel => self.cancel.clone().unwrap_or(self.base.clone()),
         }
     }
 
-    fn to_value(
-        &self,
-        transition_base: InteractionAnimationState,
-        animation_progress: InteractionAnimationState,
-    ) -> T {
-        let start_value = match transition_base.progress {
-            AnimationProgress::Start(phase) => self.phase_value(phase),
-            AnimationProgress::Inbetween(start_phase, end_phase, t) => self
-                .phase_value(start_phase)
-                .lerp(self.phase_value(end_phase), t),
-            AnimationProgress::End(phase) => self.phase_value(phase),
-        };
-
-        match animation_progress.progress {
-            AnimationProgress::Start(_) => start_value,
-            AnimationProgress::Inbetween(_, end_phase, t) => {
-                start_value.lerp(self.phase_value(end_phase), t)
-            }
-            AnimationProgress::End(phase) => self.phase_value(phase),
-        }
+    fn to_value(&self, current_state: &AnimationState) -> T {
+        current_state.extract(&self)
     }
 }
 
@@ -428,14 +399,13 @@ impl EntityCommand for CustomInteractiveStyleAttribute {
 }
 
 pub struct CustomAnimatableStyleAttribute {
-    callback: fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
-    transition_base: InteractionAnimationState,
-    animation_progress: InteractionAnimationState,
+    callback: fn(Entity, AnimationState, &mut World),
+    current_state: AnimationState,
 }
 
 impl EntityCommand for CustomAnimatableStyleAttribute {
     fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(id, self.transition_base, self.animation_progress, world);
+        (self.callback)(id, self.current_state, world);
     }
 }
 
@@ -477,9 +447,7 @@ impl<'a> AnimatedStyleBuilder<'a> {
 
     pub fn custom(
         &'a mut self,
-        callback: impl Into<
-            fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World),
-        >,
+        callback: impl Into<fn(Entity, AnimationState, &mut World)>,
     ) -> &'a mut StyleAnimation {
         let attribute = DynamicStyleAttribute::Animated {
             attribute: AnimatedStyleAttribute::Custom(callback.into()),

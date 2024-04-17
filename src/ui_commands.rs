@@ -377,7 +377,7 @@ where
         // Each might have a base and pseudo-specific theme.
         let mut pseudo_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
         let mut base_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
-
+        // TODO: Rank override pseudo-themes by state match count (precedence/priority)
         match pseudo_states {
             Some(pseudo_states) => {
                 // Add own theme
@@ -475,3 +475,5 @@ where
         }
     }
 }
+
+// TODO: Add OnPressed command to attach callbacks

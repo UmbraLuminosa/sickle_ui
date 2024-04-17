@@ -33,9 +33,6 @@ pub struct InteractiveMargin;
 #[simple_interaction_for((Style, Val, "height"))]
 pub struct InteractiveHeight;
 
-// TODO: Introduce DynamicStyle with set of interaction optional configs, mapped to InputState (new enum: Enabled, Disabled, Checked, Selected, etc.). Have a default value.
-// TODO: DynamicStyle could be applied without InputState as well, targeting only the interaction state
-// TODO: Move config to separate struct,
 pub trait InteractionConfig {
     type TargetType;
     fn new(

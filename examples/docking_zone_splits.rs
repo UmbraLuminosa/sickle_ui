@@ -97,7 +97,7 @@ impl ThemeTestBox {
                 cancel: Color::RED.into(),
                 ..default()
             })
-            .pointer_enter(0.5, Ease::Linear, None, None)
+            .pointer_enter(0.5, Ease::Linear, 0.5, None)
             .pointer_leave(0.5, Ease::Linear, 0.5, None)
             .press(0.3, None, None, None)
             .cancel(0.3, None, None, None)

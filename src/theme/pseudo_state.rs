@@ -11,6 +11,8 @@ pub enum PseudoState {
     FirstChild,
     NthChild(usize),
     LastChild,
+    Even,
+    Odd,
     DirectionRow,
     DirectionColumn,
     OverflowX,

@@ -1,12 +1,11 @@
+use bevy::log::info;
+
 use crate::{
-    ui_style::{
-        AnimatedStyleAttribute, InteractionAnimationState, InteractiveStyleAttribute,
-        StaticStyleAttribute,
-    },
+    ui_style::{AnimatedStyleAttribute, InteractiveStyleAttribute, StaticStyleAttribute},
     FluxInteraction, FluxInteractionStopwatch,
 };
 
-use super::{AnimationProgress, StyleAnimation};
+use super::{AnimationState, StyleAnimation};
 
 /*
 // TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
@@ -131,11 +130,10 @@ impl DynamicStyleAttribute {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct DynamicStyleController {
     pub animation: StyleAnimation,
-    transition_base: InteractionAnimationState,
-    current_state: InteractionAnimationState,
+    current_state: AnimationState,
     dirty: bool,
 }
 
@@ -145,57 +143,19 @@ impl DynamicStyleController {
         flux_interaction: &FluxInteraction,
         stopwatch: &FluxInteractionStopwatch,
     ) {
-        // TODO: track overflow
-        // TODO: fix issue with animation when the cursor briefly passes over an element that has a delay on pointer_leave
-        let (progress, _) = self.animation.to_progress(flux_interaction, stopwatch);
-        let update_transition_base = match (self.current_state.progress, progress) {
-            (AnimationProgress::Start(l_phase), AnimationProgress::Start(r_phase)) => {
-                l_phase != r_phase
-            }
-            (AnimationProgress::End(l_phase), AnimationProgress::End(r_phase)) => {
-                l_phase != r_phase
-            }
-            (
-                AnimationProgress::Inbetween(l_start_phase, l_end_phase, _),
-                AnimationProgress::Inbetween(r_start_phase, r_end_phase, _),
-            ) => l_start_phase != r_start_phase || l_end_phase != r_end_phase,
-            _ => true,
-        };
+        let new_state = self
+            .animation
+            .update(&self.current_state, flux_interaction, stopwatch);
 
-        let update_current = match (self.current_state.progress, progress) {
-            (AnimationProgress::Start(l_phase), AnimationProgress::Start(r_phase)) => {
-                l_phase != r_phase
-            }
-            (AnimationProgress::End(l_phase), AnimationProgress::End(r_phase)) => {
-                l_phase != r_phase
-            }
-            (
-                AnimationProgress::Inbetween(l_start_phase, l_end_phase, l_t),
-                AnimationProgress::Inbetween(r_start_phase, r_end_phase, r_t),
-            ) => l_start_phase != r_start_phase || l_end_phase != r_end_phase || l_t != r_t,
-            _ => true,
-        };
-
-        if update_transition_base {
-            self.transition_base = self.current_state;
+        if new_state != self.current_state {
+            // info!("{:?}", new_state);
+            self.current_state = new_state;
+            self.dirty = true;
         }
-
-        if update_current {
-            self.current_state = InteractionAnimationState {
-                progress,
-                iteration: 0,
-            };
-        }
-
-        self.dirty = update_transition_base || update_current;
     }
 
-    pub fn transition_base(&self) -> InteractionAnimationState {
-        self.transition_base
-    }
-
-    pub fn current_state(&self) -> InteractionAnimationState {
-        self.current_state
+    pub fn current_state(&self) -> &AnimationState {
+        &self.current_state
     }
 
     pub fn dirty(&self) -> bool {
@@ -203,8 +163,7 @@ impl DynamicStyleController {
     }
 
     pub fn copy_state_from(&mut self, other: &DynamicStyleController) {
-        self.transition_base = other.transition_base();
-        self.current_state = other.current_state();
+        self.current_state = other.current_state().clone();
         self.dirty = other.dirty();
     }
 }

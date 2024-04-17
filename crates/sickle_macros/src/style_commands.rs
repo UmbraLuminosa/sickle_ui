@@ -372,7 +372,7 @@ fn prepare_animated_style_attribute(
         #[derive(Clone, Debug)]
         pub enum AnimatedStyleAttribute {
             #(#base_variants)*
-            Custom(fn(Entity, InteractionAnimationState, InteractionAnimationState, &mut World)),
+            Custom(fn(Entity, AnimationState, &mut World)),
         }
 
         impl PartialEq for AnimatedStyleAttribute {
@@ -388,8 +388,7 @@ fn prepare_animated_style_attribute(
         impl AnimatedStyleAttribute {
             fn to_attribute(
                 &self,
-                transition_base: InteractionAnimationState,
-                animation_progress: InteractionAnimationState,
+                current_state: &AnimationState,
             ) -> StaticStyleAttribute {
                 match self {
                     #(#apply_variants)*
@@ -399,8 +398,7 @@ fn prepare_animated_style_attribute(
 
             pub fn apply<'a>(
                 &self,
-                transition_base: InteractionAnimationState,
-                animation_progress: InteractionAnimationState,
+                current_state: &AnimationState,
                 ui_style: &'a mut UiStyle<'a>,
             ) {
                 match self {
@@ -409,13 +407,12 @@ fn prepare_animated_style_attribute(
                             .entity_commands()
                             .add(CustomAnimatableStyleAttribute {
                                 callback: *callback,
-                                transition_base,
-                                animation_progress,
+                                current_state: current_state.clone(),
                             });
                     }
                     _ => {
                         self
-                            .to_attribute(transition_base, animation_progress)
+                            .to_attribute(current_state)
                             .apply(ui_style);
                     }
                 }
@@ -615,7 +612,7 @@ fn to_animated_style_appl_variant(style_attribute: &StyleAttribute) -> proc_macr
     let ident = &style_attribute.ident;
     quote! {
         Self::#ident(bundle) => StaticStyleAttribute::#ident(
-            bundle.to_value(transition_base, animation_progress),
+            bundle.to_value(current_state),
         ),
     }
 }

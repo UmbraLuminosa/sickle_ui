@@ -18,7 +18,6 @@ use self::{
 
 pub struct ThemePlugin;
 
-// TODO: move to post updates
 impl Plugin for ThemePlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(

@@ -30,8 +30,6 @@ impl Plugin for DynamicStylePlugin {
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct DynamicStyleUpdate;
 
-// TODO: Apply interactive and Animated styles on ChangedDynamic styles
-// These are dynamic styles with only inert values
 fn update_dynamic_style_static_attributes(
     mut q_styles: Query<(Entity, &mut DynamicStyle), Changed<DynamicStyle>>,
     mut commands: Commands,
@@ -80,9 +78,6 @@ fn update_dynamic_style_on_flux_change(
     }
 }
 
-// NOTE: Updating the dynamic style for mid-transition animations could cause a visual pop.
-// This is because the controller state is not kept from the previous state.
-// TODO: keep old controllers when possible or separate controllers
 fn update_dynamic_style_on_stopwatch_change(
     mut q_styles: Query<
         (
@@ -100,6 +95,8 @@ fn update_dynamic_style_on_stopwatch_change(
     mut commands: Commands,
 ) {
     for (entity, mut style, interaction, stopwatch) in &mut q_styles {
+        let style_changed = style.is_changed();
+
         for attribute in &mut style.0 {
             let DynamicStyleAttribute::Animated {
                 attribute,
@@ -112,19 +109,10 @@ fn update_dynamic_style_on_stopwatch_change(
             if let Some(stopwatch) = stopwatch {
                 // TODO: Update stopwatch lock if interaction is_changed
                 controller.update(interaction, stopwatch);
-                if controller.dirty() {
-                    attribute.apply(
-                        controller.transition_base(),
-                        controller.current_state(),
-                        &mut commands.style(entity),
-                    );
-                }
-            } else {
-                attribute.apply(
-                    controller.transition_base(),
-                    controller.current_state(),
-                    &mut commands.style(entity),
-                );
+            }
+
+            if style_changed || controller.dirty() {
+                attribute.apply(controller.current_state(), &mut commands.style(entity));
             }
         }
     }
