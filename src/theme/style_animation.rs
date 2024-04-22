@@ -55,8 +55,14 @@ impl AnimationState {
 #[derive(Clone, Debug, PartialEq)]
 pub enum AnimationResult {
     Hold(InteractionStyle),
-    Interpolate(InteractionStyle, InteractionStyle, f32),
-    Reverse(InteractionStyle, InteractionStyle, f32, f32),
+    // Interpolate(InteractionStyle, InteractionStyle, f32),
+    // Reverse(InteractionStyle, InteractionStyle, f32, f32),
+    Interpolate {
+        from: InteractionStyle,
+        to: InteractionStyle,
+        t: f32,
+        offset: f32,
+    },
     TransitionBetween {
         origin: InteractionStyle,
         points: Vec<(InteractionStyle, f32)>,
@@ -76,12 +82,9 @@ impl AnimationResult {
     ) -> T {
         match self {
             AnimationResult::Hold(style) => bundle.interaction_style(*style),
-            AnimationResult::Interpolate(start_style, end_style, t) => bundle
-                .interaction_style(*start_style)
-                .lerp(bundle.interaction_style(*end_style), *t),
-            AnimationResult::Reverse(start_style, end_style, t, _) => bundle
-                .interaction_style(*start_style)
-                .lerp(bundle.interaction_style(*end_style), *t),
+            AnimationResult::Interpolate { from, to, t, .. } => bundle
+                .interaction_style(*from)
+                .lerp(bundle.interaction_style(*to), *t),
             AnimationResult::TransitionBetween { origin, points } => {
                 let start_value = bundle.interaction_style(*origin);
                 points
@@ -232,12 +235,31 @@ impl StyleAnimation {
     }
 
     pub fn lock_duration(&self, flux_interaction: &FluxInteraction) -> StopwatchLock {
-        let Some(tween) = self.to_tween(flux_interaction) else {
+        match flux_interaction {
+            FluxInteraction::PressCanceled => {
+                let cancel_lock = StyleAnimation::tween_lock_duration(self.cancel);
+                let reset_lock = StyleAnimation::tween_lock_duration(self.cancel_reset);
+                match (cancel_lock, reset_lock) {
+                    (StopwatchLock::None, StopwatchLock::None) => StopwatchLock::None,
+                    (StopwatchLock::None, StopwatchLock::Duration(_)) => reset_lock,
+                    (StopwatchLock::Duration(_), StopwatchLock::None) => cancel_lock,
+                    (StopwatchLock::Duration(l_duration), StopwatchLock::Duration(r_duration)) => {
+                        StopwatchLock::Duration(l_duration + r_duration)
+                    }
+                    // Either side is infinite, let them cook
+                    _ => StopwatchLock::Infinite,
+                }
+            }
+            _ => StyleAnimation::tween_lock_duration(self.to_tween(flux_interaction)),
+        }
+    }
+
+    fn tween_lock_duration(tween: Option<AnimationConfig>) -> StopwatchLock {
+        let Some(tween) = tween else {
             return StopwatchLock::None;
         };
 
-        let loop_type = tween.loop_type();
-        match loop_type {
+        match tween.loop_type() {
             AnimationLoop::None => {
                 StopwatchLock::Duration(Duration::from_secs_f32(tween.delay() + tween.duration))
             }
@@ -308,11 +330,12 @@ impl StyleAnimation {
                     AnimationResult::Hold(style) => {
                         if *style != target_style {
                             return AnimationState {
-                                result: AnimationResult::Interpolate(
-                                    *style,
-                                    target_style,
-                                    tween_ratio,
-                                ),
+                                result: AnimationResult::Interpolate {
+                                    from: *style,
+                                    to: target_style,
+                                    t: tween_ratio,
+                                    offset: 0.,
+                                },
                                 iteration: 0,
                             };
                         } else {
@@ -322,43 +345,37 @@ impl StyleAnimation {
                             };
                         }
                     }
-                    AnimationResult::Interpolate(from, to, t) => {
+                    AnimationResult::Interpolate {
+                        from,
+                        to,
+                        t,
+                        offset,
+                    } => {
+                        // TODO: Discover inner mathematical genius to implement inverse ease functions to recover x where ease(x) = offset
+                        let base_ratio =
+                            (((elapsed - delay) / tween_time) * (1. - offset)).clamp(0., 1.);
+                        let tween_ratio = offset + base_ratio.ease(easing);
+
                         if *from == target_style {
                             return AnimationState {
-                                result: AnimationResult::Reverse(*from, *to, *t, *t),
+                                result: AnimationResult::Interpolate {
+                                    from: *to,
+                                    to: *from,
+                                    t: 1. - *t,
+                                    offset: 1. - *t,
+                                },
                                 iteration: 0,
                             };
                         } else if *to == target_style {
                             return AnimationState {
-                                result: AnimationResult::Interpolate(*from, *to, tween_ratio),
-                                iteration: 0,
-                            };
-                        } else {
-                            return AnimationState {
-                                result: AnimationResult::TransitionBetween {
-                                    origin: *from,
-                                    points: vec![(*to, *t), (target_style, tween_ratio)],
+                                result: AnimationResult::Interpolate {
+                                    from: *from,
+                                    to: *to,
+                                    t: tween_ratio,
+                                    offset: *offset,
                                 },
                                 iteration: 0,
                             };
-                        }
-                    }
-                    AnimationResult::Reverse(from, to, t, offset) => {
-                        if *from == target_style {
-                            let new_ratio = (offset - tween_ratio).max(0.);
-                            if new_ratio == 0. {
-                                return AnimationState {
-                                    result: AnimationResult::Hold(target_style),
-                                    iteration: 0,
-                                };
-                            } else {
-                                return AnimationState {
-                                    result: AnimationResult::Reverse(
-                                        *from, *to, new_ratio, *offset,
-                                    ),
-                                    iteration: 0,
-                                };
-                            }
                         } else {
                             return AnimationState {
                                 result: AnimationResult::TransitionBetween {
@@ -372,13 +389,31 @@ impl StyleAnimation {
                     AnimationResult::TransitionBetween { origin, points } => {
                         // TODO: this is not a frequent case, but consider finding workaround for allocation
                         let mut new_points = points.clone();
+                        let point_count = new_points.len();
 
                         // Safe unwrap: We never remove points, only add, and we start with two points
                         let last_point = new_points.last_mut().unwrap();
-                        if last_point.0 == target_style {
+                        let last_style = last_point.0;
+                        if last_style == target_style {
                             last_point.1 = tween_ratio;
-                        } else {
+                        } else if point_count < 5 {
                             new_points.push((target_style, tween_ratio));
+                        } else {
+                            warn!(
+                                "Transition animation step overflow occured: {:?}",
+                                new_points.clone()
+                            );
+
+                            // Reset to the last two step's interpolation
+                            return AnimationState {
+                                result: AnimationResult::Interpolate {
+                                    from: last_style,
+                                    to: target_style,
+                                    t: tween_ratio,
+                                    offset: 0.,
+                                },
+                                iteration: 0,
+                            };
                         }
 
                         return AnimationState {
