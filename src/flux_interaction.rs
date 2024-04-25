@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, time::Duration};
+use std::{cmp::Ordering, ops::Add, time::Duration};
 
 use bevy::{prelude::*, time::Stopwatch, utils::HashMap};
 use bevy_reflect::Reflect;
@@ -97,6 +97,23 @@ pub enum StopwatchLock {
     None,
     Infinite,
     Duration(Duration),
+}
+
+impl Add for StopwatchLock {
+    type Output = StopwatchLock;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (StopwatchLock::None, StopwatchLock::None) => StopwatchLock::None,
+            (StopwatchLock::None, StopwatchLock::Duration(_)) => rhs,
+            (StopwatchLock::Duration(_), StopwatchLock::None) => self,
+            (StopwatchLock::Duration(l_duration), StopwatchLock::Duration(r_duration)) => {
+                StopwatchLock::Duration(l_duration + r_duration)
+            }
+            // Either side is infinite, let them cook
+            _ => StopwatchLock::Infinite,
+        }
+    }
 }
 
 impl Ord for StopwatchLock {

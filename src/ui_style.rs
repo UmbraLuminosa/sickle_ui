@@ -317,10 +317,13 @@ impl<T: Clone + Default> StaticBundle<T> {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
-    pub base: T,
+    pub idle: T,
     pub hover: Option<T>,
     pub press: Option<T>,
     pub cancel: Option<T>,
+    pub idle_alt: Option<T>,
+    pub hover_alt: Option<T>,
+    pub press_alt: Option<T>,
 }
 
 impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T> {
@@ -332,7 +335,7 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T>
 impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
     fn from(value: StaticBundle<T>) -> Self {
         Self {
-            base: value.base,
+            idle: value.base,
             hover: value.hover,
             press: value.press,
             cancel: value.cancel,
@@ -344,7 +347,7 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for Ani
 impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
     pub fn new(value: T) -> Self {
         AnimatedBundle {
-            base: value,
+            idle: value,
             ..default()
         }
     }
@@ -372,13 +375,22 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
 
     pub fn interaction_style(&self, interaction: InteractionStyle) -> T {
         match interaction {
-            InteractionStyle::Base => self.base.clone(),
-            InteractionStyle::Hover => self.hover.clone().unwrap_or(self.base.clone()),
+            InteractionStyle::Base => self.idle.clone(),
+            InteractionStyle::Hover => self.hover.clone().unwrap_or(self.idle.clone()),
             InteractionStyle::Press => self
                 .press
                 .clone()
-                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
-            InteractionStyle::Cancel => self.cancel.clone().unwrap_or(self.base.clone()),
+                .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
+            InteractionStyle::Cancel => self.cancel.clone().unwrap_or(self.idle.clone()),
+            InteractionStyle::BaseAlt => self
+                .idle_alt
+                .clone()
+                .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
+            InteractionStyle::HoverAlt => self.hover_alt.clone().unwrap_or(self.idle.clone()),
+            InteractionStyle::PressAlt => self
+                .press_alt
+                .clone()
+                .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
         }
     }
 

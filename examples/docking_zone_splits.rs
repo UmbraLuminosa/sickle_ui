@@ -6,6 +6,7 @@ use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::{
         pseudo_state::{PseudoState, PseudoStates},
+        style_animation::AnimationLoop,
         PseudoTheme, Theme, ThemeData,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
@@ -91,17 +92,23 @@ impl ThemeTestBox {
         builder
             .animated()
             .background_color(AnimatedBundle {
-                base: data.background_color,
-                hover: Color::GOLD.into(),
+                idle: data.background_color,
+                hover: Color::rgb(0.5, 0.5, 1.).into(),
                 press: Color::GREEN.into(),
                 cancel: Color::RED.into(),
+                hover_alt: Color::GOLD.into(),
+                idle_alt: Color::rgb(0.5, 0.5, 1.).into(),
+                press_alt: Color::rgb(0.5, 1., 0.5).into(),
                 ..default()
             })
-            .pointer_enter(0.5, Ease::Linear, 0.5, None)
-            .pointer_leave(0.5, Ease::Linear, 0.5, None)
-            .press(0.3, None, None, None)
-            .cancel(0.3, None, None, None)
-            .cancel_reset(0.3, None, 0.3, None);
+            .pointer_enter(0.3, Ease::Linear, 0.5)
+            .pointer_leave(0.3, Ease::Linear, 0.5)
+            .press(0.3, None, None)
+            .cancel(0.3, None, None)
+            .cancel_reset(0.3, None, 0.3)
+            .idle(0.3, Ease::InOutExpo, 0.3, 0.1, AnimationLoop::Times(3))
+            .hover(0.3, Ease::InOutExpo, 0.3, 0.1, AnimationLoop::PingPong(3))
+            .pressed(0.3, Ease::InOutExpo, 0.3, 0.1, AnimationLoop::PingPongContinous);
     }
 }
 

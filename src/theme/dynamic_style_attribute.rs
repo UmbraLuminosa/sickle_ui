@@ -1,16 +1,9 @@
-use bevy::log::info;
-
 use crate::{
     ui_style::{AnimatedStyleAttribute, InteractiveStyleAttribute, StaticStyleAttribute},
     FluxInteraction, FluxInteractionStopwatch,
 };
 
 use super::{AnimationState, StyleAnimation};
-
-/*
-// TODO: lock cleanup automatically on flux interaction change -> part of flux interaction system stack
-// FluxStopwatchLock? Merge lock lengths?
-*/
 
 #[derive(Clone, Debug)]
 pub enum DynamicStyleAttribute {
@@ -148,7 +141,7 @@ impl DynamicStyleController {
             .update(&self.current_state, flux_interaction, stopwatch);
 
         if new_state != self.current_state {
-            info!("{:?}", new_state);
+            // info!("{:?}", new_state);
             self.current_state = new_state;
             self.dirty = true;
         }

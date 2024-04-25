@@ -123,18 +123,18 @@ fn update_dynamic_style_on_stopwatch_change(
 ) {
     for (entity, mut style, interaction, stopwatch) in &mut q_styles {
         let style_changed = style.is_changed();
+        let style = style.bypass_change_detection();
 
-        for attribute in &mut style.0 {
+        for style_attribute in &mut style.0 {
             let DynamicStyleAttribute::Animated {
                 attribute,
                 ref mut controller,
-            } = attribute
+            } = style_attribute
             else {
                 continue;
             };
 
             if let Some(stopwatch) = stopwatch {
-                // TODO: Update stopwatch lock if interaction is_changed
                 controller.update(interaction, stopwatch);
             }
 
