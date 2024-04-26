@@ -14,7 +14,7 @@ use sickle_ui::{
         AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt, SetWidthExt,
         StaticBundle, StyleBuilder,
     },
-    widgets::{prelude::*, tab_container::UiTabContainerSubExt},
+    widgets::{floating_panel::FloatingPanel, prelude::*, tab_container::UiTabContainerSubExt},
     FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
 };
 
@@ -33,6 +33,7 @@ fn main() {
         .add_plugins(HierarchyTreeViewPlugin)
         .add_systems(Startup, setup.in_set(UiStartupSet))
         .add_systems(PostUpdate, Theme::<ThemeTestBox>::post_update())
+        .add_systems(PostUpdate, Theme::<FloatingPanel>::post_update())
         .add_systems(
             Update,
             (
@@ -109,11 +110,13 @@ impl ThemeTestBox {
             hover_alt: Color::GOLD.into(),
             idle_alt: Color::rgb(0.5, 0.5, 1.).into(),
             press_alt: Color::rgb(0.5, 1., 0.5).into(),
+            enter_from: Color::BLACK.into(),
             ..default()
         };
 
         let mut style_animation = StyleAnimation::new();
         style_animation
+            .enter(0.3, Ease::Linear, 0.5)
             .pointer_enter(0.3, Ease::Linear, 0.5)
             .pointer_leave(0.3, Ease::Linear, 0.5)
             .press(0.3, None, None)
@@ -209,6 +212,27 @@ fn setup(
         ))
         .id();
 
+    let base_style = PseudoTheme::build(None, |base_style| {
+        base_style
+            .animated()
+            .custom(|entity, animation_state, world| {
+                let Some(mut transform) = world.get_mut::<Transform>(entity) else {
+                    return;
+                };
+
+                let bundle = AnimatedBundle {
+                    enter_from: Some(0.),
+                    idle: 1.,
+                    ..default()
+                };
+                let value = animation_state.extract(&bundle);
+                transform.scale = Vec3::ONE * value;
+            })
+            .enter(0.3, Ease::OutExpo, None);
+    });
+
+    let floating_panel_theme = Theme::<FloatingPanel>::new(vec![base_style]);
+
     // Use the UI builder with plain bundles and direct setting of bundle props
     let mut hierarchy_container = Entity::PLACEHOLDER;
     let mut root_entity = Entity::PLACEHOLDER;
@@ -226,6 +250,7 @@ fn setup(
             },
             TargetCamera(main_camera),
             ThemeTestBox::base_theme(),
+            floating_panel_theme,
         ),
         |container| {
             container

@@ -450,8 +450,6 @@ where
             );
         }
 
-        // TODO: Update flux interaction stopwatch timeout resource
-
         if let Some(mut style) = style {
             if let Some(current_style) = world.get::<DynamicStyle>(entity) {
                 style.copy_controllers(current_style);
@@ -462,7 +460,10 @@ where
                 if world.get::<Interaction>(entity).is_none() {
                     world.entity_mut(entity).insert(Interaction::default());
                 }
-                if world.get::<FluxInteraction>(entity).is_none() {
+
+                if let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) {
+                    *flux_interaction = FluxInteraction::None;
+                } else {
                     world
                         .entity_mut(entity)
                         .insert(TrackedInteraction::default());

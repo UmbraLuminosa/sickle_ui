@@ -1,6 +1,6 @@
 use bevy::{prelude::*, time::Stopwatch, ui::UiSystem};
 
-use crate::{ui_style::UiStyleExt, FluxInteraction, FluxInteractionStopwatch, StopwatchLock};
+use crate::{ui_style::UiStyleExt, FluxInteraction, StopwatchLock};
 
 use super::*;
 
@@ -33,14 +33,10 @@ pub struct DynamicStyleUpdate;
 
 fn tick_dynamic_style_stopwatch(
     time: Res<Time<Real>>,
-    mut q_stopwatches: Query<(
-        Entity,
-        &mut DynamicStyleStopwatch,
-        Option<&FluxInteractionStopwatch>,
-    )>,
+    mut q_stopwatches: Query<(Entity, &mut DynamicStyleStopwatch)>,
     mut commands: Commands,
 ) {
-    for (entity, mut style_stopwatch, flux_stopwatch) in &mut q_stopwatches {
+    for (entity, mut style_stopwatch) in &mut q_stopwatches {
         let remove_stopwatch = match style_stopwatch.1 {
             StopwatchLock::None => true,
             StopwatchLock::Infinite => false,
@@ -51,11 +47,7 @@ fn tick_dynamic_style_stopwatch(
             commands.entity(entity).remove::<DynamicStyleStopwatch>();
         }
 
-        if let Some(flux_stopwatch) = flux_stopwatch {
-            style_stopwatch.0.set_elapsed(flux_stopwatch.0.elapsed());
-        } else {
-            style_stopwatch.0.tick(time.delta());
-        }
+        style_stopwatch.0.tick(time.delta());
     }
 }
 
@@ -104,18 +96,23 @@ fn update_dynamic_style_on_flux_change(
 ) {
     for (entity, style, interaction, stopwatch) in &mut q_styles {
         let mut lock_needed = StopwatchLock::None;
+        let mut keep_stop_watch = false;
 
         for attribute in &style.0 {
             match attribute {
                 DynamicStyleAttribute::Interactive(style) => {
                     style.apply(*interaction, &mut commands.style(entity));
                 }
-                DynamicStyleAttribute::Animated {
-                    controller: DynamicStyleController { animation, .. },
-                    ..
-                } => {
-                    // TODO: Enter animation will need a branch here to get the proper lock length
-                    let animation_lock = animation.lock_duration(interaction);
+                DynamicStyleAttribute::Animated { controller, .. } => {
+                    let animation_lock = if controller.entering() {
+                        keep_stop_watch = true;
+
+                        controller.animation.lock_duration(&FluxInteraction::None)
+                            + controller.animation.lock_duration(interaction)
+                    } else {
+                        controller.animation.lock_duration(interaction)
+                    };
+
                     if animation_lock > lock_needed {
                         lock_needed = animation_lock;
                     }
@@ -125,7 +122,9 @@ fn update_dynamic_style_on_flux_change(
         }
 
         if let Some(mut stopwatch) = stopwatch {
-            stopwatch.0.reset();
+            if !keep_stop_watch {
+                stopwatch.0.reset();
+            }
             stopwatch.1 = lock_needed;
         } else {
             commands
@@ -151,7 +150,6 @@ fn update_dynamic_style_on_stopwatch_change(
     >,
     mut commands: Commands,
 ) {
-    // TODO: Looped animation should use their own stopwatch
     for (entity, mut style, interaction, stopwatch) in &mut q_styles {
         let style_changed = style.is_changed();
         let style = style.bypass_change_detection();

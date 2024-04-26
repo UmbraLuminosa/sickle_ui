@@ -258,7 +258,7 @@ impl LockedStyleAttributes {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StaticBundle<T: Clone + Default> {
-    pub base: T,
+    pub idle: T,
     pub hover: Option<T>,
     pub press: Option<T>,
     pub cancel: Option<T>,
@@ -273,7 +273,7 @@ impl<T: Default + Clone> From<T> for StaticBundle<T> {
 impl<T: Clone + Default> StaticBundle<T> {
     pub fn new(value: T) -> Self {
         StaticBundle {
-            base: value,
+            idle: value,
             ..default()
         }
     }
@@ -301,16 +301,16 @@ impl<T: Clone + Default> StaticBundle<T> {
 
     fn to_value(&self, flux_interaction: FluxInteraction) -> T {
         match flux_interaction {
-            FluxInteraction::None => self.base.clone(),
-            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PointerLeave => self.base.clone(),
+            FluxInteraction::None => self.idle.clone(),
+            FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.idle.clone()),
+            FluxInteraction::PointerLeave => self.idle.clone(),
             FluxInteraction::Pressed => self
                 .press
                 .clone()
-                .unwrap_or(self.hover.clone().unwrap_or(self.base.clone())),
-            FluxInteraction::Released => self.hover.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.base.clone()),
-            FluxInteraction::Disabled => self.base.clone(),
+                .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
+            FluxInteraction::Released => self.hover.clone().unwrap_or(self.idle.clone()),
+            FluxInteraction::PressCanceled => self.cancel.clone().unwrap_or(self.idle.clone()),
+            FluxInteraction::Disabled => self.idle.clone(),
         }
     }
 }
@@ -324,18 +324,22 @@ pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
     pub idle_alt: Option<T>,
     pub hover_alt: Option<T>,
     pub press_alt: Option<T>,
+    pub enter_from: Option<T>,
 }
 
 impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T> {
     fn from(value: T) -> Self {
-        AnimatedBundle::new(value)
+        AnimatedBundle {
+            idle: value,
+            ..default()
+        }
     }
 }
 
 impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
     fn from(value: StaticBundle<T>) -> Self {
         Self {
-            idle: value.base,
+            idle: value.idle,
             hover: value.hover,
             press: value.press,
             cancel: value.cancel,
@@ -345,44 +349,16 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for Ani
 }
 
 impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
-    pub fn new(value: T) -> Self {
-        AnimatedBundle {
-            idle: value,
-            ..default()
-        }
-    }
-
-    pub fn hover(self, value: T) -> Self {
-        Self {
-            hover: value.into(),
-            ..self
-        }
-    }
-
-    pub fn press(self, value: T) -> Self {
-        Self {
-            press: value.into(),
-            ..self
-        }
-    }
-
-    pub fn cancel(self, value: T) -> Self {
-        Self {
-            cancel: value.into(),
-            ..self
-        }
-    }
-
     pub fn interaction_style(&self, interaction: InteractionStyle) -> T {
         match interaction {
-            InteractionStyle::Base => self.idle.clone(),
+            InteractionStyle::Idle => self.idle.clone(),
             InteractionStyle::Hover => self.hover.clone().unwrap_or(self.idle.clone()),
             InteractionStyle::Press => self
                 .press
                 .clone()
                 .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
             InteractionStyle::Cancel => self.cancel.clone().unwrap_or(self.idle.clone()),
-            InteractionStyle::BaseAlt => self
+            InteractionStyle::IdleAlt => self
                 .idle_alt
                 .clone()
                 .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
@@ -391,6 +367,7 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
                 .press_alt
                 .clone()
                 .unwrap_or(self.hover.clone().unwrap_or(self.idle.clone())),
+            InteractionStyle::Enter => self.enter_from.clone().unwrap_or(self.idle.clone()),
         }
     }
 
@@ -459,7 +436,7 @@ impl<'a> AnimatedStyleBuilder<'a> {
 
     pub fn custom(
         &'a mut self,
-        callback: impl Into<fn(Entity, AnimationState, &mut World)>,
+        callback: fn(Entity, AnimationState, &mut World),
     ) -> &'a mut StyleAnimation {
         let attribute = DynamicStyleAttribute::Animated {
             attribute: AnimatedStyleAttribute::Custom(callback.into()),

@@ -11,11 +11,12 @@ use crate::{ui_style::AnimatedBundle, FluxInteraction, StopwatchLock};
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InteractionStyle {
     #[default]
-    Base,
+    Enter,
+    Idle,
     Hover,
     Press,
     Cancel,
-    BaseAlt,
+    IdleAlt,
     HoverAlt,
     PressAlt,
 }
@@ -23,13 +24,13 @@ pub enum InteractionStyle {
 impl From<FluxInteraction> for InteractionStyle {
     fn from(value: FluxInteraction) -> Self {
         match value {
-            FluxInteraction::None => Self::Base,
+            FluxInteraction::None => Self::Idle,
             FluxInteraction::PointerEnter => Self::Hover,
-            FluxInteraction::PointerLeave => Self::Base,
+            FluxInteraction::PointerLeave => Self::Idle,
             FluxInteraction::Pressed => Self::Press,
             FluxInteraction::Released => Self::Hover,
             FluxInteraction::PressCanceled => Self::Cancel,
-            FluxInteraction::Disabled => Self::Base,
+            FluxInteraction::Disabled => Self::Idle,
         }
     }
 }
@@ -43,13 +44,14 @@ impl From<&FluxInteraction> for InteractionStyle {
 impl InteractionStyle {
     fn alt(&self) -> Option<InteractionStyle> {
         match self {
-            InteractionStyle::Base => InteractionStyle::BaseAlt.into(),
+            InteractionStyle::Idle => InteractionStyle::IdleAlt.into(),
             InteractionStyle::Hover => InteractionStyle::HoverAlt.into(),
             InteractionStyle::Press => InteractionStyle::PressAlt.into(),
             InteractionStyle::Cancel => None,
-            InteractionStyle::BaseAlt => InteractionStyle::Base.into(),
+            InteractionStyle::IdleAlt => InteractionStyle::Idle.into(),
             InteractionStyle::HoverAlt => InteractionStyle::Hover.into(),
             InteractionStyle::PressAlt => InteractionStyle::Press.into(),
+            InteractionStyle::Enter => None,
         }
     }
 }
@@ -66,6 +68,14 @@ impl AnimationState {
         bundle: &AnimatedBundle<T>,
     ) -> T {
         self.result.extract(bundle)
+    }
+
+    pub fn is_entering(&self) -> bool {
+        match self.result {
+            AnimationResult::Hold(style) => style == InteractionStyle::Enter,
+            AnimationResult::Interpolate { from, .. } => from == InteractionStyle::Enter,
+            _ => false,
+        }
     }
 }
 
@@ -223,6 +233,7 @@ impl LoopedAnimationConfig {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct StyleAnimation {
+    pub enter: Option<AnimationConfig>,
     pub non_interacted: Option<AnimationConfig>,
     pub pointer_enter: Option<AnimationConfig>,
     pub pointer_leave: Option<AnimationConfig>,
@@ -320,6 +331,7 @@ impl StyleAnimation {
     }
 
     pub fn copy_from(&mut self, other: Self) -> &mut Self {
+        self.enter = other.enter;
         self.non_interacted = other.non_interacted;
         self.pointer_enter = other.pointer_enter;
         self.pointer_leave = other.pointer_leave;
@@ -335,6 +347,7 @@ impl StyleAnimation {
         self
     }
 
+    transition_animation_setter!(enter);
     transition_animation_setter!(non_interacted);
     transition_from_animation_setter!(non_interacted, non_interacted_from);
     transition_animation_setter!(pointer_enter);
@@ -360,7 +373,7 @@ impl StyleAnimation {
 
     fn to_tween(&self, flux_interaction: &FluxInteraction) -> Option<AnimationConfig> {
         match flux_interaction {
-            FluxInteraction::None => self.non_interacted,
+            FluxInteraction::None => self.enter,
             FluxInteraction::PointerEnter => self.pointer_enter,
             FluxInteraction::PointerLeave => self.pointer_leave,
             FluxInteraction::Pressed => self.press,
@@ -372,7 +385,7 @@ impl StyleAnimation {
 
     fn to_loop_tween(&self, flux_interaction: &FluxInteraction) -> Option<LoopedAnimationConfig> {
         match flux_interaction {
-            FluxInteraction::None => self.idle,
+            FluxInteraction::None => None,
             FluxInteraction::PointerEnter => self.hover,
             FluxInteraction::PointerLeave => self.idle,
             FluxInteraction::Pressed => self.pressed,
@@ -393,7 +406,7 @@ impl StyleAnimation {
         };
 
         let state_animation = match flux_interaction {
-            FluxInteraction::None => StyleAnimation::state_lock_duration(self.idle),
+            FluxInteraction::None => StopwatchLock::None,
             FluxInteraction::PointerEnter => StyleAnimation::state_lock_duration(self.hover),
             FluxInteraction::PointerLeave => StyleAnimation::state_lock_duration(self.idle),
             FluxInteraction::Pressed => StyleAnimation::state_lock_duration(self.pressed),
@@ -418,7 +431,6 @@ impl StyleAnimation {
             return StopwatchLock::None;
         };
 
-        // Add loop gap
         match tween.loop_type() {
             AnimationLoop::None => StopwatchLock::Duration(Duration::from_secs_f32(
                 tween.start_delay() + tween.duration,
@@ -441,19 +453,19 @@ impl StyleAnimation {
         mut elapsed: f32,
     ) -> AnimationState {
         let mut target_style: InteractionStyle = flux_interaction.into();
-        let mut tween = self.to_tween(flux_interaction);
+        let mut tween = self.to_tween(&flux_interaction);
 
         if target_style == InteractionStyle::Cancel {
             if let Some(cancel_tween) = tween {
                 let cancel_tween_length = cancel_tween.duration + cancel_tween.delay();
 
                 if elapsed >= cancel_tween_length {
-                    target_style = InteractionStyle::Base;
+                    target_style = InteractionStyle::Idle;
                     tween = self.cancel_reset;
                     elapsed -= cancel_tween_length;
                 }
             } else {
-                target_style = InteractionStyle::Base;
+                target_style = InteractionStyle::Idle;
                 tween = self.cancel_reset;
             }
         }
@@ -494,7 +506,7 @@ impl StyleAnimation {
         if elapsed > (tween_time + delay) {
             // Do loop or hold
             let (Some(alt_tween), Some(alt_target)) =
-                (self.to_loop_tween(flux_interaction), target_style.alt())
+                (self.to_loop_tween(&flux_interaction), target_style.alt())
             else {
                 return AnimationState {
                     result: AnimationResult::Hold(target_style),

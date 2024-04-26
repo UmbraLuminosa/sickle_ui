@@ -118,13 +118,21 @@ pub struct DynamicStyleController {
     pub animation: StyleAnimation,
     current_state: AnimationState,
     dirty: bool,
+    entering: bool,
 }
 
 impl DynamicStyleController {
     pub fn update(&mut self, flux_interaction: &FluxInteraction, elapsed: f32) {
-        let new_state = self
-            .animation
-            .update(&self.current_state, flux_interaction, elapsed);
+        let new_state = self.animation.update(
+            &self.current_state,
+            match self.current_state.is_entering() {
+                true => &FluxInteraction::None,
+                false => flux_interaction,
+            },
+            elapsed,
+        );
+
+        self.entering = new_state.is_entering();
 
         if new_state != self.current_state {
             // info!("{:?}", new_state);
@@ -139,6 +147,10 @@ impl DynamicStyleController {
 
     pub fn dirty(&self) -> bool {
         self.dirty
+    }
+
+    pub fn entering(&self) -> bool {
+        self.entering
     }
 
     pub fn copy_state_from(&mut self, other: &DynamicStyleController) {
