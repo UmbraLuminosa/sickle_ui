@@ -6,7 +6,7 @@ use sickle_math::{
     lerp::Lerp,
 };
 
-use crate::{ui_style::AnimatedBundle, FluxInteraction, FluxInteractionStopwatch, StopwatchLock};
+use crate::{ui_style::AnimatedBundle, FluxInteraction, StopwatchLock};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InteractionStyle {
@@ -112,13 +112,13 @@ impl AnimationResult {
     }
 }
 
-//  TODO: Add support for continous animations, i.e. loop, ping-pong
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AnimationLoop {
     #[default]
     None,
     Continous,
-    /// Repeat animation u8 number of times. Reset to start value second argument is true.
+    /// Repeat animation u8 number of times. Once the animation is completed
+    /// it will reset to the start value if the second argument is set to true.
     Times(u8, bool),
     PingPongContinous,
     PingPong(u8),
@@ -438,11 +438,10 @@ impl StyleAnimation {
         &self,
         prev_state: &AnimationState,
         flux_interaction: &FluxInteraction,
-        stopwatch: &FluxInteractionStopwatch,
+        mut elapsed: f32,
     ) -> AnimationState {
         let mut target_style: InteractionStyle = flux_interaction.into();
         let mut tween = self.to_tween(flux_interaction);
-        let mut elapsed = stopwatch.0.elapsed_secs();
 
         if target_style == InteractionStyle::Cancel {
             if let Some(cancel_tween) = tween {

@@ -1,6 +1,6 @@
 use crate::{
     ui_style::{AnimatedStyleAttribute, InteractiveStyleAttribute, StaticStyleAttribute},
-    FluxInteraction, FluxInteractionStopwatch,
+    FluxInteraction,
 };
 
 use super::{AnimationState, StyleAnimation};
@@ -111,16 +111,6 @@ impl DynamicStyleAttribute {
 
         Ok(controller)
     }
-
-    pub fn update(
-        &mut self,
-        flux_interaction: &FluxInteraction,
-        stopwatch: &FluxInteractionStopwatch,
-    ) {
-        if let DynamicStyleAttribute::Animated { controller, .. } = self {
-            controller.update(flux_interaction, stopwatch);
-        }
-    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -131,14 +121,10 @@ pub struct DynamicStyleController {
 }
 
 impl DynamicStyleController {
-    pub fn update(
-        &mut self,
-        flux_interaction: &FluxInteraction,
-        stopwatch: &FluxInteractionStopwatch,
-    ) {
+    pub fn update(&mut self, flux_interaction: &FluxInteraction, elapsed: f32) {
         let new_state = self
             .animation
-            .update(&self.current_state, flux_interaction, stopwatch);
+            .update(&self.current_state, flux_interaction, elapsed);
 
         if new_state != self.current_state {
             // info!("{:?}", new_state);

@@ -14,7 +14,7 @@ impl Plugin for FluxInteractionPlugin {
                 (
                     tick_flux_interaction_stopwatch,
                     update_flux_interaction,
-                    reset_stopwatch_on_change,
+                    reset_flux_interaction_stopwatch_on_change,
                     update_prev_interaction,
                 )
                     .chain()
@@ -23,7 +23,6 @@ impl Plugin for FluxInteractionPlugin {
     }
 }
 
-// TODO: calculate value based on theme tween lengths and submenu timings
 #[derive(Resource, Clone, Debug, Reflect)]
 pub struct FluxInteractionConfig {
     pub max_interaction_duration: f32,
@@ -181,7 +180,6 @@ impl FluxInteractionStopwatchLock {
         self.0.is_empty()
     }
 }
-// TODO: Add FluxInteractionStopwatchLock (sparse set)
 
 #[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq, Reflect)]
 #[reflect(Component, PartialEq)]
@@ -195,14 +193,14 @@ pub enum PrevInteraction {
 fn tick_flux_interaction_stopwatch(
     config: Res<FluxInteractionConfig>,
     time: Res<Time<Real>>,
-    mut q_stopwatch: Query<(
+    mut q_stopwatches: Query<(
         Entity,
         &mut FluxInteractionStopwatch,
         Option<&FluxInteractionStopwatchLock>,
     )>,
     mut commands: Commands,
 ) {
-    for (entity, mut stopwatch, lock) in &mut q_stopwatch {
+    for (entity, mut stopwatch, lock) in &mut q_stopwatches {
         let remove_stopwatch = if let Some(lock) = lock {
             match lock.min_duration() {
                 StopwatchLock::None => {
@@ -250,7 +248,7 @@ fn update_flux_interaction(
     }
 }
 
-fn reset_stopwatch_on_change(
+fn reset_flux_interaction_stopwatch_on_change(
     mut q_stopwatch: Query<
         (Entity, Option<&mut FluxInteractionStopwatch>),
         Changed<FluxInteraction>,
