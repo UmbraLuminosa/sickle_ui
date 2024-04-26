@@ -118,19 +118,32 @@ pub enum AnimationLoop {
     #[default]
     None,
     Continous,
-    Times(u8),
+    /// Repeat animation u8 number of times. Reset to start value second argument is true.
+    Times(u8, bool),
     PingPongContinous,
     PingPong(u8),
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct AnimationConfig {
-    duration: f32,
-    easing: Option<Ease>,
-    delay: Option<f32>,
+    pub duration: f32,
+    pub easing: Option<Ease>,
+    pub delay: Option<f32>,
 }
 
 impl AnimationConfig {
+    pub fn new(
+        duration: f32,
+        easing: impl Into<Option<Ease>>,
+        delay: impl Into<Option<f32>>,
+    ) -> AnimationConfig {
+        AnimationConfig {
+            duration,
+            easing: easing.into(),
+            delay: delay.into(),
+        }
+    }
+
     fn delay(&self) -> f32 {
         match self.delay {
             Some(delay) => delay,
@@ -148,14 +161,30 @@ impl AnimationConfig {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LoopedAnimationConfig {
-    duration: f32,
-    easing: Option<Ease>,
-    start_delay: Option<f32>,
-    loop_gap: Option<f32>,
-    loop_type: Option<AnimationLoop>,
+    pub duration: f32,
+    pub easing: Option<Ease>,
+    pub start_delay: Option<f32>,
+    pub loop_gap: Option<f32>,
+    pub loop_type: Option<AnimationLoop>,
 }
 
 impl LoopedAnimationConfig {
+    pub fn new(
+        duration: f32,
+        easing: impl Into<Option<Ease>>,
+        start_delay: impl Into<Option<f32>>,
+        loop_gap: impl Into<Option<f32>>,
+        loop_type: impl Into<Option<AnimationLoop>>,
+    ) -> LoopedAnimationConfig {
+        LoopedAnimationConfig {
+            duration,
+            easing: easing.into(),
+            start_delay: start_delay.into(),
+            loop_gap: loop_gap.into(),
+            loop_type: loop_type.into(),
+        }
+    }
+
     fn start_delay(&self) -> f32 {
         match self.start_delay {
             Some(delay) => delay,
@@ -194,17 +223,17 @@ impl LoopedAnimationConfig {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct StyleAnimation {
-    non_interacted: Option<AnimationConfig>,
-    pointer_enter: Option<AnimationConfig>,
-    pointer_leave: Option<AnimationConfig>,
-    press: Option<AnimationConfig>,
-    release: Option<AnimationConfig>,
-    cancel: Option<AnimationConfig>,
-    cancel_reset: Option<AnimationConfig>,
-    disable: Option<AnimationConfig>,
-    idle: Option<LoopedAnimationConfig>,
-    hover: Option<LoopedAnimationConfig>,
-    pressed: Option<LoopedAnimationConfig>,
+    pub non_interacted: Option<AnimationConfig>,
+    pub pointer_enter: Option<AnimationConfig>,
+    pub pointer_leave: Option<AnimationConfig>,
+    pub press: Option<AnimationConfig>,
+    pub release: Option<AnimationConfig>,
+    pub cancel: Option<AnimationConfig>,
+    pub cancel_reset: Option<AnimationConfig>,
+    pub disable: Option<AnimationConfig>,
+    pub idle: Option<LoopedAnimationConfig>,
+    pub hover: Option<LoopedAnimationConfig>,
+    pub pressed: Option<LoopedAnimationConfig>,
 }
 
 macro_rules! transition_animation_setter {
@@ -214,13 +243,23 @@ macro_rules! transition_animation_setter {
             duration: f32,
             easing: impl Into<Option<Ease>>,
             delay: impl Into<Option<f32>>,
-        ) -> &mut StyleAnimation {
+        ) -> &mut Self {
             let config = AnimationConfig {
                 duration,
                 easing: easing.into(),
                 delay: delay.into(),
             };
             self.$setter = Some(config);
+
+            self
+        }
+    };
+}
+
+macro_rules! transition_from_animation_setter {
+    ($setter:ident, $setter_from:ident) => {
+        pub fn $setter_from(&mut self, config: impl Into<Option<AnimationConfig>>) -> &mut Self {
+            self.$setter = config.into();
 
             self
         }
@@ -236,7 +275,7 @@ macro_rules! state_animation_setter {
             start_delay: impl Into<Option<f32>>,
             loop_gap: impl Into<Option<f32>>,
             loop_type: impl Into<Option<AnimationLoop>>,
-        ) -> &mut StyleAnimation {
+        ) -> &mut Self {
             if duration <= 0. {
                 warn!("Invalid animation duration used: {}", duration);
             }
@@ -255,22 +294,69 @@ macro_rules! state_animation_setter {
     };
 }
 
+macro_rules! state_from_animation_setter {
+    ($setter:ident, $setter_from:ident) => {
+        pub fn $setter_from(
+            &mut self,
+            config: impl Into<Option<LoopedAnimationConfig>>,
+        ) -> &mut Self {
+            if let Some(config) = config.into() {
+                if config.duration <= 0. {
+                    warn!("Invalid animation duration used: {}", config.duration);
+                }
+                self.$setter = Some(config);
+            } else {
+                self.$setter = None;
+            }
+
+            self
+        }
+    };
+}
+
 impl StyleAnimation {
     pub fn new() -> Self {
         Self { ..default() }
     }
 
+    pub fn copy_from(&mut self, other: Self) -> &mut Self {
+        self.non_interacted = other.non_interacted;
+        self.pointer_enter = other.pointer_enter;
+        self.pointer_leave = other.pointer_leave;
+        self.press = other.press;
+        self.release = other.release;
+        self.cancel = other.cancel;
+        self.cancel_reset = other.cancel_reset;
+        self.disable = other.disable;
+        self.idle = other.idle;
+        self.hover = other.hover;
+        self.pressed = other.pressed;
+
+        self
+    }
+
     transition_animation_setter!(non_interacted);
+    transition_from_animation_setter!(non_interacted, non_interacted_from);
     transition_animation_setter!(pointer_enter);
+    transition_from_animation_setter!(pointer_enter, pointer_enter_from);
     transition_animation_setter!(pointer_leave);
+    transition_from_animation_setter!(pointer_leave, pointer_leave_from);
     transition_animation_setter!(press);
+    transition_from_animation_setter!(press, press_from);
     transition_animation_setter!(release);
+    transition_from_animation_setter!(release, release_from);
     transition_animation_setter!(cancel);
+    transition_from_animation_setter!(cancel, cancel_from);
     transition_animation_setter!(cancel_reset);
+    transition_from_animation_setter!(cancel_reset, cancel_reset_from);
     transition_animation_setter!(disable);
+    transition_from_animation_setter!(disable, disable_from);
     state_animation_setter!(idle);
+    state_from_animation_setter!(idle, idle_from);
     state_animation_setter!(hover);
+    state_from_animation_setter!(hover, hover_from);
     state_animation_setter!(pressed);
+    state_from_animation_setter!(pressed, pressed_from);
 
     fn to_tween(&self, flux_interaction: &FluxInteraction) -> Option<AnimationConfig> {
         match flux_interaction {
@@ -338,7 +424,7 @@ impl StyleAnimation {
                 tween.start_delay() + tween.duration,
             )),
             AnimationLoop::Continous => StopwatchLock::Infinite,
-            AnimationLoop::Times(n) => StopwatchLock::Duration(Duration::from_secs_f32(
+            AnimationLoop::Times(n, _) => StopwatchLock::Duration(Duration::from_secs_f32(
                 tween.start_delay() + (tween.duration * n as f32) + (tween.loop_gap() * n as f32),
             )),
             AnimationLoop::PingPongContinous => StopwatchLock::Infinite,
@@ -456,10 +542,13 @@ impl StyleAnimation {
         let even = iteration % 2 == 0;
 
         match tween.loop_type() {
-            AnimationLoop::Times(times) => {
+            AnimationLoop::Times(times, reset) => {
                 if iteration >= times as usize {
                     return AnimationState {
-                        result: AnimationResult::Hold(alt_target),
+                        result: AnimationResult::Hold(match reset {
+                            true => target_style,
+                            false => alt_target,
+                        }),
                         iteration: (iteration % 255) as u8,
                     };
                 }

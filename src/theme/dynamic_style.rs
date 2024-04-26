@@ -121,6 +121,8 @@ fn update_dynamic_style_on_stopwatch_change(
     >,
     mut commands: Commands,
 ) {
+    // TODO: Looped animation should use their own stopwatch
+    // TODO: Add reset flag to times loops
     for (entity, mut style, interaction, stopwatch) in &mut q_styles {
         let style_changed = style.is_changed();
         let style = style.bypass_change_detection();
