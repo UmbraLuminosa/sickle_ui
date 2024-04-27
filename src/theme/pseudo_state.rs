@@ -32,6 +32,10 @@ impl PseudoStates {
         Self(Vec::new())
     }
 
+    pub fn has(&self, state: PseudoState) -> bool {
+        self.0.contains(&state)
+    }
+
     pub fn add(&mut self, state: PseudoState) {
         if !self.0.contains(&state) {
             self.0.push(state);
@@ -46,13 +50,11 @@ impl PseudoStates {
         }
     }
 
-    /// Compares the current list of PseudoStates with the provided `set`
-    /// Returns `true` only when the contents of the set and the list is the same (order doesn't matter)
-    pub fn in_state(&self, set: &Vec<PseudoState>) -> bool {
-        set.iter().all(|s| self.0.contains(s)) && self.0.iter().all(|s| set.contains(s))
-    }
-
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn get(&self) -> &Vec<PseudoState> {
+        &self.0
     }
 }

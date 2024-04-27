@@ -101,6 +101,10 @@ impl PseudoTheme {
         }
     }
 
+    pub fn builder(&self) -> &DynamicStyleBuilder {
+        &self.builder
+    }
+
     pub fn build(
         state: impl Into<Option<Vec<PseudoState>>>,
         builder: fn(&mut StyleBuilder),
@@ -138,10 +142,20 @@ impl PseudoTheme {
         self.state.is_none()
     }
 
-    pub fn for_state(&self, pseudo_states: &PseudoStates) -> bool {
+    pub fn count_match(&self, node_states: &Vec<PseudoState>) -> usize {
         match &self.state {
-            Some(states) => pseudo_states.in_state(states),
-            None => false,
+            // Only consider pseudo themes that are specific to an inclusive substet of the themed element's pseudo states.
+            // A theme for [Checked, Disabled] will apply to elements with [Checked, Disabled, FirstChild],
+            // but will not apply to elements with [Checked] (because the theme targets more specific elements)
+            // or [Checked, FirstChild] (because they are disjoint)
+            Some(targeted_states) => match targeted_states
+                .iter()
+                .all(|state| node_states.contains(state))
+            {
+                true => targeted_states.len(),
+                false => 0,
+            },
+            None => 0,
         }
     }
 }
@@ -152,37 +166,22 @@ where
     C: Component,
 {
     context: PhantomData<C>,
-    styles: Vec<PseudoTheme>,
+    pseudo_themes: Vec<PseudoTheme>,
 }
 
 impl<C> Theme<C>
 where
     C: Component,
 {
-    pub fn new(styles: impl Into<Vec<PseudoTheme>>) -> Self {
+    pub fn new(pseudo_themes: impl Into<Vec<PseudoTheme>>) -> Self {
         Self {
             context: PhantomData,
-            styles: styles.into(),
+            pseudo_themes: pseudo_themes.into(),
         }
     }
-}
 
-impl<C> Theme<C>
-where
-    C: Component,
-{
-    pub fn base_builder(&self) -> Option<DynamicStyleBuilder> {
-        self.styles
-            .iter()
-            .find(|pseudo_theme| pseudo_theme.is_base_theme())
-            .map(|pseudo_theme| pseudo_theme.builder.clone())
-    }
-
-    pub fn builder_for(&self, pseudo_states: &PseudoStates) -> Option<DynamicStyleBuilder> {
-        self.styles
-            .iter()
-            .find(|pseudo_theme| pseudo_theme.for_state(pseudo_states))
-            .map(|pseudo_theme| pseudo_theme.builder.clone())
+    pub fn pseudo_themes(&self) -> &Vec<PseudoTheme> {
+        &self.pseudo_themes
     }
 
     pub fn post_update() -> impl IntoSystemConfigs<()> {
@@ -221,7 +220,8 @@ where
     }
 
     fn process_updated_pseudo_states(
-        q_changed_targets: Query<Entity, Changed<PseudoStates>>,
+        q_targets: Query<Entity, With<C>>,
+        q_changed_targets: Query<Entity, (With<C>, Changed<PseudoStates>)>,
         mut q_removed_targets: RemovedComponents<PseudoStates>,
         mut commands: Commands,
     ) {
@@ -230,7 +230,9 @@ where
         }
 
         for entity in q_removed_targets.read() {
-            commands.entity(entity).refresh_theme::<C>();
+            if q_targets.contains(entity) {
+                commands.entity(entity).refresh_theme::<C>();
+            }
         }
     }
 }

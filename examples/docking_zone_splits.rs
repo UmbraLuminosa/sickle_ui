@@ -79,7 +79,29 @@ impl ThemeTestBox {
             checked_style.background_color(Color::GRAY);
         });
 
-        Theme::<ThemeTestBox>::new(vec![base_style, checked_style])
+        let checked_empty_style = PseudoTheme::build(
+            vec![PseudoState::Checked, PseudoState::Empty],
+            |checked_empty_style| {
+                checked_empty_style.background_color(Color::SEA_GREEN);
+            },
+        );
+        let checked_empty_selected_style = PseudoTheme::build(
+            vec![
+                PseudoState::Checked,
+                PseudoState::Empty,
+                PseudoState::Selected,
+            ],
+            |checked_empty_selected_style| {
+                checked_empty_selected_style.background_color(Color::RED);
+            },
+        );
+
+        Theme::<ThemeTestBox>::new(vec![
+            base_style,
+            checked_style,
+            checked_empty_style,
+            checked_empty_selected_style,
+        ])
     }
 
     fn override_theme() -> Theme<ThemeTestBox> {
@@ -151,20 +173,33 @@ fn update_theme_data_on_press(
 }
 
 fn update_test_pseudo_state_on_press(
-    q_test_boxes: Query<
-        (Entity, &FluxInteraction, Option<&PseudoStates>),
+    mut q_test_boxes: Query<
+        (Entity, &FluxInteraction, Option<&mut PseudoStates>),
         (With<ThemeTestBox>, Changed<FluxInteraction>),
     >,
     mut commands: Commands,
 ) {
-    for (entity, interaction, pseudo_states) in &q_test_boxes {
+    for (entity, interaction, pseudo_states) in &mut q_test_boxes {
         if interaction.is_released() {
-            if let Some(_) = pseudo_states {
-                commands.entity(entity).remove::<PseudoStates>();
+            if let Some(mut pseudo_states) = pseudo_states {
+                match pseudo_states.get().len() {
+                    0 => pseudo_states.add(PseudoState::Checked),
+                    1 => pseudo_states.add(PseudoState::Empty),
+                    2 => match pseudo_states.has(PseudoState::Empty) {
+                        true => {
+                            pseudo_states.add(PseudoState::Selected);
+                        }
+                        false => {
+                            commands.entity(entity).remove::<PseudoStates>();
+                        }
+                    },
+                    3 => {
+                        pseudo_states.remove(PseudoState::Empty);
+                    }
+                    _ => (),
+                }
             } else {
-                let mut new_state = PseudoStates::new();
-                new_state.add(PseudoState::Checked);
-
+                let new_state = PseudoStates::new();
                 commands.entity(entity).insert(new_state);
             }
         }
@@ -227,6 +262,15 @@ fn setup(
                 };
                 let value = animation_state.extract(&bundle);
                 transform.scale = Vec3::ONE * value;
+            })
+            .enter(0.3, Ease::OutExpo, None);
+
+        base_style
+            .animated()
+            .background_color(AnimatedBundle {
+                idle: Color::DARK_GRAY,
+                enter_from: Color::rgba(0.5, 0.5, 0.5, 0.).into(),
+                ..default()
             })
             .enter(0.3, Ease::OutExpo, None);
     });

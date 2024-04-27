@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, DynamicStyleBuilder, Theme,
-        ThemeData,
+        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, DynamicStyleBuilder, PseudoTheme,
+        Theme, ThemeData,
     },
     ui_style::StyleBuilder,
     FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,
@@ -330,19 +330,80 @@ where
     context: PhantomData<C>,
 }
 
-impl<C> RefreshEntityTheme<C>
+impl<C> EntityCommand for RefreshEntityTheme<C>
 where
     C: Component,
 {
-    fn merge_theme_chain(
-        theme_chain: Vec<DynamicStyleBuilder>,
-        base: Option<DynamicStyle>,
-        theme_data: &ThemeData,
-        world: &mut World,
-    ) -> Option<DynamicStyle> {
-        theme_chain
+    fn apply(self, entity: Entity, world: &mut World) {
+        let theme_data = world.resource::<ThemeData>().clone();
+        let pseudo_states = world.get::<PseudoStates>(entity);
+        let empty_pseudo_state = Vec::new();
+
+        // TODO: Remove allocation and use reference instead
+        let pseudo_states = match pseudo_states {
+            Some(pseudo_states) => pseudo_states.get(),
+            None => &empty_pseudo_state,
+        };
+
+        // Default -> General (App-wide) -> Specialized (Screen) theming is a reasonable guess.
+        // Round to 4, which is the first growth step.
+        // TODO: Cache most common theme count in theme data.
+        let mut themes: Vec<&Theme<C>> = Vec::with_capacity(4);
+        // Add own theme
+        if let Some(own_theme) = world.get::<Theme<C>>(entity) {
+            themes.push(own_theme);
+        }
+
+        // Add all ancestor themes
+        let mut current_ancestor = entity;
+        while let Some(parent) = world.get::<Parent>(current_ancestor) {
+            current_ancestor = parent.get();
+            if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
+                themes.push(ancestor_theme);
+            }
+        }
+
+        if themes.len() == 0 {
+            warn!(
+                "Theme missing for component {} on entity: {:?}",
+                std::any::type_name::<C>(),
+                entity
+            );
+            return;
+        };
+
+        // The list contains themes in reverse order of application
+        themes.reverse();
+
+        // Assuming we have a base style and two-three pseudo state style is a reasonable guess.
+        // TODO: Cache most common pseudo theme count in theme data.
+        let mut pseudo_themes: Vec<&PseudoTheme> = Vec::with_capacity(themes.len() * 4);
+
+        for theme in &themes {
+            if let Some(base_theme) = theme.pseudo_themes().iter().find(|pt| pt.is_base_theme()) {
+                pseudo_themes.push(base_theme);
+            }
+        }
+
+        if pseudo_states.len() > 0 {
+            for i in 0..pseudo_states.len() {
+                for theme in &themes {
+                    theme
+                        .pseudo_themes()
+                        .iter()
+                        .filter(|pt| pt.count_match(pseudo_states) == i + 1)
+                        .for_each(|pt| pseudo_themes.push(pt));
+                }
+            }
+        }
+
+        // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
+        let style: Option<DynamicStyle> = pseudo_themes
             .iter()
-            .map(|dynamic_style_builder| match dynamic_style_builder {
+            .map(|pseudo_theme| pseudo_theme.builder().clone())
+            .collect::<Vec<DynamicStyleBuilder>>()
+            .iter()
+            .map(|builder| match builder {
                 DynamicStyleBuilder::Static(style) => style.clone(),
                 DynamicStyleBuilder::StyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
@@ -357,98 +418,10 @@ where
                     style_builder.into()
                 }
             })
-            .fold(base, |acc, dynamic_style| match acc {
+            .fold(None, |acc, dynamic_style| match acc {
                 Some(prev_style) => prev_style.merge(dynamic_style).into(),
                 None => dynamic_style.into(),
-            })
-    }
-}
-
-impl<C> EntityCommand for RefreshEntityTheme<C>
-where
-    C: Component,
-{
-    fn apply(self, entity: Entity, world: &mut World) {
-        let theme_data = world.resource::<ThemeData>().clone();
-        let pseudo_states = world.get::<PseudoStates>(entity);
-        let mut style: Option<DynamicStyle> = None;
-
-        // Default -> General (App-wide) -> Specialized (Screen) theming is a reasonable guess.
-        // Each might have a base and pseudo-specific theme.
-        let mut pseudo_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
-        let mut base_theme_chain: Vec<DynamicStyleBuilder> = Vec::with_capacity(3);
-        // TODO: Rank override pseudo-themes by state match count (precedence/priority)
-        match pseudo_states {
-            Some(pseudo_states) => {
-                // Add own theme
-                if let Some(own_theme) = world.get::<Theme<C>>(entity) {
-                    if let Some(builder) = own_theme.builder_for(pseudo_states) {
-                        pseudo_theme_chain.push(builder);
-                    }
-
-                    if let Some(builder) = own_theme.base_builder() {
-                        base_theme_chain.push(builder);
-                    }
-                }
-
-                // Add all ancestor themes
-                let mut current_ancestor = entity;
-                while let Some(parent) = world.get::<Parent>(current_ancestor) {
-                    current_ancestor = parent.get();
-                    if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
-                        if let Some(builder) = ancestor_theme.builder_for(pseudo_states) {
-                            pseudo_theme_chain.push(builder);
-                        }
-
-                        if let Some(builder) = ancestor_theme.base_builder() {
-                            base_theme_chain.push(builder);
-                        }
-                    }
-                }
-            }
-            None => {
-                // Add own theme
-                if let Some(own_theme) = world.get::<Theme<C>>(entity) {
-                    if let Some(builder) = own_theme.base_builder() {
-                        base_theme_chain.push(builder);
-                    }
-                }
-
-                // Add all ancestor themes
-                let mut current_ancestor = entity;
-                while let Some(parent) = world.get::<Parent>(current_ancestor) {
-                    current_ancestor = parent.get();
-                    if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
-                        if let Some(builder) = ancestor_theme.base_builder() {
-                            base_theme_chain.push(builder);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
-        if base_theme_chain.len() > 0 {
-            base_theme_chain.reverse();
-            style = RefreshEntityTheme::<C>::merge_theme_chain(
-                base_theme_chain,
-                style,
-                &theme_data,
-                world,
-            );
-        }
-
-        // Merge pseudo-state specific overrides, overwriting per-attribute at each level
-        if pseudo_theme_chain.len() > 0 {
-            pseudo_theme_chain.reverse();
-
-            style = RefreshEntityTheme::<C>::merge_theme_chain(
-                pseudo_theme_chain,
-                style,
-                &theme_data,
-                world,
-            );
-        }
+            });
 
         if let Some(mut style) = style {
             if let Some(current_style) = world.get::<DynamicStyle>(entity) {
