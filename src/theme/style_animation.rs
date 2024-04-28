@@ -1,6 +1,7 @@
 use std::{time::Duration, vec};
 
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use sickle_math::{
     ease::{Ease, ValueEasing},
     lerp::Lerp,
@@ -63,10 +64,7 @@ pub struct AnimationState {
 }
 
 impl AnimationState {
-    pub fn extract<T: Lerp + Default + Clone + Copy + PartialEq>(
-        &self,
-        bundle: &AnimatedBundle<T>,
-    ) -> T {
+    pub fn extract<T: Lerp + Default + Clone + PartialEq>(&self, bundle: &AnimatedBundle<T>) -> T {
         self.result.extract(bundle)
     }
 
@@ -101,10 +99,7 @@ impl Default for AnimationResult {
 }
 
 impl AnimationResult {
-    pub fn extract<T: Lerp + Default + Clone + Copy + PartialEq>(
-        &self,
-        bundle: &AnimatedBundle<T>,
-    ) -> T {
+    pub fn extract<T: Lerp + Default + Clone + PartialEq>(&self, bundle: &AnimatedBundle<T>) -> T {
         match self {
             AnimationResult::Hold(style) => bundle.interaction_style(*style),
             AnimationResult::Interpolate { from, to, t, .. } => bundle
@@ -122,7 +117,7 @@ impl AnimationResult {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Reflect, Serialize, Deserialize)]
 pub enum AnimationLoop {
     #[default]
     None,
@@ -134,7 +129,7 @@ pub enum AnimationLoop {
     PingPong(u8),
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct AnimationConfig {
     pub duration: f32,
     pub easing: Option<Ease>,
@@ -169,7 +164,7 @@ impl AnimationConfig {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct LoopedAnimationConfig {
     pub duration: f32,
     pub easing: Option<Ease>,
@@ -231,7 +226,7 @@ impl LoopedAnimationConfig {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct StyleAnimation {
     pub enter: Option<AnimationConfig>,
     pub non_interacted: Option<AnimationConfig>,

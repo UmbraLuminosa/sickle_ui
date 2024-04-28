@@ -12,3 +12,4 @@ dev = [
 
 [dependencies]
 bevy = { version = "0.13" }
+serde = { version = "1.0", features = ["derive"] }

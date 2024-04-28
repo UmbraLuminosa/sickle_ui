@@ -1,6 +1,9 @@
 use bevy::{prelude::*, time::Stopwatch, ui::UiSystem};
 
-use crate::{ui_style::UiStyleExt, FluxInteraction, StopwatchLock};
+use crate::{
+    ui_style::{LogicalEq, UiStyleExt},
+    FluxInteraction, StopwatchLock,
+};
 
 use super::*;
 
@@ -190,11 +193,14 @@ impl DynamicStyle {
         let mut new_list = self.0;
 
         for attribute in other.0 {
-            if !new_list.contains(&attribute) {
+            if !new_list.iter().any(|dsa| dsa.logical_eq(&attribute)) {
                 new_list.push(attribute);
             } else {
                 // Safe unwrap: checked in if above
-                let index = new_list.iter().position(|dsa| *dsa == attribute).unwrap();
+                let index = new_list
+                    .iter()
+                    .position(|dsa| dsa.logical_eq(&attribute))
+                    .unwrap();
                 new_list[index] = attribute;
             }
         }
@@ -212,7 +218,7 @@ impl DynamicStyle {
                 .0
                 .iter()
                 .filter(|other_attr| other_attr.is_animated())
-                .find(|other_attr| **other_attr == attribute.clone())
+                .find(|other_attr| other_attr.logical_eq(attribute))
             else {
                 continue;
             };

@@ -1,5 +1,9 @@
+use bevy::prelude::default;
+
 use crate::{
-    ui_style::{AnimatedStyleAttribute, InteractiveStyleAttribute, StaticStyleAttribute},
+    ui_style::{
+        AnimatedStyleAttribute, InteractiveStyleAttribute, LogicalEq, StaticStyleAttribute,
+    },
     FluxInteraction,
 };
 
@@ -22,27 +26,27 @@ pub enum DynamicStyleAttribute {
     },
 }
 
-impl PartialEq for DynamicStyleAttribute {
-    fn eq(&self, other: &Self) -> bool {
+impl LogicalEq for DynamicStyleAttribute {
+    fn logical_eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Static(l0), Self::Static(r0)) => l0 == r0,
-            (Self::Static(l0), Self::Interactive(r0)) => l0 == r0,
+            (Self::Static(l0), Self::Static(r0)) => l0.logical_eq(r0),
+            (Self::Static(l0), Self::Interactive(r0)) => l0.logical_eq(r0),
             (
                 Self::Static(l0),
                 Self::Animated {
                     attribute: r_attribute,
                     ..
                 },
-            ) => l0 == r_attribute,
-            (Self::Interactive(l0), Self::Interactive(r0)) => l0 == r0,
-            (Self::Interactive(l0), Self::Static(r0)) => l0 == r0,
+            ) => l0.logical_eq(r_attribute),
+            (Self::Interactive(l0), Self::Interactive(r0)) => l0.logical_eq(r0),
+            (Self::Interactive(l0), Self::Static(r0)) => l0.logical_eq(r0),
             (
                 Self::Interactive(l0),
                 Self::Animated {
                     attribute: r_attribute,
                     ..
                 },
-            ) => l0 == r_attribute,
+            ) => l0.logical_eq(r_attribute),
             (
                 Self::Animated {
                     attribute: l_attribute,
@@ -52,21 +56,21 @@ impl PartialEq for DynamicStyleAttribute {
                     attribute: r_attribute,
                     ..
                 },
-            ) => l_attribute == r_attribute,
+            ) => l_attribute.logical_eq(r_attribute),
             (
                 Self::Animated {
                     attribute: l_attribute,
                     ..
                 },
                 Self::Static(r0),
-            ) => l_attribute == r0,
+            ) => l_attribute.logical_eq(r0),
             (
                 Self::Animated {
                     attribute: l_attribute,
                     ..
                 },
                 Self::Interactive(r0),
-            ) => l_attribute == r0,
+            ) => l_attribute.logical_eq(r0),
         }
     }
 }
@@ -122,6 +126,14 @@ pub struct DynamicStyleController {
 }
 
 impl DynamicStyleController {
+    pub fn new(animation: StyleAnimation, starting_state: AnimationState) -> Self {
+        Self {
+            animation,
+            current_state: starting_state,
+            ..default()
+        }
+    }
+
     pub fn update(&mut self, flux_interaction: &FluxInteraction, elapsed: f32) {
         let new_state = self.animation.update(
             &self.current_state,

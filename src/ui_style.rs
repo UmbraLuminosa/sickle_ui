@@ -4,6 +4,7 @@ use bevy::{
     ui::FocusPolicy,
     utils::HashSet,
 };
+use serde::{Deserialize, Serialize};
 use sickle_macros::StyleCommands;
 use sickle_math::lerp::Lerp;
 
@@ -65,6 +66,14 @@ impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
         UiStyleUnchecked {
             commands: self.entity(entity),
         }
+    }
+}
+
+pub trait LogicalEq<Rhs: ?Sized = Self> {
+    fn logical_eq(&self, other: &Rhs) -> bool;
+
+    fn logical_ne(&self, other: &Rhs) -> bool {
+        !self.logical_eq(other)
     }
 }
 
@@ -244,10 +253,9 @@ enum _StyleAttributes {
     AbsolutePosition {
         absolute_position: Vec2,
     },
-    // TODO: Add FluxStopwatchLocked((None, f32, Indefinite) -> lockable
 }
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, Debug, Default, Reflect)]
 pub struct LockedStyleAttributes(HashSet<LockableStyleAttribute>);
 
 impl LockedStyleAttributes {
@@ -256,7 +264,7 @@ impl LockedStyleAttributes {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Reflect, Serialize, Deserialize)]
 pub struct StaticBundle<T: Clone + Default> {
     pub idle: T,
     pub hover: Option<T>,
@@ -315,8 +323,8 @@ impl<T: Clone + Default> StaticBundle<T> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
+#[derive(Clone, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
+pub struct AnimatedBundle<T: Lerp + Default + Clone + PartialEq> {
     pub idle: T,
     pub hover: Option<T>,
     pub press: Option<T>,
@@ -327,7 +335,7 @@ pub struct AnimatedBundle<T: Lerp + Default + Clone + Copy + PartialEq> {
     pub enter_from: Option<T>,
 }
 
-impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T> {
+impl<T: Lerp + Default + Clone + PartialEq> From<T> for AnimatedBundle<T> {
     fn from(value: T) -> Self {
         AnimatedBundle {
             idle: value,
@@ -336,7 +344,7 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> From<T> for AnimatedBundle<T>
     }
 }
 
-impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
+impl<T: Lerp + Default + Clone + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
     fn from(value: StaticBundle<T>) -> Self {
         Self {
             idle: value.idle,
@@ -348,7 +356,7 @@ impl<T: Lerp + Default + Clone + Copy + PartialEq> From<StaticBundle<T>> for Ani
     }
 }
 
-impl<T: Lerp + Default + Clone + Copy + PartialEq> AnimatedBundle<T> {
+impl<T: Lerp + Default + Clone + PartialEq> AnimatedBundle<T> {
     pub fn interaction_style(&self, interaction: InteractionStyle) -> T {
         match interaction {
             InteractionStyle::Idle => self.idle.clone(),
@@ -418,7 +426,7 @@ impl<'a> AnimatedStyleBuilder<'a> {
             .style_builder
             .attributes
             .iter()
-            .position(|attr| *attr == attribute)
+            .position(|attr| attr.logical_eq(&attribute))
             .unwrap();
 
         let DynamicStyleAttribute::Animated {
@@ -456,14 +464,14 @@ impl StyleBuilder {
         Self { attributes: vec![] }
     }
     pub fn add(&mut self, attribute: DynamicStyleAttribute) {
-        if !self.attributes.contains(&attribute) {
+        if !self.attributes.iter().any(|dsa| dsa.logical_eq(&attribute)) {
             self.attributes.push(attribute);
         } else {
             // Safe unwrap: checked in if above
             let index = self
                 .attributes
                 .iter()
-                .position(|dsa| *dsa == attribute)
+                .position(|dsa| dsa.logical_eq(&attribute))
                 .unwrap();
 
             warn!(

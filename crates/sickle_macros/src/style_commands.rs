@@ -261,8 +261,8 @@ fn prepare_static_style_attribute(
             Custom(fn(Entity, &mut World)),
         }
 
-        impl PartialEq for StaticStyleAttribute {
-            fn eq(&self, other: &Self) -> bool {
+        impl LogicalEq for StaticStyleAttribute {
+            fn logical_eq(&self, other: &Self) -> bool {
                 match (self, other) {
                     #(#eq_variants)*
                     (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
@@ -312,8 +312,8 @@ fn prepare_interactive_style_attribute(
             Custom(fn(Entity, FluxInteraction, &mut World)),
         }
 
-        impl PartialEq for InteractiveStyleAttribute {
-            fn eq(&self, other: &Self) -> bool {
+        impl LogicalEq for InteractiveStyleAttribute {
+            fn logical_eq(&self, other: &Self) -> bool {
                 match (self, other) {
                     #(#eq_variants)*
                     (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
@@ -369,14 +369,14 @@ fn prepare_animated_style_attribute(
         variants.clone().map(to_animated_style_builder_fn).collect();
 
     quote! {
-        #[derive(Clone, Debug)]
+        #[derive(Clone, Debug, PartialEq)]
         pub enum AnimatedStyleAttribute {
             #(#base_variants)*
             Custom(fn(Entity, AnimationState, &mut World)),
         }
 
-        impl PartialEq for AnimatedStyleAttribute {
-            fn eq(&self, other: &Self) -> bool {
+        impl LogicalEq for AnimatedStyleAttribute {
+            fn logical_eq(&self, other: &Self) -> bool {
                 match (self, other) {
                     #(#eq_variants)*
                     (Self::Custom(l0), Self::Custom(r0)) => l0 == r0,
@@ -460,48 +460,48 @@ fn prepare_enum_equivalence(style_attributes: &Vec<StyleAttribute>) -> proc_macr
         .collect();
 
     quote! {
-        impl PartialEq<StaticStyleAttribute> for InteractiveStyleAttribute {
-            fn eq(&self, other: &StaticStyleAttribute) -> bool {
+        impl LogicalEq<StaticStyleAttribute> for InteractiveStyleAttribute {
+            fn logical_eq(&self, other: &StaticStyleAttribute) -> bool {
                 match (self, other) {
                     #(#interactive_to_static)*
                     _ => false,
                 }
             }
         }
-        impl PartialEq<InteractiveStyleAttribute> for StaticStyleAttribute {
-            fn eq(&self, other: &InteractiveStyleAttribute) -> bool {
+        impl LogicalEq<InteractiveStyleAttribute> for StaticStyleAttribute {
+            fn logical_eq(&self, other: &InteractiveStyleAttribute) -> bool {
                 match (self, other) {
                     #(#static_to_interactive)*
                     _ => false,
                 }
             }
         }
-        impl PartialEq<InteractiveStyleAttribute> for AnimatedStyleAttribute {
-            fn eq(&self, other: &InteractiveStyleAttribute) -> bool {
+        impl LogicalEq<InteractiveStyleAttribute> for AnimatedStyleAttribute {
+            fn logical_eq(&self, other: &InteractiveStyleAttribute) -> bool {
                 match (self, other) {
                     #(#animated_to_interactive)*
                     _ => false,
                 }
             }
         }
-        impl PartialEq<AnimatedStyleAttribute> for InteractiveStyleAttribute {
-            fn eq(&self, other: &AnimatedStyleAttribute) -> bool {
+        impl LogicalEq<AnimatedStyleAttribute> for InteractiveStyleAttribute {
+            fn logical_eq(&self, other: &AnimatedStyleAttribute) -> bool {
                 match (self, other) {
                     #(#interactive_to_animated)*
                     _ => false,
                 }
             }
         }
-        impl PartialEq<StaticStyleAttribute> for AnimatedStyleAttribute {
-            fn eq(&self, other: &StaticStyleAttribute) -> bool {
+        impl LogicalEq<StaticStyleAttribute> for AnimatedStyleAttribute {
+            fn logical_eq(&self, other: &StaticStyleAttribute) -> bool {
                 match (self, other) {
                     #(#animated_to_static)*
                     _ => false,
                 }
             }
         }
-        impl PartialEq<AnimatedStyleAttribute> for StaticStyleAttribute {
-            fn eq(&self, other: &AnimatedStyleAttribute) -> bool {
+        impl LogicalEq<AnimatedStyleAttribute> for StaticStyleAttribute {
+            fn logical_eq(&self, other: &AnimatedStyleAttribute) -> bool {
                 match (self, other) {
                     #(#static_to_animated)*
                     _ => false,

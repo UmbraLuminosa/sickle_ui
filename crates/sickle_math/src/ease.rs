@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::reflect::Reflect;
+use serde::{Deserialize, Serialize};
 
 const C1_F32: f32 = 1.70158;
 const C2_F32: f32 = C1_F32 * 1.525;
@@ -19,7 +20,7 @@ const D1_F32: f32 = 2.75;
 // const N1_F64: f64 = 7.5625;
 // const D1_F64: f64 = 2.75;
 
-#[derive(Default, Copy, Clone, Debug, Hash, PartialEq, Eq, Reflect)]
+#[derive(Default, Copy, Clone, Debug, Hash, PartialEq, Eq, Reflect, Serialize, Deserialize)]
 pub enum Ease {
     #[default]
     Linear,
