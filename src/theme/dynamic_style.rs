@@ -89,7 +89,7 @@ fn update_dynamic_style_on_flux_change(
     mut q_styles: Query<
         (
             Entity,
-            &DynamicStyle,
+            Ref<DynamicStyle>,
             &FluxInteraction,
             Option<&mut DynamicStyleStopwatch>,
         ),
@@ -125,7 +125,7 @@ fn update_dynamic_style_on_flux_change(
         }
 
         if let Some(mut stopwatch) = stopwatch {
-            if !keep_stop_watch {
+            if !keep_stop_watch || style.is_changed() {
                 stopwatch.0.reset();
             }
             stopwatch.1 = lock_needed;
@@ -223,13 +223,25 @@ impl DynamicStyle {
                 continue;
             };
 
-            let Ok(controller) = attribute.controller_mut() else {
+            let DynamicStyleAttribute::Animated {
+                controller: old_controller,
+                attribute: old_attribute,
+            } = old_attribute
+            else {
                 continue;
             };
 
-            // Safe unwrap: attribute type already checked ^^
-            let old_controller = old_attribute.controller().unwrap();
-            controller.copy_state_from(old_controller);
+            let DynamicStyleAttribute::Animated {
+                ref mut controller,
+                attribute,
+            } = attribute
+            else {
+                continue;
+            };
+
+            if attribute == old_attribute && controller.animation == old_controller.animation {
+                controller.copy_state_from(old_controller);
+            }
         }
     }
 

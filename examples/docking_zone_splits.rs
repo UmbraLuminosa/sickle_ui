@@ -6,13 +6,13 @@ use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::{
         pseudo_state::{PseudoState, PseudoStates},
-        style_animation::{AnimationLoop, LoopedAnimationConfig, StyleAnimation},
+        style_animation::{AnimationLoop, LoopedAnimationConfig, AnimationSettings},
         PseudoTheme, Theme, ThemeData,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
-        AnimatedBundle, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt, SetWidthExt,
-        StaticBundle, StyleBuilder,
+        AnimatedVals, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt, SetWidthExt,
+        StaticVals, StyleBuilder,
     },
     widgets::{floating_panel::FloatingPanel, prelude::*, tab_container::UiTabContainerSubExt},
     FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
@@ -72,7 +72,7 @@ impl ThemeTestBox {
 
             base_style
                 .interactive()
-                .border_color(StaticBundle::new(Color::DARK_GRAY).hover(Color::BEIGE));
+                .border_color(StaticVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
         });
 
         let checked_style = PseudoTheme::build(vec![PseudoState::Checked], |checked_style| {
@@ -124,7 +124,7 @@ impl ThemeTestBox {
             0.1,
             AnimationLoop::Times(3, true),
         );
-        let color_bundle = AnimatedBundle {
+        let color_bundle = AnimatedVals {
             idle: data.background_color,
             hover: Color::rgb(0.5, 0.5, 1.).into(),
             press: Color::GREEN.into(),
@@ -136,7 +136,7 @@ impl ThemeTestBox {
             ..default()
         };
 
-        let mut style_animation = StyleAnimation::new();
+        let mut style_animation = AnimationSettings::new();
         style_animation
             .enter(0.3, Ease::Linear, 0.5)
             .pointer_enter(0.3, Ease::Linear, 0.5)
@@ -255,7 +255,7 @@ fn setup(
                     return;
                 };
 
-                let bundle = AnimatedBundle {
+                let bundle = AnimatedVals {
                     enter_from: Some(0.),
                     idle: 1.,
                     ..default()
@@ -267,7 +267,7 @@ fn setup(
 
         base_style
             .animated()
-            .background_color(AnimatedBundle {
+            .background_color(AnimatedVals {
                 idle: Color::DARK_GRAY,
                 enter_from: Color::rgba(0.5, 0.5, 0.5, 0.).into(),
                 ..default()

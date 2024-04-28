@@ -12,7 +12,7 @@ use crate::{
     theme::{
         dynamic_style::DynamicStyle,
         dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
-        style_animation::{AnimationState, InteractionStyle, StyleAnimation},
+        style_animation::{AnimationSettings, AnimationState, InteractionStyle},
     },
     FluxInteraction,
 };
@@ -265,22 +265,22 @@ impl LockedStyleAttributes {
 }
 
 #[derive(Clone, Copy, Debug, Default, Reflect, Serialize, Deserialize)]
-pub struct StaticBundle<T: Clone + Default> {
+pub struct StaticVals<T: Clone + Default> {
     pub idle: T,
     pub hover: Option<T>,
     pub press: Option<T>,
     pub cancel: Option<T>,
 }
 
-impl<T: Default + Clone> From<T> for StaticBundle<T> {
+impl<T: Default + Clone> From<T> for StaticVals<T> {
     fn from(value: T) -> Self {
-        StaticBundle::new(value)
+        StaticVals::new(value)
     }
 }
 
-impl<T: Clone + Default> StaticBundle<T> {
+impl<T: Clone + Default> StaticVals<T> {
     pub fn new(value: T) -> Self {
-        StaticBundle {
+        StaticVals {
             idle: value,
             ..default()
         }
@@ -324,7 +324,7 @@ impl<T: Clone + Default> StaticBundle<T> {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
-pub struct AnimatedBundle<T: Lerp + Default + Clone + PartialEq> {
+pub struct AnimatedVals<T: Lerp + Default + Clone + PartialEq> {
     pub idle: T,
     pub hover: Option<T>,
     pub press: Option<T>,
@@ -335,17 +335,17 @@ pub struct AnimatedBundle<T: Lerp + Default + Clone + PartialEq> {
     pub enter_from: Option<T>,
 }
 
-impl<T: Lerp + Default + Clone + PartialEq> From<T> for AnimatedBundle<T> {
+impl<T: Lerp + Default + Clone + PartialEq> From<T> for AnimatedVals<T> {
     fn from(value: T) -> Self {
-        AnimatedBundle {
+        AnimatedVals {
             idle: value,
             ..default()
         }
     }
 }
 
-impl<T: Lerp + Default + Clone + PartialEq> From<StaticBundle<T>> for AnimatedBundle<T> {
-    fn from(value: StaticBundle<T>) -> Self {
+impl<T: Lerp + Default + Clone + PartialEq> From<StaticVals<T>> for AnimatedVals<T> {
+    fn from(value: StaticVals<T>) -> Self {
         Self {
             idle: value.idle,
             hover: value.hover,
@@ -356,7 +356,7 @@ impl<T: Lerp + Default + Clone + PartialEq> From<StaticBundle<T>> for AnimatedBu
     }
 }
 
-impl<T: Lerp + Default + Clone + PartialEq> AnimatedBundle<T> {
+impl<T: Lerp + Default + Clone + PartialEq> AnimatedVals<T> {
     pub fn interaction_style(&self, interaction: InteractionStyle) -> T {
         match interaction {
             InteractionStyle::Idle => self.idle.clone(),
@@ -418,7 +418,7 @@ impl<'a> AnimatedStyleBuilder<'a> {
     fn add_and_extract_animation(
         &'a mut self,
         attribute: DynamicStyleAttribute,
-    ) -> &'a mut StyleAnimation {
+    ) -> &'a mut AnimationSettings {
         self.style_builder.add(attribute.clone());
 
         // Safe unwrap: we just added the entry, they are variant-equal
@@ -445,7 +445,7 @@ impl<'a> AnimatedStyleBuilder<'a> {
     pub fn custom(
         &'a mut self,
         callback: fn(Entity, AnimationState, &mut World),
-    ) -> &'a mut StyleAnimation {
+    ) -> &'a mut AnimationSettings {
         let attribute = DynamicStyleAttribute::Animated {
             attribute: AnimatedStyleAttribute::Custom(callback.into()),
             controller: DynamicStyleController::default(),

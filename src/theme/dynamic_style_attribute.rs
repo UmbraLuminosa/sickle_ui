@@ -1,4 +1,4 @@
-use bevy::prelude::default;
+use bevy::utils::default;
 
 use crate::{
     ui_style::{
@@ -7,7 +7,7 @@ use crate::{
     FluxInteraction,
 };
 
-use super::{AnimationState, StyleAnimation};
+use super::{AnimationState, InteractionStyle, AnimationSettings};
 
 #[derive(Clone, Debug)]
 pub enum DynamicStyleAttribute {
@@ -91,10 +91,7 @@ impl DynamicStyleAttribute {
     }
 
     pub fn is_animated(&self) -> bool {
-        match self {
-            DynamicStyleAttribute::Animated { .. } => true,
-            _ => false,
-        }
+        matches!(self, DynamicStyleAttribute::Animated { .. })
     }
 
     pub fn controller(&self) -> Result<&DynamicStyleController, &'static str> {
@@ -117,16 +114,27 @@ impl DynamicStyleAttribute {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DynamicStyleController {
-    pub animation: StyleAnimation,
+    pub animation: AnimationSettings,
     current_state: AnimationState,
     dirty: bool,
     entering: bool,
 }
 
+impl Default for DynamicStyleController {
+    fn default() -> Self {
+        Self {
+            animation: Default::default(),
+            current_state: Default::default(),
+            dirty: Default::default(),
+            entering: true,
+        }
+    }
+}
+
 impl DynamicStyleController {
-    pub fn new(animation: StyleAnimation, starting_state: AnimationState) -> Self {
+    pub fn new(animation: AnimationSettings, starting_state: AnimationState) -> Self {
         Self {
             animation,
             current_state: starting_state,
@@ -134,20 +142,52 @@ impl DynamicStyleController {
         }
     }
 
-    pub fn update(&mut self, flux_interaction: &FluxInteraction, elapsed: f32) {
-        let new_state = self.animation.update(
-            &self.current_state,
-            match self.current_state.is_entering() {
-                true => &FluxInteraction::None,
-                false => flux_interaction,
-            },
-            elapsed,
-        );
+    pub fn update(&mut self, flux_interaction: &FluxInteraction, mut elapsed: f32) {
+        // Pre-check if we should tick an enter frame
+        let entering = match self.animation.enter.is_some() {
+            true => self.entering,
+            false => false,
+        };
 
-        self.entering = new_state.is_entering();
+        let mut target_style: InteractionStyle = match entering {
+            true => InteractionStyle::Idle,
+            false => flux_interaction.into(),
+        };
+        let mut tween = match entering {
+            true => self.animation.enter,
+            false => self.animation.to_tween(&flux_interaction),
+        };
+        let loop_tween = match entering {
+            true => None,
+            false => self.animation.to_loop_tween(&flux_interaction),
+        };
+
+        if target_style == InteractionStyle::Cancel {
+            if let Some(cancel_tween) = tween {
+                let cancel_tween_length = cancel_tween.duration + cancel_tween.delay();
+
+                if elapsed >= cancel_tween_length {
+                    target_style = InteractionStyle::Idle;
+                    tween = self.animation.cancel_reset;
+                    elapsed -= cancel_tween_length;
+                }
+            } else {
+                target_style = InteractionStyle::Idle;
+                tween = self.animation.cancel_reset;
+            }
+        }
+
+        let new_state = self
+            .current_state
+            .tick(target_style, tween, loop_tween, elapsed);
+
+        // Remove entering flag post tick, to allow Hold to occur
+        self.entering = match self.animation.enter {
+            Some(tween) => self.entering && elapsed < (tween.duration + tween.delay()),
+            None => false,
+        };
 
         if new_state != self.current_state {
-            // info!("{:?}", new_state);
             self.current_state = new_state;
             self.dirty = true;
         }
@@ -167,6 +207,7 @@ impl DynamicStyleController {
 
     pub fn copy_state_from(&mut self, other: &DynamicStyleController) {
         self.current_state = other.current_state().clone();
-        self.dirty = other.dirty();
+        self.entering = other.entering;
+        self.dirty = other.dirty;
     }
 }
