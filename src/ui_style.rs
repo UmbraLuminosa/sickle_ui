@@ -267,8 +267,11 @@ impl LockedStyleAttributes {
 #[derive(Clone, Copy, Debug, Default, Reflect, Serialize, Deserialize)]
 pub struct StaticVals<T: Clone + Default> {
     pub idle: T,
+    #[reflect(default)]
     pub hover: Option<T>,
+    #[reflect(default)]
     pub press: Option<T>,
+    #[reflect(default)]
     pub cancel: Option<T>,
 }
 
@@ -326,12 +329,19 @@ impl<T: Clone + Default> StaticVals<T> {
 #[derive(Clone, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct AnimatedVals<T: Lerp + Default + Clone + PartialEq> {
     pub idle: T,
+    #[reflect(default)]
     pub hover: Option<T>,
+    #[reflect(default)]
     pub press: Option<T>,
+    #[reflect(default)]
     pub cancel: Option<T>,
+    #[reflect(default)]
     pub idle_alt: Option<T>,
+    #[reflect(default)]
     pub hover_alt: Option<T>,
+    #[reflect(default)]
     pub press_alt: Option<T>,
+    #[reflect(default)]
     pub enter_from: Option<T>,
 }
 
