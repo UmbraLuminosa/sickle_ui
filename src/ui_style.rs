@@ -17,6 +17,8 @@ use crate::{
     FluxInteraction,
 };
 
+use std::sync::Arc;
+
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
 }
@@ -394,6 +396,33 @@ impl<T: Lerp + Default + Clone + PartialEq> AnimatedVals<T> {
     }
 }
 
+#[derive(Clone)]
+pub struct CustomAnimatedStyleAttribute {
+    callback: Arc<dyn Fn(Entity, AnimationState, &mut World) + Send + Sync + 'static>,
+}
+
+impl CustomAnimatedStyleAttribute {
+    pub fn new(
+        callback: impl Fn(Entity, AnimationState, &mut World) + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl std::fmt::Debug for CustomAnimatedStyleAttribute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CustomAnimatedStyleAttribute").finish()
+    }
+}
+
+impl PartialEq for CustomAnimatedStyleAttribute {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.callback, &other.callback)
+    }
+}
+
 pub struct CustomInteractiveStyleAttribute {
     callback: fn(Entity, FluxInteraction, &mut World),
     flux_interaction: FluxInteraction,
@@ -405,14 +434,14 @@ impl EntityCommand for CustomInteractiveStyleAttribute {
     }
 }
 
-pub struct CustomAnimatableStyleAttribute {
-    callback: fn(Entity, AnimationState, &mut World),
+pub struct ApplyCustomAnimatadStyleAttribute {
+    callback: CustomAnimatedStyleAttribute,
     current_state: AnimationState,
 }
 
-impl EntityCommand for CustomAnimatableStyleAttribute {
+impl EntityCommand for ApplyCustomAnimatadStyleAttribute {
     fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(id, self.current_state, world);
+        (self.callback.callback)(id, self.current_state, world);
     }
 }
 
@@ -454,10 +483,10 @@ impl<'a> AnimatedStyleBuilder<'a> {
 
     pub fn custom(
         &'a mut self,
-        callback: fn(Entity, AnimationState, &mut World),
+        callback: impl Fn(Entity, AnimationState, &mut World) + Send + Sync + 'static,
     ) -> &'a mut AnimationSettings {
         let attribute = DynamicStyleAttribute::Animated {
-            attribute: AnimatedStyleAttribute::Custom(callback.into()),
+            attribute: AnimatedStyleAttribute::Custom(CustomAnimatedStyleAttribute::new(callback)),
             controller: DynamicStyleController::default(),
         };
 

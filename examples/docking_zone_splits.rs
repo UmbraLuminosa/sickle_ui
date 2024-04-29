@@ -6,7 +6,7 @@ use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::{
         pseudo_state::{PseudoState, PseudoStates},
-        style_animation::{AnimationLoop, LoopedAnimationConfig, AnimationSettings},
+        style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
         PseudoTheme, Theme, ThemeData,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},

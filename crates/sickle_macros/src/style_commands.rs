@@ -372,7 +372,7 @@ fn prepare_animated_style_attribute(
         #[derive(Clone, Debug, PartialEq)]
         pub enum AnimatedStyleAttribute {
             #(#base_variants)*
-            Custom(fn(Entity, AnimationState, &mut World)),
+            Custom(CustomAnimatedStyleAttribute),
         }
 
         impl LogicalEq for AnimatedStyleAttribute {
@@ -405,8 +405,8 @@ fn prepare_animated_style_attribute(
                     Self::Custom(callback) => {
                         ui_style
                             .entity_commands()
-                            .add(CustomAnimatableStyleAttribute {
-                                callback: *callback,
+                            .add(ApplyCustomAnimatadStyleAttribute {
+                                callback: callback.clone(),
                                 current_state: current_state.clone(),
                             });
                     }

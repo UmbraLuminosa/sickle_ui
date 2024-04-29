@@ -7,7 +7,7 @@ use crate::{
     FluxInteraction,
 };
 
-use super::{AnimationState, InteractionStyle, AnimationSettings};
+use super::{AnimationSettings, AnimationState, InteractionStyle};
 
 #[derive(Clone, Debug)]
 pub enum DynamicStyleAttribute {
