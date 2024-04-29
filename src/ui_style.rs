@@ -283,6 +283,15 @@ impl<T: Default + Clone> From<T> for StaticVals<T> {
     }
 }
 
+impl<T: Default + Clone + PartialEq> PartialEq for StaticVals<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.idle == other.idle
+            && self.hover == other.hover
+            && self.press == other.press
+            && self.cancel == other.cancel
+    }
+}
+
 impl<T: Clone + Default> StaticVals<T> {
     pub fn new(value: T) -> Self {
         StaticVals {
@@ -402,9 +411,7 @@ pub struct CustomStaticStyleAttribute {
 }
 
 impl CustomStaticStyleAttribute {
-    pub fn new(
-        callback: impl Fn(Entity, &mut World) + Send + Sync + 'static,
-    ) -> Self {
+    pub fn new(callback: impl Fn(Entity, &mut World) + Send + Sync + 'static) -> Self {
         Self {
             callback: Arc::new(callback),
         }
