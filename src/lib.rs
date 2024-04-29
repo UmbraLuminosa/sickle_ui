@@ -30,6 +30,8 @@ use widgets::WidgetsPlugin;
 
 use self::animated_interaction::AnimatedInteractionPlugin;
 
+pub use sickle_math::*;
+
 /// Core plugin.
 ///
 /// Must be added after [`DefaultPlugins`].
