@@ -309,7 +309,7 @@ fn prepare_interactive_style_attribute(
         #[derive(Clone, Debug)]
         pub enum InteractiveStyleAttribute {
             #(#base_variants)*
-            Custom(fn(Entity, FluxInteraction, &mut World)),
+            Custom(CustomInteractiveStyleAttribute),
         }
 
         impl LogicalEq for InteractiveStyleAttribute {
@@ -335,8 +335,8 @@ fn prepare_interactive_style_attribute(
                     Self::Custom(callback) => {
                         ui_style
                             .entity_commands()
-                            .add(CustomInteractiveStyleAttribute {
-                                callback: *callback,
+                            .add(ApplyCustomInteractiveStyleAttribute {
+                                callback: callback.clone(),
                                 flux_interaction,
                             });
                     }
