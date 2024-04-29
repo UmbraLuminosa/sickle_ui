@@ -379,7 +379,7 @@ impl<T: Lerp + Default + Clone + PartialEq> AnimatedVals<T> {
         }
     }
 
-    fn to_value(&self, current_state: &AnimationState) -> T {
+    pub fn to_value(&self, current_state: &AnimationState) -> T {
         current_state.extract(&self)
     }
 }
