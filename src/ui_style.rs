@@ -312,7 +312,7 @@ impl<T: Clone + Default> StaticVals<T> {
         }
     }
 
-    fn to_value(&self, flux_interaction: FluxInteraction) -> T {
+    pub fn to_value(&self, flux_interaction: FluxInteraction) -> T {
         match flux_interaction {
             FluxInteraction::None => self.idle.clone(),
             FluxInteraction::PointerEnter => self.hover.clone().unwrap_or(self.idle.clone()),
@@ -397,6 +397,33 @@ impl<T: Lerp + Default + Clone + PartialEq> AnimatedVals<T> {
 }
 
 #[derive(Clone)]
+pub struct CustomStaticStyleAttribute {
+    callback: Arc<dyn Fn(Entity, &mut World) + Send + Sync + 'static>,
+}
+
+impl CustomStaticStyleAttribute {
+    pub fn new(
+        callback: impl Fn(Entity, &mut World) + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl std::fmt::Debug for CustomStaticStyleAttribute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CustomStaticStyleAttribute").finish()
+    }
+}
+
+impl PartialEq for CustomStaticStyleAttribute {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.callback, &other.callback)
+    }
+}
+
+#[derive(Clone)]
 pub struct CustomInteractiveStyleAttribute {
     callback: Arc<dyn Fn(Entity, FluxInteraction, &mut World) + Send + Sync + 'static>,
 }
@@ -447,6 +474,16 @@ impl std::fmt::Debug for CustomAnimatedStyleAttribute {
 impl PartialEq for CustomAnimatedStyleAttribute {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.callback, &other.callback)
+    }
+}
+
+pub struct ApplyCustomStaticStyleAttribute {
+    callback: CustomStaticStyleAttribute,
+}
+
+impl EntityCommand for ApplyCustomStaticStyleAttribute {
+    fn apply(self, id: Entity, world: &mut World) {
+        (self.callback.callback)(id, world);
     }
 }
 

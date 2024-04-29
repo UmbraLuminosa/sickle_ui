@@ -258,7 +258,7 @@ fn prepare_static_style_attribute(
         #[derive(Clone, Debug)]
         pub enum StaticStyleAttribute {
             #(#base_variants)*
-            Custom(fn(Entity, &mut World)),
+            Custom(CustomStaticStyleAttribute),
         }
 
         impl LogicalEq for StaticStyleAttribute {
@@ -276,7 +276,7 @@ fn prepare_static_style_attribute(
                 match self {
                     #(#apply_variants)*
                     Self::Custom(callback) => {
-                        ui_style.entity_commands().add(*callback);
+                        ui_style.entity_commands().add(ApplyCustomStaticStyleAttribute{ callback: callback.clone() });
                     }
                 }
             }
