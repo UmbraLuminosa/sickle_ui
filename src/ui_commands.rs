@@ -339,7 +339,6 @@ where
         let pseudo_states = world.get::<PseudoStates>(entity);
         let empty_pseudo_state = Vec::new();
 
-        // TODO: Remove allocation and use reference instead
         let pseudo_states = match pseudo_states {
             Some(pseudo_states) => pseudo_states.get(),
             None => &empty_pseudo_state,

@@ -60,7 +60,7 @@ fn update_dynamic_style_static_attributes(
 ) {
     for (entity, mut style) in &mut q_styles {
         let mut had_static = false;
-        for attribute in &style.0 {
+        for attribute in &style.attributes {
             let DynamicStyleAttribute::Static(style) = attribute else {
                 continue;
             };
@@ -71,14 +71,14 @@ fn update_dynamic_style_static_attributes(
 
         if had_static {
             let style = style.bypass_change_detection();
-            style.0 = style
-                .0
+            style.attributes = style
+                .attributes
                 .iter()
                 .filter(|attr| !attr.is_static())
                 .cloned()
                 .collect();
 
-            if style.0.len() == 0 {
+            if style.attributes.len() == 0 {
                 commands.entity(entity).remove::<DynamicStyle>();
             }
         }
@@ -101,7 +101,7 @@ fn update_dynamic_style_on_flux_change(
         let mut lock_needed = StopwatchLock::None;
         let mut keep_stop_watch = false;
 
-        for attribute in &style.0 {
+        for attribute in &style.attributes {
             match attribute {
                 DynamicStyleAttribute::Interactive(style) => {
                     style.apply(*interaction, &mut commands.style(entity));
@@ -144,6 +144,7 @@ fn update_dynamic_style_on_stopwatch_change(
             &mut DynamicStyle,
             &FluxInteraction,
             Option<&DynamicStyleStopwatch>,
+            Option<&mut DynamicStyleEnterState>,
         ),
         Or<(
             Changed<DynamicStyle>,
@@ -153,11 +154,12 @@ fn update_dynamic_style_on_stopwatch_change(
     >,
     mut commands: Commands,
 ) {
-    for (entity, mut style, interaction, stopwatch) in &mut q_styles {
+    for (entity, mut style, interaction, stopwatch, enter_state) in &mut q_styles {
         let style_changed = style.is_changed();
         let style = style.bypass_change_detection();
+        let mut enter_completed = true;
 
-        for style_attribute in &mut style.0 {
+        for style_attribute in &mut style.attributes {
             let DynamicStyleAttribute::Animated {
                 attribute,
                 ref mut controller,
@@ -173,6 +175,20 @@ fn update_dynamic_style_on_stopwatch_change(
             if style_changed || controller.dirty() {
                 attribute.apply(controller.current_state(), &mut commands.style(entity));
             }
+
+            if controller.entering() {
+                enter_completed = false;
+            }
+        }
+
+        if !style.enter_completed && enter_completed {
+            style.enter_completed = true;
+        }
+
+        if let Some(mut enter_state) = enter_state {
+            if enter_state.completed != style.enter_completed {
+                enter_state.completed = style.enter_completed;
+            }
         }
     }
 }
@@ -181,18 +197,35 @@ fn update_dynamic_style_on_stopwatch_change(
 #[component(storage = "SparseSet")]
 pub struct DynamicStyleStopwatch(pub Stopwatch, pub StopwatchLock);
 
+#[derive(Component, Clone, Copy, Debug, Default, Reflect)]
+pub struct DynamicStyleEnterState {
+    completed: bool,
+}
+
+impl DynamicStyleEnterState {
+    pub fn completed(&self) -> bool {
+        self.completed
+    }
+}
+
 #[derive(Component, Clone, Debug)]
-pub struct DynamicStyle(Vec<DynamicStyleAttribute>);
+pub struct DynamicStyle {
+    attributes: Vec<DynamicStyleAttribute>,
+    enter_completed: bool,
+}
 
 impl DynamicStyle {
-    pub fn new(list: Vec<DynamicStyleAttribute>) -> Self {
-        Self(list)
+    pub fn new(attributes: Vec<DynamicStyleAttribute>) -> Self {
+        Self {
+            attributes,
+            enter_completed: false,
+        }
     }
 
     pub fn merge(self, other: DynamicStyle) -> Self {
-        let mut new_list = self.0;
+        let mut new_list = self.attributes;
 
-        for attribute in other.0 {
+        for attribute in other.attributes {
             if !new_list.iter().any(|dsa| dsa.logical_eq(&attribute)) {
                 new_list.push(attribute);
             } else {
@@ -205,17 +238,17 @@ impl DynamicStyle {
             }
         }
 
-        DynamicStyle(new_list)
+        DynamicStyle::new(new_list)
     }
 
     pub fn copy_controllers(&mut self, other: &DynamicStyle) {
-        for attribute in self.0.iter_mut() {
+        for attribute in self.attributes.iter_mut() {
             if !attribute.is_animated() {
                 continue;
             }
 
             let Some(old_attribute) = other
-                .0
+                .attributes
                 .iter()
                 .filter(|other_attr| other_attr.is_animated())
                 .find(|other_attr| other_attr.logical_eq(attribute))
@@ -246,10 +279,10 @@ impl DynamicStyle {
     }
 
     pub fn is_interactive(&self) -> bool {
-        self.0.iter().any(|attr| attr.is_interactive())
+        self.attributes.iter().any(|attr| attr.is_interactive())
     }
 
     pub fn is_animated(&self) -> bool {
-        self.0.iter().any(|attr| attr.is_animated())
+        self.attributes.iter().any(|attr| attr.is_animated())
     }
 }

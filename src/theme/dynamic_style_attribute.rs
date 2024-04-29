@@ -143,6 +143,11 @@ impl DynamicStyleController {
     }
 
     pub fn update(&mut self, flux_interaction: &FluxInteraction, mut elapsed: f32) {
+        // TODO: `enter` animation is currently played when a style animation different from
+        // the previous one is requested. This means that playing the enter animation is *contextual*
+        // and cannot be directly controlled by the developer. Figure out a way to factor out these
+        // for explicit control.
+
         // Pre-check if we should tick an enter frame
         let entering = match self.animation.enter.is_some() {
             true => self.entering,

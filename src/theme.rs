@@ -188,6 +188,10 @@ where
         Theme::<C>::post_update_in(ThemeUpdate)
     }
 
+    pub fn custom_post_update() -> impl IntoSystemConfigs<()> {
+        Theme::<C>::post_update_in(CustomThemeUpdate)
+    }
+
     pub fn post_update_in(set: impl SystemSet) -> impl IntoSystemConfigs<()> {
         (
             Theme::<C>::process_theme_update,
@@ -234,5 +238,46 @@ where
                 commands.entity(entity).refresh_theme::<C>();
             }
         }
+    }
+}
+
+#[derive(Default)]
+pub struct ComponentThemePlugin<C>
+where
+    C: Component,
+{
+    context: PhantomData<C>,
+    is_custom: bool,
+}
+
+impl<C> ComponentThemePlugin<C>
+where
+    C: Component,
+{
+    pub fn new() -> Self {
+        Self {
+            context: PhantomData,
+            is_custom: false,
+        }
+    }
+
+    /// Adds the theme update systems to the `CustomThemeUpdate` system set
+    pub fn custom() -> Self {
+        Self {
+            context: PhantomData,
+            is_custom: true,
+        }
+    }
+}
+
+impl<C> Plugin for ComponentThemePlugin<C>
+where
+    C: Component,
+{
+    fn build(&self, app: &mut App) {
+        match self.is_custom {
+            true => app.add_systems(PostUpdate, Theme::<C>::custom_post_update()),
+            false => app.add_systems(PostUpdate, Theme::<C>::post_update()),
+        };
     }
 }

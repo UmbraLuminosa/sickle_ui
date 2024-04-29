@@ -5,9 +5,10 @@ use sickle_math::ease::Ease;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
     theme::{
+        dynamic_style::DynamicStyleEnterState,
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
-        PseudoTheme, Theme, ThemeData,
+        ComponentThemePlugin, PseudoTheme, Theme, ThemeData,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
@@ -31,14 +32,17 @@ fn main() {
         .add_plugins(SickleUiPlugin)
         .init_resource::<IconCache>()
         .add_plugins(HierarchyTreeViewPlugin)
+        .add_plugins((
+            ComponentThemePlugin::<ThemeTestBox>::new(),
+            ComponentThemePlugin::<FloatingPanel>::new(),
+        ))
         .add_systems(Startup, setup.in_set(UiStartupSet))
-        .add_systems(PostUpdate, Theme::<ThemeTestBox>::post_update())
-        .add_systems(PostUpdate, Theme::<FloatingPanel>::post_update())
         .add_systems(
             Update,
             (
                 update_theme_data_on_press,
                 update_test_pseudo_state_on_press,
+                log_on_dynamic_style_enter_change,
             )
                 .after(FluxInteractionUpdate),
         )
@@ -203,6 +207,17 @@ fn update_test_pseudo_state_on_press(
                 commands.entity(entity).insert(new_state);
             }
         }
+    }
+}
+
+fn log_on_dynamic_style_enter_change(
+    q_test_boxes: Query<
+        &DynamicStyleEnterState,
+        (With<ThemeTestBox>, Changed<DynamicStyleEnterState>),
+    >,
+) {
+    for state in &q_test_boxes {
+        info!("Enter state changed to: {:?}", state.completed());
     }
 }
 
@@ -373,6 +388,7 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     NodeBundle::default(),
                                     ThemeTestBox,
                                     ThemeTestBox::override_theme(),
+                                    DynamicStyleEnterState::default(),
                                 ));
                                 panel.spawn((
                                     ButtonBundle {
