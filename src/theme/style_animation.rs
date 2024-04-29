@@ -112,7 +112,9 @@ pub enum AnimationLoop {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct AnimationConfig {
     pub duration: f32,
+    #[reflect(default)]
     pub easing: Option<Ease>,
+    #[reflect(default)]
     pub delay: Option<f32>,
 }
 
@@ -147,9 +149,13 @@ impl AnimationConfig {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct LoopedAnimationConfig {
     pub duration: f32,
+    #[reflect(default)]
     pub easing: Option<Ease>,
+    #[reflect(default)]
     pub start_delay: Option<f32>,
+    #[reflect(default)]
     pub loop_gap: Option<f32>,
+    #[reflect(default)]
     pub loop_type: Option<AnimationLoop>,
 }
 
@@ -208,17 +214,29 @@ impl LoopedAnimationConfig {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Reflect, Serialize, Deserialize)]
 pub struct AnimationSettings {
+    #[reflect(default)]
     pub enter: Option<AnimationConfig>,
+    #[reflect(default)]
     pub non_interacted: Option<AnimationConfig>,
+    #[reflect(default)]
     pub pointer_enter: Option<AnimationConfig>,
+    #[reflect(default)]
     pub pointer_leave: Option<AnimationConfig>,
+    #[reflect(default)]
     pub press: Option<AnimationConfig>,
+    #[reflect(default)]
     pub release: Option<AnimationConfig>,
+    #[reflect(default)]
     pub cancel: Option<AnimationConfig>,
+    #[reflect(default)]
     pub cancel_reset: Option<AnimationConfig>,
+    #[reflect(default)]
     pub disable: Option<AnimationConfig>,
+    #[reflect(default)]
     pub idle: Option<LoopedAnimationConfig>,
+    #[reflect(default)]
     pub hover: Option<LoopedAnimationConfig>,
+    #[reflect(default)]
     pub pressed: Option<LoopedAnimationConfig>,
 }
 
