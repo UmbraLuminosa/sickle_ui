@@ -577,7 +577,7 @@ fn to_interactive_style_variant(style_attribute: &StyleAttribute) -> proc_macro2
     let ident = &style_attribute.ident;
     let type_path = &style_attribute.type_path;
     quote! {
-        #ident(StaticVals<#type_path>),
+        #ident(InteractiveVals<#type_path>),
     }
 }
 
@@ -637,7 +637,7 @@ fn to_interactive_style_builder_fn(style_attribute: &StyleAttribute) -> proc_mac
     let type_path = &style_attribute.type_path;
     let command = &style_attribute.command;
     quote! {
-        pub fn #command(&mut self, bundle: impl Into<StaticVals<#type_path>>) -> &mut Self {
+        pub fn #command(&mut self, bundle: impl Into<InteractiveVals<#type_path>>) -> &mut Self {
             self.style_builder.add(DynamicStyleAttribute::Interactive(
                 InteractiveStyleAttribute::#ident(bundle.into()),
             ));

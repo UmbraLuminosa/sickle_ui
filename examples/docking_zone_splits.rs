@@ -12,8 +12,8 @@ use sickle_ui::{
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
-        AnimatedVals, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt, SetWidthExt,
-        StaticVals, StyleBuilder,
+        AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt,
+        SetWidthExt, StyleBuilder,
     },
     widgets::{floating_panel::FloatingPanel, prelude::*, tab_container::UiTabContainerSubExt},
     FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
@@ -76,7 +76,7 @@ impl ThemeTestBox {
 
             base_style
                 .interactive()
-                .border_color(StaticVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
+                .border_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
         });
 
         let checked_style = PseudoTheme::build(vec![PseudoState::Checked], |checked_style| {

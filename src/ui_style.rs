@@ -267,7 +267,7 @@ impl LockedStyleAttributes {
 }
 
 #[derive(Clone, Copy, Debug, Default, Reflect, Serialize, Deserialize)]
-pub struct StaticVals<T: Clone + Default> {
+pub struct InteractiveVals<T: Clone + Default> {
     pub idle: T,
     #[reflect(default)]
     pub hover: Option<T>,
@@ -277,13 +277,13 @@ pub struct StaticVals<T: Clone + Default> {
     pub cancel: Option<T>,
 }
 
-impl<T: Default + Clone> From<T> for StaticVals<T> {
+impl<T: Default + Clone> From<T> for InteractiveVals<T> {
     fn from(value: T) -> Self {
-        StaticVals::new(value)
+        InteractiveVals::new(value)
     }
 }
 
-impl<T: Default + Clone + PartialEq> PartialEq for StaticVals<T> {
+impl<T: Default + Clone + PartialEq> PartialEq for InteractiveVals<T> {
     fn eq(&self, other: &Self) -> bool {
         self.idle == other.idle
             && self.hover == other.hover
@@ -292,9 +292,9 @@ impl<T: Default + Clone + PartialEq> PartialEq for StaticVals<T> {
     }
 }
 
-impl<T: Clone + Default> StaticVals<T> {
+impl<T: Clone + Default> InteractiveVals<T> {
     pub fn new(value: T) -> Self {
-        StaticVals {
+        InteractiveVals {
             idle: value,
             ..default()
         }
@@ -365,8 +365,8 @@ impl<T: Lerp + Default + Clone + PartialEq> From<T> for AnimatedVals<T> {
     }
 }
 
-impl<T: Lerp + Default + Clone + PartialEq> From<StaticVals<T>> for AnimatedVals<T> {
-    fn from(value: StaticVals<T>) -> Self {
+impl<T: Lerp + Default + Clone + PartialEq> From<InteractiveVals<T>> for AnimatedVals<T> {
+    fn from(value: InteractiveVals<T>) -> Self {
         Self {
             idle: value.idle,
             hover: value.hover,

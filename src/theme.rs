@@ -51,7 +51,6 @@ impl Default for ThemeData {
     }
 }
 
-// TODO: Add support for enter/exit pseudo state animations
 #[derive(Clone, Debug)]
 pub enum DynamicStyleBuilder {
     Static(DynamicStyle),
