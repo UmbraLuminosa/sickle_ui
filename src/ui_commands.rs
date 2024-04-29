@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, DynamicStyleBuilder, PseudoTheme,
-        Theme, ThemeData,
+        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, theme_data::ThemeData,
+        DynamicStyleBuilder, PseudoTheme, Theme,
     },
     ui_style::StyleBuilder,
     FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,

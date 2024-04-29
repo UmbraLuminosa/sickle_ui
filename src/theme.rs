@@ -1,9 +1,10 @@
-pub mod color_palette;
 pub mod default_theme;
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
 pub mod pseudo_state;
 pub mod style_animation;
+pub mod theme_colors;
+pub mod theme_data;
 
 use std::marker::PhantomData;
 
@@ -13,7 +14,7 @@ use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder};
 
 use self::{
     default_theme::DefaultThemePlugin, dynamic_style::*, dynamic_style_attribute::*,
-    pseudo_state::*, style_animation::*,
+    pseudo_state::*, style_animation::*, theme_data::ThemeData,
 };
 
 pub struct ThemePlugin;
@@ -34,22 +35,6 @@ pub struct ThemeUpdate;
 
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct CustomThemeUpdate;
-
-#[derive(Resource, Clone, Debug, Reflect)]
-pub struct ThemeData {
-    pub background_color: Color,
-    // Colors, floats, bools, strings (image/font path), handles
-    // font data-> text styles -> per weight
-    // should act as a cache for handles
-}
-
-impl Default for ThemeData {
-    fn default() -> Self {
-        Self {
-            background_color: Color::BLUE,
-        }
-    }
-}
 
 #[derive(Clone, Debug)]
 pub enum DynamicStyleBuilder {

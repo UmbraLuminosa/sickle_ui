@@ -8,7 +8,8 @@ use sickle_ui::{
         dynamic_style::DynamicStyleEnterState,
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
-        ComponentThemePlugin, PseudoTheme, Theme, ThemeData,
+        theme_data::ThemeData,
+        ComponentThemePlugin, PseudoTheme, Theme,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
