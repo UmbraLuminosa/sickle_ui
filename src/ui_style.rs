@@ -397,6 +397,33 @@ impl<T: Lerp + Default + Clone + PartialEq> AnimatedVals<T> {
 }
 
 #[derive(Clone)]
+pub struct CustomInteractiveStyleAttribute {
+    callback: Arc<dyn Fn(Entity, FluxInteraction, &mut World) + Send + Sync + 'static>,
+}
+
+impl CustomInteractiveStyleAttribute {
+    pub fn new(
+        callback: impl Fn(Entity, FluxInteraction, &mut World) + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl std::fmt::Debug for CustomInteractiveStyleAttribute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CustomInteractiveStyleAttribute").finish()
+    }
+}
+
+impl PartialEq for CustomInteractiveStyleAttribute {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.callback, &other.callback)
+    }
+}
+
+#[derive(Clone)]
 pub struct CustomAnimatedStyleAttribute {
     callback: Arc<dyn Fn(Entity, AnimationState, &mut World) + Send + Sync + 'static>,
 }
@@ -423,14 +450,14 @@ impl PartialEq for CustomAnimatedStyleAttribute {
     }
 }
 
-pub struct CustomInteractiveStyleAttribute {
-    callback: fn(Entity, FluxInteraction, &mut World),
+pub struct ApplyCustomInteractiveStyleAttribute {
+    callback: CustomInteractiveStyleAttribute,
     flux_interaction: FluxInteraction,
 }
 
-impl EntityCommand for CustomInteractiveStyleAttribute {
+impl EntityCommand for ApplyCustomInteractiveStyleAttribute {
     fn apply(self, id: Entity, world: &mut World) {
-        (self.callback)(id, self.flux_interaction, world);
+        (self.callback.callback)(id, self.flux_interaction, world);
     }
 }
 
