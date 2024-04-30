@@ -5,6 +5,8 @@ pub mod pseudo_state;
 pub mod style_animation;
 pub mod theme_colors;
 pub mod theme_data;
+pub mod theme_spacing;
+pub mod typography;
 
 use std::marker::PhantomData;
 

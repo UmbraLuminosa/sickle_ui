@@ -8,7 +8,7 @@ use sickle_ui::{
         dynamic_style::DynamicStyleEnterState,
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
-        theme_data::ThemeData,
+        theme_data::{Scheme, Contrast::Standard, ThemeData},
         ComponentThemePlugin, PseudoTheme, Theme,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
@@ -130,7 +130,7 @@ impl ThemeTestBox {
             AnimationLoop::Times(3, true),
         );
         let color_bundle = AnimatedVals {
-            idle: data.background_color,
+            idle: data.colors().background,
             hover: Color::rgb(0.5, 0.5, 1.).into(),
             press: Color::GREEN.into(),
             cancel: Color::RED.into(),
@@ -168,10 +168,10 @@ fn update_theme_data_on_press(
 ) {
     for interaction in &q_test_boxes {
         if *interaction == Interaction::Pressed {
-            if theme_data.background_color == Color::CRIMSON {
-                theme_data.background_color = Color::BLUE;
+            if theme_data.active_scheme.is_dark() {
+                theme_data.active_scheme = Scheme::Light(Standard);
             } else {
-                theme_data.background_color = Color::CRIMSON;
+                theme_data.active_scheme = Scheme::Dark(Standard);
             }
         }
     }

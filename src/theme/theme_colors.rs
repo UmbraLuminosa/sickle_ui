@@ -1,5 +1,71 @@
 use bevy::prelude::*;
 
+use super::theme_data::Contrast;
+
+#[derive(Clone, Copy, Debug)]
+pub enum Surface {
+    Background,
+    Surface,
+    SurfaceVariant,
+    SurfaceDim,
+    SurfaceBright,
+    InverseSurface,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Accent {
+    Primary,
+    PrimaryFixed,
+    PrimaryFixedDim,
+    InversePrimary,
+    Secondary,
+    SecondaryFixed,
+    SecondaryFixedDim,
+    Tertiary,
+    TertiaryFixed,
+    TertiaryFixedDim,
+    Error,
+    Outline,
+    OutlineVariant,
+    Shadow,
+    Scrim,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Container {
+    Primary,
+    Secondary,
+    Tertiary,
+    Error,
+    SurfaceLowest,
+    SurfaceLow,
+    SurfaceMid,
+    SurfaceHigh,
+    SurfaceHighest,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum On {
+    Primary,
+    PrimaryContainer,
+    PrimaryFixed,
+    PrimaryFixedVariant,
+    Secondary,
+    SecondaryContainer,
+    SecondaryFixed,
+    SecondaryFixedVariant,
+    Tertiary,
+    TertiaryContainer,
+    TertiaryFixed,
+    TertiaryFixedVariant,
+    Error,
+    ErrorContainer,
+    Background,
+    Surface,
+    SurfaceVariant,
+    InverseSurface,
+}
+
 #[derive(Clone, Debug, Default, Reflect)]
 pub struct ExtendedColor {
     pub name: String,
@@ -8,7 +74,7 @@ pub struct ExtendedColor {
     pub harmonized: bool,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct CoreColors {
     pub primary: Color,
     pub secondary: Option<Color>,
@@ -18,10 +84,9 @@ pub struct CoreColors {
     pub neutral_variant: Option<Color>,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct SchemeColors {
     pub primary: Color,
-    pub surface_tint: Color,
     pub on_primary: Color,
     pub primary_container: Color,
     pub on_primary_container: Color,
@@ -71,22 +136,100 @@ pub struct SchemeColors {
     pub surface_container_highest: Color,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+impl SchemeColors {
+    pub fn surface(&self, surface: Surface) -> Color {
+        match surface {
+            Surface::Background => self.background,
+            Surface::Surface => self.surface,
+            Surface::InverseSurface => self.inverse_surface,
+            Surface::SurfaceVariant => self.surface_variant,
+            Surface::SurfaceDim => self.surface_dim,
+            Surface::SurfaceBright => self.surface_bright,
+        }
+    }
+
+    pub fn accent(&self, accent: Accent) -> Color {
+        match accent {
+            Accent::Primary => self.primary,
+            Accent::PrimaryFixed => self.primary_fixed,
+            Accent::PrimaryFixedDim => self.primary_fixed_dim,
+            Accent::InversePrimary => self.inverse_primary,
+            Accent::Secondary => self.secondary,
+            Accent::SecondaryFixed => self.secondary_fixed,
+            Accent::SecondaryFixedDim => self.secondary_fixed_dim,
+            Accent::Tertiary => self.tertiary,
+            Accent::TertiaryFixed => self.tertiary_fixed,
+            Accent::TertiaryFixedDim => self.tertiary_fixed_dim,
+            Accent::Error => self.error,
+            Accent::Outline => self.outline,
+            Accent::OutlineVariant => self.outline_variant,
+            Accent::Shadow => self.shadow,
+            Accent::Scrim => self.scrim,
+        }
+    }
+
+    pub fn container(&self, container: Container) -> Color {
+        match container {
+            Container::Primary => self.primary_container,
+            Container::Secondary => self.secondary_container,
+            Container::Tertiary => self.tertiary_container,
+            Container::Error => self.error_container,
+            Container::SurfaceLowest => self.surface_container_lowest,
+            Container::SurfaceLow => self.surface_container_low,
+            Container::SurfaceMid => self.surface_container,
+            Container::SurfaceHigh => self.surface_container_high,
+            Container::SurfaceHighest => self.surface_container_highest,
+        }
+    }
+
+    pub fn on(&self, on: On) -> Color {
+        match on {
+            On::Primary => self.on_primary,
+            On::PrimaryContainer => self.on_primary_container,
+            On::PrimaryFixed => self.on_primary_fixed,
+            On::PrimaryFixedVariant => self.on_primary_fixed_variant,
+            On::Secondary => self.on_secondary,
+            On::SecondaryContainer => self.on_secondary_container,
+            On::SecondaryFixed => self.on_secondary_fixed,
+            On::SecondaryFixedVariant => self.on_secondary_fixed_variant,
+            On::Tertiary => self.on_tertiary,
+            On::TertiaryContainer => self.on_tertiary_container,
+            On::TertiaryFixed => self.on_tertiary_fixed,
+            On::TertiaryFixedVariant => self.on_tertiary_fixed_variant,
+            On::Error => self.on_error,
+            On::ErrorContainer => self.on_error_container,
+            On::Background => self.on_background,
+            On::Surface => self.on_surface,
+            On::SurfaceVariant => self.on_surface_variant,
+            On::InverseSurface => self.inverse_on_surface,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct ColorScheme {
     pub colors: SchemeColors,
     pub medium_contrast: SchemeColors,
     pub high_contrast: SchemeColors,
-    pub custom: Option<SchemeColors>,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+impl ColorScheme {
+    pub fn contrast(&self, contrast: Contrast) -> SchemeColors {
+        match contrast {
+            Contrast::Standard => self.colors,
+            Contrast::Medium => self.medium_contrast,
+            Contrast::High => self.high_contrast,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct ColorSchemes {
     pub light: ColorScheme,
     pub dark: ColorScheme,
-    pub custom: Option<ColorScheme>,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct ColorPalette {
     pub p_0: Color,
     pub p_5: Color,
@@ -108,7 +251,7 @@ pub struct ColorPalette {
     pub p_100: Color,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct ColorPalettes {
     pub primary: ColorPalette,
     pub secondary: ColorPalette,
@@ -146,7 +289,6 @@ impl Default for ThemeColors {
                 light: ColorScheme {
                     colors: SchemeColors {
                         primary: Color::hex("695F12").unwrap(),
-                        surface_tint: Color::hex("695F12").unwrap(),
                         on_primary: Color::hex("FFFFFF").unwrap(),
                         primary_container: Color::hex("F2E48A").unwrap(),
                         on_primary_container: Color::hex("201C00").unwrap(),
@@ -197,7 +339,6 @@ impl Default for ThemeColors {
                     },
                     medium_contrast: SchemeColors {
                         primary: Color::hex("4B4300").unwrap(),
-                        surface_tint: Color::hex("695F12").unwrap(),
                         on_primary: Color::hex("FFFFFF").unwrap(),
                         primary_container: Color::hex("807628").unwrap(),
                         on_primary_container: Color::hex("FFFFFF").unwrap(),
@@ -248,7 +389,6 @@ impl Default for ThemeColors {
                     },
                     high_contrast: SchemeColors {
                         primary: Color::hex("272200").unwrap(),
-                        surface_tint: Color::hex("695F12").unwrap(),
                         on_primary: Color::hex("FFFFFF").unwrap(),
                         primary_container: Color::hex("4B4300").unwrap(),
                         on_primary_container: Color::hex("FFFFFF").unwrap(),
@@ -297,12 +437,10 @@ impl Default for ThemeColors {
                         surface_container_high: Color::hex("EDE8DA").unwrap(),
                         surface_container_highest: Color::hex("E7E2D5").unwrap(),
                     },
-                    custom: None,
                 },
                 dark: ColorScheme {
                     colors: SchemeColors {
                         primary: Color::hex("D5C871").unwrap(),
-                        surface_tint: Color::hex("D5C871").unwrap(),
                         on_primary: Color::hex("373100").unwrap(),
                         primary_container: Color::hex("504700").unwrap(),
                         on_primary_container: Color::hex("F2E48A").unwrap(),
@@ -353,7 +491,6 @@ impl Default for ThemeColors {
                     },
                     medium_contrast: SchemeColors {
                         primary: Color::hex("DACC75").unwrap(),
-                        surface_tint: Color::hex("D5C871").unwrap(),
                         on_primary: Color::hex("1A1600").unwrap(),
                         primary_container: Color::hex("9D9241").unwrap(),
                         on_primary_container: Color::hex("000000").unwrap(),
@@ -404,7 +541,6 @@ impl Default for ThemeColors {
                     },
                     high_contrast: SchemeColors {
                         primary: Color::hex("FFFAF3").unwrap(),
-                        surface_tint: Color::hex("D5C871").unwrap(),
                         on_primary: Color::hex("000000").unwrap(),
                         primary_container: Color::hex("DACC75").unwrap(),
                         on_primary_container: Color::hex("000000").unwrap(),
@@ -453,9 +589,7 @@ impl Default for ThemeColors {
                         surface_container_high: Color::hex("2C2A21").unwrap(),
                         surface_container_highest: Color::hex("37352C").unwrap(),
                     },
-                    custom: None,
                 },
-                custom: None,
             },
             palettes: ColorPalettes {
                 primary: ColorPalette {
