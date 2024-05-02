@@ -1,6 +1,7 @@
 pub mod default_theme;
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
+pub mod icons;
 pub mod pseudo_state;
 pub mod style_animation;
 pub mod theme_colors;
@@ -261,6 +262,7 @@ where
     C: Component,
 {
     fn build(&self, app: &mut App) {
+        // TODO: only add systems when theming cfg is set
         match self.is_custom {
             true => app.add_systems(PostUpdate, Theme::<C>::custom_post_update()),
             false => app.add_systems(PostUpdate, Theme::<C>::post_update()),

@@ -1,12 +1,15 @@
 use bevy::prelude::*;
+use sickle_math::ease::Ease;
 
 use super::{
+    icons::Icons,
     theme_colors::{SchemeColors, ThemeColors},
     theme_spacing::ThemeSpacing,
     typography::ThemeTypography,
+    AnimationSettings,
 };
 
-#[derive(Resource, Clone, Copy, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub enum Contrast {
     #[default]
     Standard,
@@ -14,7 +17,7 @@ pub enum Contrast {
     High,
 }
 
-#[derive(Resource, Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug, Reflect)]
 pub enum Scheme {
     Light(Contrast),
     Dark(Contrast),
@@ -22,7 +25,7 @@ pub enum Scheme {
 
 impl Default for Scheme {
     fn default() -> Self {
-        Self::Light(Default::default())
+        Self::Dark(Default::default())
     }
 }
 
@@ -36,15 +39,33 @@ impl Scheme {
     }
 }
 
-#[derive(Resource, Clone, Debug, Default, Reflect)]
+#[derive(Resource, Clone, Debug, Reflect)]
 pub struct ThemeData {
     pub active_scheme: Scheme,
     pub colors: ThemeColors,
     pub spacing: ThemeSpacing,
     pub text: ThemeTypography,
-    // Colors, floats, bools, strings (image/font path), handles
-    // font data-> text styles -> per weight
-    // should act as a cache for handles
+    pub icons: Icons,
+    pub interaction_animation: AnimationSettings,
+}
+
+impl Default for ThemeData {
+    fn default() -> Self {
+        let mut interaction_animation = AnimationSettings::new();
+        interaction_animation
+            .pointer_enter(0.1, Ease::OutExpo, None)
+            .pointer_leave(0.1, Ease::OutExpo, None)
+            .press(0.1, Ease::OutExpo, None);
+
+        Self {
+            active_scheme: Default::default(),
+            colors: Default::default(),
+            spacing: Default::default(),
+            text: Default::default(),
+            icons: Default::default(),
+            interaction_animation,
+        }
+    }
 }
 
 impl ThemeData {

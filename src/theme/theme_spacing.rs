@@ -1,34 +1,45 @@
 use bevy::prelude::*;
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct DividerSpacing {
-    extra_small: f32,
-    small: f32,
-    medium: f32,
-    large: f32,
-    custom_1: f32,
-    custom_2: f32,
+    pub extra_small: f32,
+    pub small: f32,
+    pub medium: f32,
+    pub large: f32,
+    pub custom_1: f32,
+    pub custom_2: f32,
 }
 
-#[derive(Clone, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
 pub struct Spacing {
-    tiny: f32,
-    extra_small: f32,
-    small: f32,
-    medium: f32,
-    large: f32,
-    extra_large: f32,
-    custom_1: f32,
-    custom_2: f32,
-    custom_3: f32,
-    custom_4: f32,
+    pub tiny: f32,
+    pub extra_small: f32,
+    pub small: f32,
+    pub medium: f32,
+    pub large: f32,
+    pub extra_large: f32,
+    pub custom_1: f32,
+    pub custom_2: f32,
+    pub custom_3: f32,
+    pub custom_4: f32,
 }
 
-#[derive(Clone, Debug, Reflect)]
+#[derive(Clone, Copy, Debug, Default, Reflect)]
+pub struct IconSizes {
+    pub extra_small: f32,
+    pub small: f32,
+    pub medium: f32,
+    pub large: f32,
+    pub custom_1: f32,
+    pub custom_2: f32,
+}
+
+#[derive(Clone, Copy, Debug, Reflect)]
 pub struct ThemeSpacing {
-    borders: DividerSpacing,
-    gaps: Spacing,
-    areas: Spacing,
+    pub borders: DividerSpacing,
+    pub gaps: Spacing,
+    pub areas: Spacing,
+    pub icons: IconSizes,
 }
 
 impl Default for ThemeSpacing {
@@ -43,12 +54,12 @@ impl Default for ThemeSpacing {
                 custom_2: 6.,
             },
             gaps: Spacing {
-                tiny: 4.,
-                extra_small: 8.,
-                small: 12.,
-                medium: 16.,
-                large: 32.,
-                extra_large: 64.,
+                tiny: 1.,
+                extra_small: 2.,
+                small: 4.,
+                medium: 8.,
+                large: 16.,
+                extra_large: 32.,
                 custom_1: 2.,
                 custom_2: 6.,
                 custom_3: 22.,
@@ -65,6 +76,14 @@ impl Default for ThemeSpacing {
                 custom_2: 36.,
                 custom_3: 48.,
                 custom_4: 96.,
+            },
+            icons: IconSizes {
+                extra_small: 10.,
+                small: 16.,
+                medium: 24.,
+                large: 32.,
+                custom_1: 48.,
+                custom_2: 64.,
             },
         }
     }
