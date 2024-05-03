@@ -5,7 +5,7 @@ use crate::{
         dynamic_style::DynamicStyle,
         theme_colors::{Accent, Container, On},
         theme_data::ThemeData,
-        PseudoTheme, Theme,
+        PseudoTheme, Theme, UiContext,
     },
     ui_builder::UiBuilder,
     ui_style::{AnimatedVals, SetImageExt, SetVisibilityExt, StyleBuilder, UiStyleExt},
@@ -18,6 +18,8 @@ use super::{
 };
 
 const CHECK_MARK: &'static str = "embedded://sickle_ui/icons/checkmark.png";
+const CHECKMARK_BACKGROUND: &'static str = "CheckmarkBackground";
+const CHECKMARK: &'static str = "Checkmark";
 
 pub struct CheckboxPlugin;
 
@@ -40,7 +42,7 @@ fn toggle_checkbox(
 fn update_checkbox(q_checkboxes: Query<&Checkbox, Changed<Checkbox>>, mut commands: Commands) {
     for checkbox in &q_checkboxes {
         commands
-            .style(checkbox.check_node)
+            .style(checkbox.checkmark)
             .visibility(match checkbox.checked {
                 true => Visibility::Inherited,
                 false => Visibility::Hidden,
@@ -48,50 +50,58 @@ fn update_checkbox(q_checkboxes: Query<&Checkbox, Changed<Checkbox>>, mut comman
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Checkbox {
     pub checked: bool,
-    check_node: Entity,
+    checkmark_background: Entity,
+    checkmark: Entity,
 }
 
 impl Default for Checkbox {
     fn default() -> Self {
         Self {
             checked: false,
-            check_node: Entity::PLACEHOLDER,
+            checkmark_background: Entity::PLACEHOLDER,
+            checkmark: Entity::PLACEHOLDER,
         }
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+impl UiContext for Checkbox {
+    fn get(&self, target: &str) -> Result<Entity, String> {
+        match target {
+            CHECKMARK_BACKGROUND => Ok(self.checkmark_background),
+            CHECKMARK => Ok(self.checkmark),
+            _ => Err(format!(
+                "{} doesn't exists for Checkbox. Possible contexts: {:?}",
+                target,
+                Checkbox::contexts()
+            )),
+        }
+    }
+
+    fn contexts() -> Vec<&'static str> {
+        vec![CHECKMARK_BACKGROUND, CHECKMARK]
+    }
+}
+
+#[derive(Component, Clone, Debug, Reflect)]
 pub struct CheckmarkBackground;
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 pub struct Checkmark;
-
-#[derive(Bundle, Debug)]
-pub struct CheckboxTheme {
-    container: Theme<Checkbox>,
-    checkmark_bg: Theme<CheckmarkBackground>,
-    checkmark: Theme<Checkmark>,
-}
 
 impl Checkbox {
     pub fn theme() -> impl Bundle {
         let container = PseudoTheme::deferred(None, Checkbox::container_style);
-        let checkmark_bg = PseudoTheme::deferred(None, Checkbox::checkmark_background_style);
-        let checkmark = PseudoTheme::deferred(None, Checkbox::checkmark_style);
-
-        CheckboxTheme {
-            container: Theme::<Checkbox>::new(vec![container]),
-            checkmark_bg: Theme::<CheckmarkBackground>::new(vec![checkmark_bg]),
-            checkmark: Theme::<Checkmark>::new(vec![checkmark]),
-        }
+        Theme::<Checkbox>::new(vec![container])
     }
 
     fn container_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
         let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
         style_builder
             .height(Val::Px(theme_spacing.areas.small))
             .align_content(AlignContent::Center)
@@ -106,27 +116,9 @@ impl Checkbox {
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
-    }
-
-    fn checkbox_container() -> impl Bundle {
-        let theme_data = ThemeData::default();
-        let mut style_builder = StyleBuilder::new();
-
-        Checkbox::container_style(&mut style_builder, &theme_data);
-        let style: DynamicStyle = style_builder.into();
-
-        (
-            ButtonBundle { ..default() },
-            TrackedInteraction::default(),
-            style,
-        )
-    }
-
-    fn checkmark_background_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
-        let theme_spacing = theme_data.spacing;
-        let colors = theme_data.colors();
 
         style_builder
+            .context(CHECKMARK_BACKGROUND)
             .width(Val::Px(theme_spacing.areas.extra_small))
             .height(Val::Px(theme_spacing.areas.extra_small))
             .margin(UiRect::px(
@@ -138,15 +130,20 @@ impl Checkbox {
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
             .border_color(colors.accent(Accent::Outline))
             .background_color(colors.container(Container::Secondary));
+
+        style_builder
+            .context(CHECKMARK)
+            .width(Val::Px(theme_spacing.icons.extra_small))
+            .height(Val::Px(theme_spacing.icons.extra_small))
+            .margin(UiRect::all(Val::Px(theme_spacing.gaps.extra_small)))
+            .background_color(colors.on(On::Secondary));
+    }
+
+    fn checkbox_container() -> impl Bundle {
+        (ButtonBundle::default(), TrackedInteraction::default())
     }
 
     fn checkmark_background() -> impl Bundle {
-        let theme_data = ThemeData::default();
-        let mut style_builder = StyleBuilder::new();
-
-        Checkbox::checkmark_background_style(&mut style_builder, &theme_data);
-        let style: DynamicStyle = style_builder.into();
-
         (
             Name::new("Checkmark Background"),
             CheckmarkBackground,
@@ -155,28 +152,10 @@ impl Checkbox {
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            style,
         )
     }
 
-    fn checkmark_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
-        let theme_spacing = theme_data.spacing;
-        let colors = theme_data.colors();
-
-        style_builder
-            .width(Val::Px(theme_spacing.icons.extra_small))
-            .height(Val::Px(theme_spacing.icons.extra_small))
-            .margin(UiRect::all(Val::Px(theme_spacing.gaps.extra_small)))
-            .background_color(colors.on(On::Secondary));
-    }
-
     fn checkmark() -> impl Bundle {
-        let theme_data = ThemeData::default();
-        let mut style_builder = StyleBuilder::new();
-
-        Checkbox::checkmark_style(&mut style_builder, &theme_data);
-        let style: DynamicStyle = style_builder.into();
-
         (
             Name::new("Checkmark"),
             Checkmark,
@@ -185,7 +164,7 @@ impl Checkbox {
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            style,
+            BorderColor::default(),
         )
     }
 }
@@ -204,17 +183,20 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         label: Option<impl Into<String>>,
         value: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let mut check_node: Entity = Entity::PLACEHOLDER;
+        let mut checkmark_background: Entity = Entity::PLACEHOLDER;
+        let mut checkmark: Entity = Entity::PLACEHOLDER;
         let mut name_attr: String = String::from("Checkbox");
 
         let mut input = self.container(Checkbox::checkbox_container(), |container| {
-            container.container(Checkbox::checkmark_background(), |checkmark_bg| {
-                let mut check_mark = checkmark_bg.spawn(Checkbox::checkmark());
-                check_node = check_mark.id();
+            checkmark_background = container
+                .container(Checkbox::checkmark_background(), |checkmark_bg| {
+                    let mut check_mark = checkmark_bg.spawn(Checkbox::checkmark());
+                    checkmark = check_mark.id();
 
-                // TODO: Implement style().icon() and use theme icon
-                check_mark.style().image(CHECK_MARK);
-            });
+                    // TODO: Implement style().icon() and use theme icon
+                    check_mark.style().image(CHECK_MARK);
+                })
+                .id();
 
             if let Some(label) = label {
                 let label_string: String = label.into();
@@ -222,6 +204,7 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
 
                 // TODO: Implement style().font() & theme.font(role, size class) and replace label with CheckboxLabel
                 // TODO: Implement style().text_color() & .font_size() - both animatable
+                // TODO: Add "role" as an optional component used for themeing via theme data
                 container.label(LabelConfig {
                     label: label_string.clone(),
                     margin: UiRect::right(Val::Px(10.)),
@@ -230,13 +213,18 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             }
         });
 
-        input.insert((
-            Name::new(name_attr),
-            Checkbox {
-                check_node,
-                checked: value,
-            },
-        ));
+        let checkbox = Checkbox {
+            checkmark_background,
+            checkmark,
+            checked: value,
+        };
+
+        let theme_data = ThemeData::default();
+        let mut style_builder = StyleBuilder::new();
+        Checkbox::container_style(&mut style_builder, &theme_data);
+        let style: DynamicStyle = style_builder.convert_with(&checkbox);
+
+        input.insert((Name::new(name_attr), checkbox, style));
 
         input
     }

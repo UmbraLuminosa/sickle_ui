@@ -43,7 +43,7 @@ pub struct CustomThemeUpdate;
 pub enum DynamicStyleBuilder {
     Static(DynamicStyle),
     StyleBuilder(fn(&mut StyleBuilder, &ThemeData)),
-    WorldStyleBuilder(fn(&mut StyleBuilder, &mut World)),
+    WorldStyleBuilder(fn(&mut StyleBuilder, Entity, &mut World)),
 }
 
 impl From<StyleBuilder> for DynamicStyleBuilder {
@@ -55,19 +55,6 @@ impl From<StyleBuilder> for DynamicStyleBuilder {
 impl From<DynamicStyle> for DynamicStyleBuilder {
     fn from(value: DynamicStyle) -> Self {
         Self::Static(value)
-    }
-}
-
-// TODO: investigate proper From implementation so it accepts static functions
-impl From<fn(&mut StyleBuilder, &ThemeData)> for DynamicStyleBuilder {
-    fn from(value: fn(&mut StyleBuilder, &ThemeData)) -> Self {
-        Self::StyleBuilder(value)
-    }
-}
-
-impl From<fn(&mut StyleBuilder, &mut World)> for DynamicStyleBuilder {
-    fn from(value: fn(&mut StyleBuilder, &mut World)) -> Self {
-        Self::WorldStyleBuilder(value)
     }
 }
 
@@ -117,7 +104,7 @@ impl PseudoTheme {
 
     pub fn deferred_world(
         state: impl Into<Option<Vec<PseudoState>>>,
-        builder: fn(&mut StyleBuilder, &mut World),
+        builder: fn(&mut StyleBuilder, Entity, &mut World),
     ) -> Self {
         Self {
             state: state.into(),
@@ -147,10 +134,15 @@ impl PseudoTheme {
     }
 }
 
+pub trait UiContext {
+    fn get(&self, target: &str) -> Result<Entity, String>;
+    fn contexts() -> Vec<&'static str>;
+}
+
 #[derive(Component, Debug)]
 pub struct Theme<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     context: PhantomData<C>,
     pseudo_themes: Vec<PseudoTheme>,
@@ -158,7 +150,7 @@ where
 
 impl<C> Theme<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     pub fn new(pseudo_themes: impl Into<Vec<PseudoTheme>>) -> Self {
         Self {
@@ -231,7 +223,7 @@ where
 #[derive(Default)]
 pub struct ComponentThemePlugin<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     context: PhantomData<C>,
     is_custom: bool,
@@ -239,7 +231,7 @@ where
 
 impl<C> ComponentThemePlugin<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     pub fn new() -> Self {
         Self {
@@ -259,7 +251,7 @@ where
 
 impl<C> Plugin for ComponentThemePlugin<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     fn build(&self, app: &mut App) {
         // TODO: only add systems when theming cfg is set

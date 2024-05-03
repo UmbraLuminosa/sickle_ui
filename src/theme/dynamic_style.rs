@@ -60,12 +60,17 @@ fn update_dynamic_style_static_attributes(
 ) {
     for (entity, mut style) in &mut q_styles {
         let mut had_static = false;
-        for attribute in &style.attributes {
-            let DynamicStyleAttribute::Static(style) = attribute else {
+        for context_attribute in &style.attributes {
+            let DynamicStyleAttribute::Static(style) = &context_attribute.attribute else {
                 continue;
             };
 
-            style.apply(&mut commands.style(entity));
+            let target = match context_attribute.context {
+                Some(context) => context,
+                None => entity,
+            };
+
+            style.apply(&mut commands.style(target));
             had_static = true;
         }
 
@@ -74,7 +79,7 @@ fn update_dynamic_style_static_attributes(
             style.attributes = style
                 .attributes
                 .iter()
-                .filter(|attr| !attr.is_static())
+                .filter(|csa| !csa.attribute.is_static())
                 .cloned()
                 .collect();
 
@@ -101,10 +106,15 @@ fn update_dynamic_style_on_flux_change(
         let mut lock_needed = StopwatchLock::None;
         let mut keep_stop_watch = false;
 
-        for attribute in &style.attributes {
-            match attribute {
+        for context_attribute in &style.attributes {
+            match &context_attribute.attribute {
                 DynamicStyleAttribute::Interactive(style) => {
-                    style.apply(*interaction, &mut commands.style(entity));
+                    let target = match context_attribute.context {
+                        Some(context) => context,
+                        None => entity,
+                    };
+
+                    style.apply(*interaction, &mut commands.style(target));
                 }
                 DynamicStyleAttribute::Animated { controller, .. } => {
                     let animation_lock = if controller.entering() {
@@ -159,11 +169,15 @@ fn update_dynamic_style_on_stopwatch_change(
         let style = style.bypass_change_detection();
         let mut enter_completed = true;
 
-        for style_attribute in &mut style.attributes {
-            let DynamicStyleAttribute::Animated {
-                attribute,
-                ref mut controller,
-            } = style_attribute
+        for context_attribute in &mut style.attributes {
+            let ContextStyleAttribute {
+                attribute:
+                    DynamicStyleAttribute::Animated {
+                        attribute,
+                        ref mut controller,
+                    },
+                ..
+            } = context_attribute
             else {
                 continue;
             };
@@ -173,7 +187,12 @@ fn update_dynamic_style_on_stopwatch_change(
             }
 
             if style_changed || controller.dirty() {
-                attribute.apply(controller.current_state(), &mut commands.style(entity));
+                let target = match context_attribute.context {
+                    Some(context) => context,
+                    None => entity,
+                };
+
+                attribute.apply(controller.current_state(), &mut commands.style(target));
             }
 
             if controller.entering() {
@@ -208,14 +227,48 @@ impl DynamicStyleEnterState {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct ContextStyleAttribute {
+    context: Option<Entity>,
+    attribute: DynamicStyleAttribute,
+}
+
+impl LogicalEq for ContextStyleAttribute {
+    fn logical_eq(&self, other: &Self) -> bool {
+        self.context == other.context && self.attribute.logical_eq(&other.attribute)
+    }
+}
+
+impl ContextStyleAttribute {
+    pub fn new(context: impl Into<Option<Entity>>, attribute: DynamicStyleAttribute) -> Self {
+        Self {
+            context: context.into(),
+            attribute,
+        }
+    }
+}
+
 #[derive(Component, Clone, Debug)]
 pub struct DynamicStyle {
-    attributes: Vec<DynamicStyleAttribute>,
+    attributes: Vec<ContextStyleAttribute>,
     enter_completed: bool,
 }
 
 impl DynamicStyle {
     pub fn new(attributes: Vec<DynamicStyleAttribute>) -> Self {
+        Self {
+            attributes: attributes
+                .iter()
+                .map(|attribute| ContextStyleAttribute {
+                    context: None,
+                    attribute: attribute.clone(),
+                })
+                .collect(),
+            enter_completed: false,
+        }
+    }
+
+    pub fn copy_from(attributes: Vec<ContextStyleAttribute>) -> Self {
         Self {
             attributes,
             enter_completed: false,
@@ -226,32 +279,34 @@ impl DynamicStyle {
         let mut new_list = self.attributes;
 
         for attribute in other.attributes {
-            if !new_list.iter().any(|dsa| dsa.logical_eq(&attribute)) {
+            if !new_list.iter().any(|csa| csa.logical_eq(&attribute)) {
                 new_list.push(attribute);
             } else {
                 // Safe unwrap: checked in if above
                 let index = new_list
                     .iter()
-                    .position(|dsa| dsa.logical_eq(&attribute))
+                    .position(|csa| csa.logical_eq(&attribute))
                     .unwrap();
                 new_list[index] = attribute;
             }
         }
 
-        DynamicStyle::new(new_list)
+        DynamicStyle::copy_from(new_list)
     }
 
     pub fn copy_controllers(&mut self, other: &DynamicStyle) {
-        for attribute in self.attributes.iter_mut() {
-            if !attribute.is_animated() {
+        for context_attribute in self.attributes.iter_mut() {
+            if !context_attribute.attribute.is_animated() {
                 continue;
             }
 
             let Some(old_attribute) = other
                 .attributes
                 .iter()
-                .filter(|other_attr| other_attr.is_animated())
-                .find(|other_attr| other_attr.logical_eq(attribute))
+                .filter(|csa| {
+                    csa.context == context_attribute.context && csa.attribute.is_animated()
+                })
+                .find(|other_attr| other_attr.logical_eq(context_attribute))
             else {
                 continue;
             };
@@ -259,15 +314,19 @@ impl DynamicStyle {
             let DynamicStyleAttribute::Animated {
                 controller: old_controller,
                 attribute: old_attribute,
-            } = old_attribute
+            } = &old_attribute.attribute
             else {
                 continue;
             };
 
-            let DynamicStyleAttribute::Animated {
-                ref mut controller,
-                attribute,
-            } = attribute
+            let ContextStyleAttribute {
+                attribute:
+                    DynamicStyleAttribute::Animated {
+                        ref mut controller,
+                        attribute,
+                    },
+                ..
+            } = context_attribute
             else {
                 continue;
             };
@@ -279,10 +338,14 @@ impl DynamicStyle {
     }
 
     pub fn is_interactive(&self) -> bool {
-        self.attributes.iter().any(|attr| attr.is_interactive())
+        self.attributes
+            .iter()
+            .any(|csa| csa.attribute.is_interactive())
     }
 
     pub fn is_animated(&self) -> bool {
-        self.attributes.iter().any(|attr| attr.is_animated())
+        self.attributes
+            .iter()
+            .any(|csa| csa.attribute.is_animated())
     }
 }

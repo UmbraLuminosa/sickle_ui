@@ -10,9 +10,10 @@ use sickle_math::lerp::Lerp;
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle,
+        dynamic_style::{ContextStyleAttribute, DynamicStyle},
         dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
         style_animation::{AnimationSettings, AnimationState, InteractionStyle},
+        UiContext,
     },
     FluxInteraction,
 };
@@ -529,22 +530,14 @@ impl<'a> AnimatedStyleBuilder<'a> {
         &'a mut self,
         attribute: DynamicStyleAttribute,
     ) -> &'a mut AnimationSettings {
-        self.style_builder.add(attribute.clone());
-
-        // Safe unwrap: we just added the entry, they are variant-equal
-        let index = self
-            .style_builder
-            .attributes
-            .iter()
-            .position(|attr| attr.logical_eq(&attribute))
-            .unwrap();
+        let index = self.style_builder.add(attribute.clone());
 
         let DynamicStyleAttribute::Animated {
             controller: DynamicStyleController {
                 ref mut animation, ..
             },
             ..
-        } = self.style_builder.attributes[index]
+        } = self.style_builder.attributes[index].1
         else {
             unreachable!();
         };
@@ -566,29 +559,41 @@ impl<'a> AnimatedStyleBuilder<'a> {
 }
 
 pub struct StyleBuilder {
-    attributes: Vec<DynamicStyleAttribute>,
+    context: Option<String>,
+    attributes: Vec<(Option<String>, DynamicStyleAttribute)>,
 }
 
 impl StyleBuilder {
     pub fn new() -> Self {
-        Self { attributes: vec![] }
+        Self {
+            context: None,
+            attributes: vec![],
+        }
     }
-    pub fn add(&mut self, attribute: DynamicStyleAttribute) {
-        if !self.attributes.iter().any(|dsa| dsa.logical_eq(&attribute)) {
-            self.attributes.push(attribute);
+
+    pub fn add(&mut self, attribute: DynamicStyleAttribute) -> usize {
+        if !self
+            .attributes
+            .iter()
+            .any(|dsa| dsa.0 == self.context && dsa.1.logical_eq(&attribute))
+        {
+            self.attributes.push((self.context.clone(), attribute));
+            self.attributes.len() - 1
         } else {
             // Safe unwrap: checked in if above
             let index = self
                 .attributes
                 .iter()
-                .position(|dsa| dsa.logical_eq(&attribute))
+                .position(|dsa| dsa.0 == self.context && dsa.1.logical_eq(&attribute))
                 .unwrap();
 
             warn!(
                 "Overwriting {:?} with {:?}",
                 self.attributes[index], attribute
             );
-            self.attributes[index] = attribute;
+            self.attributes[index] = (self.context.clone(), attribute);
+
+            index
         }
     }
 
@@ -603,11 +608,55 @@ impl StyleBuilder {
             style_builder: self,
         }
     }
+
+    pub fn context(&mut self, context: &'static str) -> &mut Self {
+        self.context = Some(context.into());
+        self
+    }
+
+    pub fn convert_with(self, context: &impl UiContext) -> DynamicStyle {
+        DynamicStyle::copy_from(
+            self.attributes
+                .iter()
+                .filter(|attr| match &attr.0 {
+                    Some(target) => match context.get(target.as_str()) {
+                        Ok(_) => true,
+                        Err(msg) => {
+                            warn!("{}", msg);
+                            false
+                        }
+                    },
+                    None => true,
+                })
+                .map(|attr| match &attr.0 {
+                    Some(target) => match context.get(target.as_str()) {
+                        Ok(target) => ContextStyleAttribute::new(target, attr.1.clone()),
+                        Err(_) => unreachable!(),
+                    },
+                    None => ContextStyleAttribute::new(None, attr.1.clone()),
+                })
+                .collect(),
+        )
+    }
 }
 
 impl From<StyleBuilder> for DynamicStyle {
     fn from(value: StyleBuilder) -> Self {
-        DynamicStyle::new(value.attributes)
+        value
+            .attributes
+            .iter()
+            .for_each(|attr| if let Some(context) = &attr.0 {
+                warn!("StyleBuilder with context-bound attributes converted without context! [{}] attributes discarded!", context);
+            });
+
+        DynamicStyle::new(
+            value
+                .attributes
+                .iter()
+                .filter(|attr| attr.0.is_none())
+                .map(|attr| attr.1.clone())
+                .collect(),
+        )
     }
 }
 

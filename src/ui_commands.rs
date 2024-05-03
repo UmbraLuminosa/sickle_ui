@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::{
     theme::{
         dynamic_style::DynamicStyle, pseudo_state::PseudoStates, theme_data::ThemeData,
-        DynamicStyleBuilder, PseudoTheme, Theme,
+        DynamicStyleBuilder, PseudoTheme, Theme, UiContext,
     },
     ui_style::StyleBuilder,
     FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,
@@ -308,13 +308,13 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
 pub trait RefreshThemeExt<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
-        C: Component;
+        C: Clone + Component + UiContext;
 }
 
 impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
-        C: Component,
+        C: Clone + Component + UiContext,
     {
         self.add(RefreshEntityTheme::<C> {
             context: PhantomData,
@@ -325,16 +325,18 @@ impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
 
 struct RefreshEntityTheme<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     context: PhantomData<C>,
 }
 
 impl<C> EntityCommand for RefreshEntityTheme<C>
 where
-    C: Component,
+    C: Clone + Component + UiContext,
 {
     fn apply(self, entity: Entity, world: &mut World) {
+        let context = world.get::<C>(entity).unwrap().clone();
+
         let theme_data = world.resource::<ThemeData>().clone();
         let pseudo_states = world.get::<PseudoStates>(entity);
         let empty_pseudo_state = Vec::new();
@@ -408,13 +410,13 @@ where
                     let mut style_builder = StyleBuilder::new();
                     builder(&mut style_builder, &theme_data);
 
-                    style_builder.into()
+                    style_builder.convert_with(&context)
                 }
                 DynamicStyleBuilder::WorldStyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, world);
+                    builder(&mut style_builder, entity, world);
 
-                    style_builder.into()
+                    style_builder.convert_with(&context)
                 }
             })
             .fold(None, |acc, dynamic_style| match acc {

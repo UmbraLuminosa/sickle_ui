@@ -8,15 +8,15 @@ use sickle_ui::{
         dynamic_style::DynamicStyleEnterState,
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
-        theme_data::{Scheme, Contrast::Standard, ThemeData},
-        ComponentThemePlugin, PseudoTheme, Theme,
+        theme_data::{Contrast::Standard, Scheme, ThemeData},
+        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
         AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt,
         SetWidthExt, StyleBuilder,
     },
-    widgets::{floating_panel::FloatingPanel, prelude::*, tab_container::UiTabContainerSubExt},
+    widgets::{prelude::*, tab_container::UiTabContainerSubExt},
     FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
 };
 
@@ -33,10 +33,7 @@ fn main() {
         .add_plugins(SickleUiPlugin)
         .init_resource::<IconCache>()
         .add_plugins(HierarchyTreeViewPlugin)
-        .add_plugins((
-            ComponentThemePlugin::<ThemeTestBox>::new(),
-            ComponentThemePlugin::<FloatingPanel>::new(),
-        ))
+        .add_plugins((ComponentThemePlugin::<ThemeTestBox>::new(),))
         .add_systems(Startup, setup.in_set(UiStartupSet))
         .add_systems(
             Update,
@@ -60,8 +57,26 @@ pub struct UiStartupSet;
 #[reflect(Resource)]
 struct IconCache(Vec<Handle<Image>>);
 
-#[derive(Component)]
-pub struct ThemeTestBox;
+const TEST_CONTEXT: &'static str = "ThemeTestBoxContext";
+
+#[derive(Component, Clone)]
+pub struct ThemeTestBox {
+    content: Entity,
+}
+
+impl UiContext for ThemeTestBox {
+    fn get(&self, context: &str) -> Result<Entity, String> {
+        if context == TEST_CONTEXT {
+            Ok(self.content)
+        } else {
+            Err("ThemeTestBox has no contexts".into())
+        }
+    }
+
+    fn contexts() -> Vec<&'static str> {
+        vec![TEST_CONTEXT]
+    }
+}
 
 #[derive(Component)]
 pub struct ThemeTestBoxToggle;
@@ -78,6 +93,10 @@ impl ThemeTestBox {
             base_style
                 .interactive()
                 .border_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
+
+            base_style
+                .context(TEST_CONTEXT)
+                .background_color(Color::BLACK);
         });
 
         let checked_style = PseudoTheme::build(vec![PseudoState::Checked], |checked_style| {
@@ -159,6 +178,11 @@ impl ThemeTestBox {
             .animated()
             .background_color(color_bundle)
             .copy_from(style_animation);
+
+        builder
+            .context(TEST_CONTEXT)
+            .interactive()
+            .background_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
     }
 }
 
@@ -263,36 +287,6 @@ fn setup(
         ))
         .id();
 
-    let base_style = PseudoTheme::build(None, |base_style| {
-        base_style
-            .animated()
-            .custom(|entity, animation_state, world| {
-                let Some(mut transform) = world.get_mut::<Transform>(entity) else {
-                    return;
-                };
-
-                let bundle = AnimatedVals {
-                    enter_from: Some(0.),
-                    idle: 1.,
-                    ..default()
-                };
-                let value = animation_state.extract(&bundle);
-                transform.scale = Vec3::ONE * value;
-            })
-            .enter(0.3, Ease::OutExpo, None);
-
-        base_style
-            .animated()
-            .background_color(AnimatedVals {
-                idle: Color::DARK_GRAY,
-                enter_from: Color::rgba(0.5, 0.5, 0.5, 0.).into(),
-                ..default()
-            })
-            .enter(0.3, Ease::OutExpo, None);
-    });
-
-    let floating_panel_theme = Theme::<FloatingPanel>::new(vec![base_style]);
-
     // Use the UI builder with plain bundles and direct setting of bundle props
     let mut hierarchy_container = Entity::PLACEHOLDER;
     let mut root_entity = Entity::PLACEHOLDER;
@@ -310,7 +304,6 @@ fn setup(
             },
             TargetCamera(main_camera),
             ThemeTestBox::base_theme(),
-            floating_panel_theme,
         ),
         |container| {
             container
@@ -384,10 +377,11 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     return;
                                 }
 
-                                panel.spawn((NodeBundle::default(), ThemeTestBox));
+                                let id = panel.id();
+                                panel.spawn((NodeBundle::default(), ThemeTestBox { content: id }));
                                 panel.spawn((
                                     NodeBundle::default(),
-                                    ThemeTestBox,
+                                    ThemeTestBox { content: id },
                                     ThemeTestBox::override_theme(),
                                     DynamicStyleEnterState::default(),
                                 ));
