@@ -1,7 +1,8 @@
 use bevy::{
     ecs::system::{EntityCommand, EntityCommands},
     prelude::*,
-    ui::FocusPolicy,
+    text::TextLayoutInfo,
+    ui::{widget::TextFlags, FocusPolicy},
     utils::HashSet,
 };
 use serde::{Deserialize, Serialize};
@@ -12,6 +13,7 @@ use crate::{
     theme::{
         dynamic_style::{ContextStyleAttribute, DynamicStyle},
         dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
+        icons::IconData,
         style_animation::{AnimationSettings, AnimationState, InteractionStyle},
         UiContext,
     },
@@ -243,6 +245,15 @@ enum _StyleAttributes {
         image: String,
     },
     #[skip_enity_command]
+    #[animatable]
+    ImageTint {
+        image_tint: Color,
+    },
+    #[skip_enity_command]
+    ImageFlip {
+        image_flip: BVec2,
+    },
+    #[skip_enity_command]
     ImageScaleMode {
         image_scale_mode: Option<ImageScaleMode>,
     },
@@ -256,14 +267,48 @@ enum _StyleAttributes {
     AbsolutePosition {
         absolute_position: Vec2,
     },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    Icon {
+        icon: IconData,
+    },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    Font {
+        font: String,
+    },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    #[animatable]
+    FontSize {
+        font_size: f32,
+    },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    #[animatable]
+    FontColor {
+        font_color: Color,
+    },
 }
 
 #[derive(Component, Debug, Default, Reflect)]
 pub struct LockedStyleAttributes(HashSet<LockableStyleAttribute>);
 
 impl LockedStyleAttributes {
+    pub fn new(attributes: impl Into<HashSet<LockableStyleAttribute>>) -> Self {
+        Self(attributes.into())
+    }
+
     pub fn contains(&self, attr: LockableStyleAttribute) -> bool {
         self.0.contains(&attr)
+    }
+}
+
+impl From<LockableStyleAttribute> for HashSet<LockableStyleAttribute> {
+    fn from(value: LockableStyleAttribute) -> Self {
+        let mut set = HashSet::<LockableStyleAttribute>::new();
+        set.insert(value);
+        set
     }
 }
 
@@ -609,34 +654,50 @@ impl StyleBuilder {
         }
     }
 
-    pub fn context(&mut self, context: &'static str) -> &mut Self {
+    /// Revert StyleBuilder to set style on the main entity.
+    pub fn reset_context(&mut self) -> &mut Self {
+        self.context = None;
+        self
+    }
+
+    /// All subsequent calls to the StyleBuilder will add styling to the selected sub-component.
+    /// NOTE: The DynamicStyle will still be set on the main entity and interactions will be
+    /// detected on it. This allows styling sub-components by the main widget.
+    pub fn switch_context(&mut self, context: &'static str) -> &mut Self {
         self.context = Some(context.into());
         self
     }
 
     pub fn convert_with(self, context: &impl UiContext) -> DynamicStyle {
-        DynamicStyle::copy_from(
-            self.attributes
-                .iter()
-                .filter(|attr| match &attr.0 {
-                    Some(target) => match context.get(target.as_str()) {
-                        Ok(_) => true,
-                        Err(msg) => {
-                            warn!("{}", msg);
-                            false
-                        }
-                    },
-                    None => true,
-                })
-                .map(|attr| match &attr.0 {
-                    Some(target) => match context.get(target.as_str()) {
-                        Ok(target) => ContextStyleAttribute::new(target, attr.1.clone()),
-                        Err(_) => unreachable!(),
-                    },
-                    None => ContextStyleAttribute::new(None, attr.1.clone()),
-                })
-                .collect(),
-        )
+        let mut attributes: Vec<ContextStyleAttribute> = Vec::with_capacity(self.attributes.len());
+        for attribute in self.attributes {
+            let new_entry: ContextStyleAttribute = match attribute.0 {
+                Some(target) => match context.get(target.as_str()) {
+                    Ok(target_entity) => {
+                        ContextStyleAttribute::new(target_entity, attribute.1.clone()).into()
+                    }
+                    Err(msg) => {
+                        warn!("{}", msg);
+                        continue;
+                    }
+                },
+                None => ContextStyleAttribute::new(None, attribute.1.clone()).into(),
+            };
+
+            if !attributes.iter().any(|csa| csa.logical_eq(&new_entry)) {
+                attributes.push(new_entry);
+            } else {
+                warn!("Style overwritten for {:?}", new_entry);
+                // Safe unwrap: checked in if above
+                let index = attributes
+                    .iter()
+                    .position(|csa| csa.logical_eq(&new_entry))
+                    .unwrap();
+                attributes[index] = new_entry;
+            }
+        }
+
+        DynamicStyle::copy_from(attributes)
     }
 }
 
@@ -760,6 +821,59 @@ impl<'a> SetImageUncheckedExt<'a> for UiStyleUnchecked<'a> {
             check_lock: false,
         });
         self
+    }
+}
+
+impl EntityCommand for SetImageTint {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(
+                world,
+                entity,
+                "image tint",
+                LockableStyleAttribute::ImageTint
+            );
+        }
+
+        // TODO: bevy 0.14: Wire to UiImage.color
+        if let Some(mut backgroun_color) = world.get_mut::<BackgroundColor>(entity) {
+            if backgroun_color.0 != self.image_tint {
+                backgroun_color.0 = self.image_tint;
+            }
+        } else {
+            world
+                .entity_mut(entity)
+                .insert(BackgroundColor(self.image_tint));
+        }
+    }
+}
+
+impl EntityCommand for SetImageFlip {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(
+                world,
+                entity,
+                "image flip",
+                LockableStyleAttribute::ImageFlip
+            );
+        }
+
+        let Some(mut image) = world.get_mut::<UiImage>(entity) else {
+            warn!(
+                "Failed to set image flip on entity {:?}: No UiImage component found!",
+                entity
+            );
+            return;
+        };
+
+        if image.flip_x != self.image_flip.x {
+            image.flip_x = self.image_flip.x;
+        }
+
+        if image.flip_y != self.image_flip.y {
+            image.flip_y = self.image_flip.y;
+        }
     }
 }
 
@@ -1090,6 +1204,196 @@ impl<'a> SetAbsolutePositionUncheckedExt<'a> for UiStyleUnchecked<'a> {
         self.commands.add(SetAbsolutePosition {
             absolute_position: position,
             check_lock: false,
+        });
+        self
+    }
+}
+
+impl EntityCommand for SetIcon {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "icon", LockableStyleAttribute::Image);
+            // TODO: Check lock on text / font once it is available
+        }
+
+        // TODO: Rework once text/font is in better shape
+        match self.icon {
+            IconData::None => {
+                world.entity_mut(entity).remove::<Text>();
+                world.entity_mut(entity).remove::<UiImage>();
+            }
+            IconData::Image(path, color) => {
+                SetImage {
+                    path,
+                    check_lock: self.check_lock,
+                }
+                .apply(entity, world);
+                SetImageTint {
+                    image_tint: color,
+                    check_lock: self.check_lock,
+                }
+                .apply(entity, world);
+            }
+            IconData::FontCodepoint(font, codepoint, color, font_size) => {
+                SetImageTint {
+                    image_tint: Color::NONE,
+                    check_lock: self.check_lock,
+                }
+                .apply(entity, world);
+
+                world.entity_mut(entity).remove::<UiImage>();
+                let font = world.resource::<AssetServer>().load(font);
+
+                if let Some(mut text) = world.get_mut::<Text>(entity) {
+                    text.sections = vec![TextSection::new(
+                        codepoint,
+                        TextStyle {
+                            font,
+                            font_size,
+                            color,
+                        },
+                    )];
+                } else {
+                    world.entity_mut(entity).insert((
+                        Text::from_section(
+                            codepoint,
+                            TextStyle {
+                                font,
+                                font_size,
+                                color,
+                            },
+                        )
+                        .with_justify(JustifyText::Center)
+                        .with_no_wrap(),
+                        TextLayoutInfo::default(),
+                        TextFlags::default(),
+                    ));
+                }
+            }
+        }
+    }
+}
+
+// TODO: Update these once font / text handling improves
+impl EntityCommand for SetFont {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let font = world.resource::<AssetServer>().load(self.font);
+
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
+            warn!(
+                "Failed to set font on entity {:?}: No Text component found!",
+                entity
+            );
+            return;
+        };
+
+        text.sections = text
+            .sections
+            .iter_mut()
+            .map(|section| {
+                section.style.font = font.clone();
+                section.clone()
+            })
+            .collect();
+    }
+}
+
+impl EntityCommand for SetFontSize {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
+            warn!(
+                "Failed to set font on entity {:?}: No Text component found!",
+                entity
+            );
+            return;
+        };
+
+        text.sections = text
+            .sections
+            .iter_mut()
+            .map(|section| {
+                section.style.font_size = self.font_size;
+                section.clone()
+            })
+            .collect();
+    }
+}
+
+impl EntityCommand for SetFontColor {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
+            warn!(
+                "Failed to set font on entity {:?}: No Text component found!",
+                entity
+            );
+            return;
+        };
+
+        text.sections = text
+            .sections
+            .iter_mut()
+            .map(|section| {
+                section.style.color = self.font_color;
+                section.clone()
+            })
+            .collect();
+    }
+}
+
+struct SetLockedAttribute {
+    attribute: LockableStyleAttribute,
+    locked: bool,
+}
+
+impl EntityCommand for SetLockedAttribute {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if let Some(mut locked_attributes) = world.get_mut::<LockedStyleAttributes>(entity) {
+            if self.locked {
+                if !locked_attributes.contains(self.attribute) {
+                    locked_attributes.0.insert(self.attribute);
+                }
+            } else {
+                if locked_attributes.contains(self.attribute) {
+                    locked_attributes.0.remove(&self.attribute);
+                }
+            }
+        } else if self.locked {
+            let mut locked_attributes = LockedStyleAttributes::default();
+            locked_attributes.0.insert(self.attribute);
+            world.entity_mut(entity).insert(locked_attributes);
+        }
+    }
+}
+
+pub trait SetLockedAttributeExt<'a> {
+    fn lock_attribute(&'a mut self, attribute: LockableStyleAttribute) -> &mut UiStyle<'a>;
+}
+
+impl<'a> SetLockedAttributeExt<'a> for UiStyle<'a> {
+    fn lock_attribute(&'a mut self, attribute: LockableStyleAttribute) -> &mut UiStyle<'a> {
+        self.commands.add(SetLockedAttribute {
+            attribute,
+            locked: true,
+        });
+        self
+    }
+}
+
+pub trait SetLockedAttributeUncheckedExt<'a> {
+    fn unlock_attribute(
+        &'a mut self,
+        attribute: LockableStyleAttribute,
+    ) -> &mut UiStyleUnchecked<'a>;
+}
+
+impl<'a> SetLockedAttributeUncheckedExt<'a> for UiStyleUnchecked<'a> {
+    fn unlock_attribute(
+        &'a mut self,
+        attribute: LockableStyleAttribute,
+    ) -> &mut UiStyleUnchecked<'a> {
+        self.commands.add(SetLockedAttribute {
+            attribute,
+            locked: false,
         });
         self
     }

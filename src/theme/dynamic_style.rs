@@ -153,7 +153,7 @@ fn update_dynamic_style_on_stopwatch_change(
             Entity,
             &mut DynamicStyle,
             &FluxInteraction,
-            Option<&DynamicStyleStopwatch>,
+            Option<&mut DynamicStyleStopwatch>,
             Option<&mut DynamicStyleEnterState>,
         ),
         Or<(
@@ -164,7 +164,7 @@ fn update_dynamic_style_on_stopwatch_change(
     >,
     mut commands: Commands,
 ) {
-    for (entity, mut style, interaction, stopwatch, enter_state) in &mut q_styles {
+    for (entity, mut style, interaction, mut stopwatch, enter_state) in &mut q_styles {
         let style_changed = style.is_changed();
         let style = style.bypass_change_detection();
         let mut enter_completed = true;
@@ -182,8 +182,15 @@ fn update_dynamic_style_on_stopwatch_change(
                 continue;
             };
 
-            if let Some(stopwatch) = stopwatch {
+            if let Some(ref mut stopwatch) = stopwatch {
+                let entering = controller.entering();
                 controller.update(interaction, stopwatch.0.elapsed_secs());
+
+                if entering && !controller.entering() {
+                    // TODO: Fix enter animation follow-up state. When an entity is hovered the state jumps
+                    // to hover after the enter is done, even with this reset.
+                    stopwatch.0.reset();
+                }
             }
 
             if style_changed || controller.dirty() {
@@ -303,10 +310,7 @@ impl DynamicStyle {
             let Some(old_attribute) = other
                 .attributes
                 .iter()
-                .filter(|csa| {
-                    csa.context == context_attribute.context && csa.attribute.is_animated()
-                })
-                .find(|other_attr| other_attr.logical_eq(context_attribute))
+                .find(|csa| csa.logical_eq(context_attribute))
             else {
                 continue;
             };

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Reflect, Serialize, Deserialize,
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Reflect, Serialize, Deserialize,
 )]
 pub enum PseudoState {
     #[default]
@@ -24,7 +24,8 @@ pub enum PseudoState {
     Unfolded,
     Open,
     Closed,
-    Custom(String),
+    Error,
+    Custom(&'static str),
 }
 
 #[derive(Component, Clone, Debug, Default, Reflect)]

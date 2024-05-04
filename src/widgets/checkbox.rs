@@ -3,12 +3,18 @@ use bevy::{prelude::*, ui::FocusPolicy};
 use crate::{
     theme::{
         dynamic_style::DynamicStyle,
-        theme_colors::{Accent, Container, On},
+        pseudo_state::PseudoState,
+        theme_colors::{Container, On},
         theme_data::ThemeData,
-        PseudoTheme, Theme, UiContext,
+        typography::{FontScale, FontStyle, FontType},
+        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
     },
     ui_builder::UiBuilder,
-    ui_style::{AnimatedVals, SetImageExt, SetVisibilityExt, StyleBuilder, UiStyleExt},
+    ui_commands::ManagePseudoStateExt,
+    ui_style::{
+        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityExt,
+        StyleBuilder, UiStyleExt,
+    },
     FluxInteraction, TrackedInteraction,
 };
 
@@ -17,15 +23,17 @@ use super::{
     prelude::{UiContainerExt, UiLabelExt},
 };
 
-const CHECK_MARK: &'static str = "embedded://sickle_ui/icons/checkmark.png";
+// const CHECK_MARK: &'static str = "embedded://sickle_ui/icons/checkmark.png";
 const CHECKMARK_BACKGROUND: &'static str = "CheckmarkBackground";
 const CHECKMARK: &'static str = "Checkmark";
+const LABEL: &'static str = "Label";
 
 pub struct CheckboxPlugin;
 
 impl Plugin for CheckboxPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (toggle_checkbox, update_checkbox).chain());
+        app.add_plugins(ComponentThemePlugin::<Checkbox>::default())
+            .add_systems(Update, (toggle_checkbox, update_checkbox).chain());
     }
 }
 
@@ -39,14 +47,26 @@ fn toggle_checkbox(
     }
 }
 
-fn update_checkbox(q_checkboxes: Query<&Checkbox, Changed<Checkbox>>, mut commands: Commands) {
-    for checkbox in &q_checkboxes {
+fn update_checkbox(
+    q_checkboxes: Query<(Entity, &Checkbox), Changed<Checkbox>>,
+    mut commands: Commands,
+) {
+    for (entity, checkbox) in &q_checkboxes {
         commands
             .style(checkbox.checkmark)
             .visibility(match checkbox.checked {
                 true => Visibility::Inherited,
                 false => Visibility::Hidden,
             });
+
+        match checkbox.checked {
+            true => commands
+                .entity(entity)
+                .add_pseudo_state(PseudoState::Checked),
+            false => commands
+                .entity(entity)
+                .remove_pseudo_state(PseudoState::Checked),
+        };
     }
 }
 
@@ -56,6 +76,7 @@ pub struct Checkbox {
     pub checked: bool,
     checkmark_background: Entity,
     checkmark: Entity,
+    label: Entity,
 }
 
 impl Default for Checkbox {
@@ -64,6 +85,7 @@ impl Default for Checkbox {
             checked: false,
             checkmark_background: Entity::PLACEHOLDER,
             checkmark: Entity::PLACEHOLDER,
+            label: Entity::PLACEHOLDER,
         }
     }
 }
@@ -73,6 +95,7 @@ impl UiContext for Checkbox {
         match target {
             CHECKMARK_BACKGROUND => Ok(self.checkmark_background),
             CHECKMARK => Ok(self.checkmark),
+            LABEL => Ok(self.label),
             _ => Err(format!(
                 "{} doesn't exists for Checkbox. Possible contexts: {:?}",
                 target,
@@ -82,61 +105,113 @@ impl UiContext for Checkbox {
     }
 
     fn contexts() -> Vec<&'static str> {
-        vec![CHECKMARK_BACKGROUND, CHECKMARK]
+        vec![CHECKMARK_BACKGROUND, CHECKMARK, LABEL]
     }
 }
 
-#[derive(Component, Clone, Debug, Reflect)]
-pub struct CheckmarkBackground;
-
-#[derive(Component, Clone, Debug, Reflect)]
-pub struct Checkmark;
+impl Default for Theme<Checkbox> {
+    fn default() -> Self {
+        Checkbox::theme()
+    }
+}
 
 impl Checkbox {
-    pub fn theme() -> impl Bundle {
-        let container = PseudoTheme::deferred(None, Checkbox::container_style);
-        Theme::<Checkbox>::new(vec![container])
+    pub fn theme() -> Theme<Checkbox> {
+        let base_theme = PseudoTheme::deferred(None, Checkbox::primary_style);
+        let checked_theme =
+            PseudoTheme::deferred(vec![PseudoState::Checked], Checkbox::checked_style);
+        Theme::<Checkbox>::new(vec![base_theme, checked_theme])
     }
 
-    fn container_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+    // TODO: bevy 0.14: Add border radius
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
         style_builder
-            .height(Val::Px(theme_spacing.areas.small))
-            .align_content(AlignContent::Center)
+            .height(Val::Px(theme_spacing.inputs.checkbox.line_height))
             .justify_content(JustifyContent::Start)
-            .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)));
+            .align_items(AlignItems::Center)
+            .padding(UiRect::all(Val::Px(
+                theme_spacing.inputs.checkbox.line_padding(),
+            )))
+            .background_color(Color::NONE);
 
         style_builder
+            .switch_context(CHECKMARK_BACKGROUND)
+            .justify_content(JustifyContent::Center)
+            .align_items(AlignItems::Center)
+            .align_content(AlignContent::Center)
+            .width(Val::Px(theme_spacing.inputs.checkbox.checkbox_size()))
+            .height(Val::Px(theme_spacing.inputs.checkbox.checkbox_size()))
+            .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
+            .border(UiRect::all(Val::Px(
+                theme_spacing.inputs.checkbox.border_size,
+            )))
+            .background_color(Color::NONE)
             .animated()
-            .background_color(AnimatedVals {
-                idle: Color::NONE,
-                hover: theme_data.colors().accent(Accent::Secondary).into(),
+            .border_color(AnimatedVals {
+                idle: colors.on(On::SurfaceVariant),
+                hover: colors.on(On::Surface).into(),
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .context(CHECKMARK_BACKGROUND)
-            .width(Val::Px(theme_spacing.areas.extra_small))
-            .height(Val::Px(theme_spacing.areas.extra_small))
+            .switch_context(CHECKMARK)
+            .width(Val::Px(theme_spacing.inputs.checkbox.checkmark_size))
+            .height(Val::Px(theme_spacing.inputs.checkbox.checkmark_size))
+            .icon(theme_data.icons.checkmark.with(
+                colors.on(On::Surface),
+                theme_spacing.inputs.checkbox.checkmark_size,
+            ));
+
+        let font = theme_data
+            .text
+            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+        style_builder
+            .switch_context(LABEL)
             .margin(UiRect::px(
                 theme_spacing.gaps.small,
                 theme_spacing.gaps.medium,
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.small,
+                0.,
+                0.,
             ))
-            .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
-            .border_color(colors.accent(Accent::Outline))
-            .background_color(colors.container(Container::Secondary));
+            .font(font.0)
+            .font_size(font.1)
+            .animated()
+            .font_color(AnimatedVals {
+                idle: colors.on(On::SurfaceVariant),
+                hover: colors.on(On::Surface).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+    }
+
+    fn checked_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
 
         style_builder
-            .context(CHECKMARK)
-            .width(Val::Px(theme_spacing.icons.extra_small))
-            .height(Val::Px(theme_spacing.icons.extra_small))
-            .margin(UiRect::all(Val::Px(theme_spacing.gaps.extra_small)))
-            .background_color(colors.on(On::Secondary));
+            .switch_context(CHECKMARK_BACKGROUND)
+            .background_color(colors.container(Container::Primary))
+            .animated()
+            .border(AnimatedVals {
+                idle: UiRect::all(Val::Px(0.)),
+                hover: UiRect::all(Val::Px(theme_spacing.inputs.checkbox.border_size)).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_context(CHECKMARK)
+            .animated()
+            .margin(AnimatedVals {
+                idle: UiRect::all(Val::Px(theme_spacing.inputs.checkbox.border_size)),
+                hover: UiRect::all(Val::Px(0.)).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
     }
 
     fn checkbox_container() -> impl Bundle {
@@ -146,25 +221,25 @@ impl Checkbox {
     fn checkmark_background() -> impl Bundle {
         (
             Name::new("Checkmark Background"),
-            CheckmarkBackground,
             NodeBundle {
                 // TODO: Lock attribute
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
+            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
         )
     }
 
     fn checkmark() -> impl Bundle {
         (
             Name::new("Checkmark"),
-            Checkmark,
             ImageBundle {
                 // TODO: Lock attribute
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
             BorderColor::default(),
+            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
         )
     }
 }
@@ -185,43 +260,38 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut checkmark_background: Entity = Entity::PLACEHOLDER;
         let mut checkmark: Entity = Entity::PLACEHOLDER;
+        let mut label_id: Entity = Entity::PLACEHOLDER;
         let mut name_attr: String = String::from("Checkbox");
 
         let mut input = self.container(Checkbox::checkbox_container(), |container| {
             checkmark_background = container
                 .container(Checkbox::checkmark_background(), |checkmark_bg| {
-                    let mut check_mark = checkmark_bg.spawn(Checkbox::checkmark());
-                    checkmark = check_mark.id();
-
-                    // TODO: Implement style().icon() and use theme icon
-                    check_mark.style().image(CHECK_MARK);
+                    checkmark = checkmark_bg.spawn(Checkbox::checkmark()).id();
                 })
                 .id();
 
             if let Some(label) = label {
                 let label_string: String = label.into();
                 name_attr = format!("Checkbox [{}]", label_string.clone());
-
-                // TODO: Implement style().font() & theme.font(role, size class) and replace label with CheckboxLabel
-                // TODO: Implement style().text_color() & .font_size() - both animatable
-                // TODO: Add "role" as an optional component used for themeing via theme data
-                container.label(LabelConfig {
-                    label: label_string.clone(),
-                    margin: UiRect::right(Val::Px(10.)),
-                    ..default()
-                });
+                label_id = container
+                    .label(LabelConfig {
+                        label: label_string.clone(),
+                        ..default()
+                    })
+                    .id();
             }
         });
 
         let checkbox = Checkbox {
+            checked: value,
             checkmark_background,
             checkmark,
-            checked: value,
+            label: label_id,
         };
 
         let theme_data = ThemeData::default();
         let mut style_builder = StyleBuilder::new();
-        Checkbox::container_style(&mut style_builder, &theme_data);
+        Checkbox::primary_style(&mut style_builder, &theme_data);
         let style: DynamicStyle = style_builder.convert_with(&checkbox);
 
         input.insert((Name::new(name_attr), checkbox, style));

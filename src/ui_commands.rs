@@ -2,7 +2,9 @@ use std::marker::PhantomData;
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle, pseudo_state::PseudoStates, theme_data::ThemeData,
+        dynamic_style::DynamicStyle,
+        pseudo_state::{PseudoState, PseudoStates},
+        theme_data::ThemeData,
         DynamicStyleBuilder, PseudoTheme, Theme, UiContext,
     },
     ui_style::StyleBuilder,
@@ -435,9 +437,10 @@ where
                     world.entity_mut(entity).insert(Interaction::default());
                 }
 
-                if let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) {
-                    *flux_interaction = FluxInteraction::None;
-                } else {
+                // if let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) {
+                //     // *flux_interaction = FluxInteraction::None;
+                // } else {
+                if world.get_mut::<FluxInteraction>(entity).is_none() {
                     world
                         .entity_mut(entity)
                         .insert(TrackedInteraction::default());
@@ -467,7 +470,7 @@ impl<'a> ManageFluxInteractionStopwatchLockExt<'a> for EntityCommands<'a> {
         owner: &'static str,
         duration: StopwatchLock,
     ) -> &mut EntityCommands<'a> {
-        self.add(move |entity: Entity, world: &mut World| {
+        self.add(move |entity, world: &mut World| {
             if let Some(mut lock) = world.get_mut::<FluxInteractionStopwatchLock>(entity) {
                 lock.lock(owner, duration);
             } else {
@@ -480,11 +483,48 @@ impl<'a> ManageFluxInteractionStopwatchLockExt<'a> for EntityCommands<'a> {
     }
 
     fn try_release_stopwatch_lock(&'a mut self, lock_of: &'static str) -> &mut EntityCommands<'a> {
-        self.add(move |entity: Entity, world: &mut World| {
+        self.add(move |entity, world: &mut World| {
             if let Some(mut lock) = world.get_mut::<FluxInteractionStopwatchLock>(entity) {
                 lock.release(lock_of);
             }
         });
+        self
+    }
+}
+
+pub trait ManagePseudoStateExt<'a> {
+    fn add_pseudo_state(&'a mut self, state: PseudoState) -> &mut EntityCommands<'a>;
+    fn remove_pseudo_state(&'a mut self, state: PseudoState) -> &mut EntityCommands<'a>;
+}
+
+impl<'a> ManagePseudoStateExt<'a> for EntityCommands<'a> {
+    fn add_pseudo_state(&'a mut self, state: PseudoState) -> &mut EntityCommands<'a> {
+        self.add(move |entity, world: &mut World| {
+            let pseudo_states = world.get_mut::<PseudoStates>(entity);
+
+            if let Some(mut pseudo_states) = pseudo_states {
+                if !pseudo_states.has(state) {
+                    pseudo_states.add(state);
+                }
+            } else {
+                let mut pseudo_states = PseudoStates::new();
+                pseudo_states.add(state);
+
+                world.entity_mut(entity).insert(pseudo_states);
+            }
+        });
+        self
+    }
+
+    fn remove_pseudo_state(&'a mut self, state: PseudoState) -> &mut EntityCommands<'a> {
+        self.add(move |entity, world: &mut World| {
+            let Some(mut pseudo_states) = world.get_mut::<PseudoStates>(entity) else {
+                return;
+            };
+
+            pseudo_states.remove(state);
+        });
+
         self
     }
 }

@@ -95,7 +95,7 @@ impl ThemeTestBox {
                 .border_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
 
             base_style
-                .context(TEST_CONTEXT)
+                .switch_context(TEST_CONTEXT)
                 .background_color(Color::BLACK);
         });
 
@@ -156,13 +156,13 @@ impl ThemeTestBox {
             hover_alt: Color::GOLD.into(),
             idle_alt: Color::rgb(0.5, 0.5, 1.).into(),
             press_alt: Color::rgb(0.5, 1., 0.5).into(),
-            enter_from: Color::BLACK.into(),
+            enter_from: Color::WHITE.into(),
             ..default()
         };
 
         let mut style_animation = AnimationSettings::new();
         style_animation
-            .enter(0.3, Ease::Linear, 0.5)
+            .enter(1.0, Ease::Linear, 0.)
             .pointer_enter(0.3, Ease::Linear, 0.5)
             .pointer_leave(0.3, Ease::Linear, 0.5)
             .press(0.3, None, None)
@@ -180,7 +180,7 @@ impl ThemeTestBox {
             .copy_from(style_animation);
 
         builder
-            .context(TEST_CONTEXT)
+            .switch_context(TEST_CONTEXT)
             .interactive()
             .background_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
     }

@@ -34,12 +34,37 @@ pub struct IconSizes {
     pub custom_2: f32,
 }
 
+#[derive(Clone, Copy, Debug, Default, Reflect)]
+pub struct CheckboxSizes {
+    pub line_height: f32,
+    pub border_size: f32,
+    pub checkbox_size: f32,
+    pub checkmark_size: f32,
+}
+
+impl CheckboxSizes {
+    pub fn line_padding(&self) -> f32 {
+        (self.line_height - self.checkbox_size - 2. * self.border_size) / 2.
+    }
+
+    pub fn checkbox_size(&self) -> f32 {
+        self.checkbox_size + 2. * self.border_size
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Reflect)]
+pub struct InputSizes {
+    pub checkbox: CheckboxSizes,
+}
+
+// TODO: bevy 0.14: Add shape / border radius
 #[derive(Clone, Copy, Debug, Reflect)]
 pub struct ThemeSpacing {
     pub borders: DividerSpacing,
     pub gaps: Spacing,
     pub areas: Spacing,
     pub icons: IconSizes,
+    pub inputs: InputSizes,
 }
 
 impl Default for ThemeSpacing {
@@ -78,12 +103,20 @@ impl Default for ThemeSpacing {
                 custom_4: 96.,
             },
             icons: IconSizes {
-                extra_small: 10.,
+                extra_small: 12.,
                 small: 16.,
                 medium: 24.,
                 large: 32.,
                 custom_1: 48.,
                 custom_2: 64.,
+            },
+            inputs: InputSizes {
+                checkbox: CheckboxSizes {
+                    line_height: 32.,
+                    border_size: 1.,
+                    checkbox_size: 14.,
+                    checkmark_size: 14.,
+                },
             },
         }
     }

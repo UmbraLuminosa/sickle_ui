@@ -46,11 +46,32 @@ pub struct FontConfig {
     pub line_height: f32,
 }
 
+impl FontConfig {
+    pub fn get(&self, font_type: FontType) -> (String, f32) {
+        match font_type {
+            FontType::Regular => (self.font.regular.clone(), self.size),
+            FontType::Bold => (self.font.bold.clone(), self.size),
+            FontType::Italic => (self.font.italic.clone(), self.size),
+            FontType::BoldItalic => (self.font.bold_italic.clone(), self.size),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Reflect)]
 pub struct StyleScales {
     pub small: FontConfig,
     pub medium: FontConfig,
     pub large: FontConfig,
+}
+
+impl StyleScales {
+    pub fn get(&self, scale: FontScale) -> &FontConfig {
+        match scale {
+            FontScale::Small => &self.small,
+            FontScale::Medium => &self.medium,
+            FontScale::Large => &self.large,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Reflect)]
@@ -62,27 +83,39 @@ pub struct ThemeTypography {
     pub label: StyleScales,
 }
 
+impl ThemeTypography {
+    pub fn get(&self, style: FontStyle, scale: FontScale, font_type: FontType) -> (String, f32) {
+        match style {
+            FontStyle::Display => self.display.get(scale).get(font_type),
+            FontStyle::Headline => self.headline.get(scale).get(font_type),
+            FontStyle::Title => self.title.get(scale).get(font_type),
+            FontStyle::Body => self.body.get(scale).get(font_type),
+            FontStyle::Label => self.label.get(scale).get(font_type),
+        }
+    }
+}
+
 impl Default for ThemeTypography {
     fn default() -> Self {
         let regular_set = FontSet {
-            regular: "FiraSans-Regular.ttf".into(),
-            bold: "FiraSans-Bold.ttf".into(),
-            italic: "FiraSans-Italic.ttf".into(),
-            bold_italic: "FiraSans-BoldItalic.ttf".into(),
+            regular: "embedded://sickle_ui/fonts/FiraSans-Regular.ttf".into(),
+            bold: "embedded://sickle_ui/fonts/FiraSans-Bold.ttf".into(),
+            italic: "embedded://sickle_ui/fonts/FiraSans-Italic.ttf".into(),
+            bold_italic: "embedded://sickle_ui/fonts/FiraSans-BoldItalic.ttf".into(),
         };
 
         let medium_set = FontSet {
-            regular: "FiraSans-Medium.ttf".into(),
-            bold: "FiraSans-Bold.ttf".into(),
-            italic: "FiraSans-MediumItalic.ttf".into(),
-            bold_italic: "FiraSans-BoldItalic.ttf".into(),
+            regular: "embedded://sickle_ui/fonts/FiraSans-Medium.ttf".into(),
+            bold: "embedded://sickle_ui/fonts/FiraSans-Bold.ttf".into(),
+            italic: "embedded://sickle_ui/fonts/FiraSans-MediumItalic.ttf".into(),
+            bold_italic: "embedded://sickle_ui/fonts/FiraSans-BoldItalic.ttf".into(),
         };
 
         let condensed_set = FontSet {
-            regular: "FiraSansCondensed-Regular.ttf".into(),
-            bold: "FiraSansCondensed-Bold.ttf".into(),
-            italic: "FiraSansCondensed-Italic.ttf".into(),
-            bold_italic: "FiraSansCondensed-BoldItalic.ttf".into(),
+            regular: "embedded://sickle_ui/fonts/FiraSansCondensed-Regular.ttf".into(),
+            bold: "embedded://sickle_ui/fonts/FiraSansCondensed-Bold.ttf".into(),
+            italic: "embedded://sickle_ui/fonts/FiraSansCondensed-Italic.ttf".into(),
+            bold_italic: "embedded://sickle_ui/fonts/FiraSansCondensed-BoldItalic.ttf".into(),
         };
 
         Self {

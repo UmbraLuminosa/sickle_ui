@@ -7,8 +7,40 @@ pub enum IconData {
     #[default]
     None,
     Image(String, Color),
-    FontCodepoint(String, char, Color),
+    FontCodepoint(String, char, Color, f32),
     // TODO: add texture atlas config
+}
+
+impl IconData {
+    pub fn with_color(&self, color: Color) -> Self {
+        match self {
+            IconData::None => IconData::None,
+            IconData::Image(path, _) => Self::Image(path.clone(), color),
+            IconData::FontCodepoint(path, codepoint, _, size) => {
+                Self::FontCodepoint(path.clone(), codepoint.clone(), color, size.clone())
+            }
+        }
+    }
+
+    pub fn with_size(&self, size: f32) -> Self {
+        match self {
+            IconData::None => IconData::None,
+            IconData::Image(_, _) => self.clone(),
+            IconData::FontCodepoint(path, codepoint, color, _) => {
+                Self::FontCodepoint(path.clone(), codepoint.clone(), color.clone(), size)
+            }
+        }
+    }
+
+    pub fn with(&self, color: Color, size: f32) -> Self {
+        match self {
+            IconData::None => IconData::None,
+            IconData::Image(path, _) => Self::Image(path.clone(), color),
+            IconData::FontCodepoint(path, codepoint, _, _) => {
+                Self::FontCodepoint(path.clone(), codepoint.clone(), color, size)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Reflect)]
@@ -40,9 +72,11 @@ impl Default for Icons {
         Self {
             checkbox_unchecked: IconData::Image("".into(), Color::WHITE),
             checkbox_checked: IconData::Image("".into(), Color::WHITE),
-            checkmark: IconData::Image(
-                "embedded://sickle_ui/icons/checkmark.png".into(),
+            checkmark: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E5CA}',
                 Color::WHITE,
+                12.,
             ),
             chevron_down: IconData::Image("".into(), Color::WHITE),
             chevron_left: IconData::Image("".into(), Color::WHITE),
