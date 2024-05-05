@@ -31,6 +31,19 @@ pub enum PseudoState {
 #[derive(Component, Clone, Debug, Default, Reflect)]
 pub struct PseudoStates(Vec<PseudoState>);
 
+impl From<Vec<PseudoState>> for PseudoStates {
+    fn from(value: Vec<PseudoState>) -> Self {
+        let mut uniques: Vec<PseudoState> = Vec::with_capacity(value.len());
+        for val in value {
+            if !uniques.contains(&val) {
+                uniques.push(val);
+            }
+        }
+
+        Self(uniques)
+    }
+}
+
 impl PseudoStates {
     pub fn new() -> Self {
         Self(Vec::new())

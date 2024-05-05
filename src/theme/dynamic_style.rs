@@ -153,7 +153,7 @@ fn update_dynamic_style_on_stopwatch_change(
             Entity,
             &mut DynamicStyle,
             &FluxInteraction,
-            Option<&mut DynamicStyleStopwatch>,
+            Option<&DynamicStyleStopwatch>,
             Option<&mut DynamicStyleEnterState>,
         ),
         Or<(
@@ -162,54 +162,58 @@ fn update_dynamic_style_on_stopwatch_change(
             Changed<DynamicStyleStopwatch>,
         )>,
     >,
-    mut commands: Commands,
+    par_commands: ParallelCommands,
 ) {
-    for (entity, mut style, interaction, mut stopwatch, enter_state) in &mut q_styles {
-        let style_changed = style.is_changed();
-        let style = style.bypass_change_detection();
-        let mut enter_completed = true;
+    q_styles
+        .par_iter_mut()
+        .for_each(|(entity, mut style, interaction, stopwatch, enter_state)| {
+            let style_changed = style.is_changed();
+            let style = style.bypass_change_detection();
+            let mut enter_completed = true;
 
-        for context_attribute in &mut style.attributes {
-            let ContextStyleAttribute {
-                attribute:
-                    DynamicStyleAttribute::Animated {
-                        attribute,
-                        ref mut controller,
-                    },
-                ..
-            } = context_attribute
-            else {
-                continue;
-            };
-
-            if let Some(ref mut stopwatch) = stopwatch {
-                controller.update(interaction, stopwatch.0.elapsed_secs());
-            }
-
-            if style_changed || controller.dirty() {
-                let target = match context_attribute.context {
-                    Some(context) => context,
-                    None => entity,
+            for context_attribute in &mut style.attributes {
+                let ContextStyleAttribute {
+                    attribute:
+                        DynamicStyleAttribute::Animated {
+                            attribute,
+                            ref mut controller,
+                        },
+                    ..
+                } = context_attribute
+                else {
+                    continue;
                 };
 
-                attribute.apply(controller.current_state(), &mut commands.style(target));
+                if let Some(stopwatch) = stopwatch {
+                    controller.update(interaction, stopwatch.0.elapsed_secs());
+                }
+
+                if style_changed || controller.dirty() {
+                    let target = match context_attribute.context {
+                        Some(context) => context,
+                        None => entity,
+                    };
+
+                    par_commands.command_scope(|mut commands| {
+                        attribute.apply(controller.current_state(), &mut commands.style(target));
+                    });
+                }
+
+                if controller.entering() {
+                    enter_completed = false;
+                }
             }
 
-            if controller.entering() {
-                enter_completed = false;
+            if !style.enter_completed && enter_completed {
+                style.enter_completed = true;
             }
-        }
 
-        if !style.enter_completed && enter_completed {
-            style.enter_completed = true;
-        }
-
-        if let Some(mut enter_state) = enter_state {
-            if enter_state.completed != style.enter_completed {
-                enter_state.completed = style.enter_completed;
+            if let Some(mut enter_state) = enter_state {
+                if enter_state.completed != style.enter_completed {
+                    enter_state.completed = style.enter_completed;
+                }
             }
-        }
-    }
+        });
 }
 
 #[derive(Component, Clone, Debug, Default)]

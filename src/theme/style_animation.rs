@@ -381,7 +381,7 @@ impl AnimationSettings {
         flux_interaction: &FluxInteraction,
     ) -> Option<LoopedAnimationConfig> {
         match flux_interaction {
-            FluxInteraction::None => None,
+            FluxInteraction::None => self.idle,
             FluxInteraction::PointerEnter => self.hover,
             FluxInteraction::PointerLeave => self.idle,
             FluxInteraction::Pressed => self.pressed,
@@ -406,7 +406,7 @@ impl AnimationSettings {
         };
 
         let state_animation = match flux_interaction {
-            FluxInteraction::None => StopwatchLock::None,
+            FluxInteraction::None => AnimationSettings::state_lock_duration(self.idle),
             FluxInteraction::PointerEnter => AnimationSettings::state_lock_duration(self.hover),
             FluxInteraction::PointerLeave => AnimationSettings::state_lock_duration(self.idle),
             FluxInteraction::Pressed => AnimationSettings::state_lock_duration(self.pressed),
@@ -475,10 +475,19 @@ impl AnimationState {
     ) -> Self {
         // No animation applied for the current interaction
         let Some(tween) = tween else {
-            return AnimationState {
-                result: AnimationResult::Hold(target_style),
-                iteration: 0,
+            let (Some(alt_tween), Some(alt_target)) = (loop_tween, target_style.alt()) else {
+                return AnimationState {
+                    result: AnimationResult::Hold(target_style),
+                    iteration: 0,
+                };
             };
+
+            return AnimationState::process_animation_loops(
+                target_style,
+                alt_target,
+                elapsed,
+                alt_tween,
+            );
         };
 
         let delay = tween.delay();
@@ -514,7 +523,6 @@ impl AnimationState {
                     iteration: 0,
                 };
             };
-
             AnimationState::process_animation_loops(
                 target_style,
                 alt_target,
