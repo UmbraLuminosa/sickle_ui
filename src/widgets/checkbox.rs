@@ -23,7 +23,6 @@ use super::{
     prelude::{UiContainerExt, UiLabelExt},
 };
 
-// const CHECK_MARK: &'static str = "embedded://sickle_ui/icons/checkmark.png";
 const CHECKMARK_BACKGROUND: &'static str = "CheckmarkBackground";
 const CHECKMARK: &'static str = "Checkmark";
 const LABEL: &'static str = "Label";
@@ -212,6 +211,16 @@ impl Checkbox {
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_context(CHECKMARK)
+            .animated()
+            .scale(AnimatedVals {
+                idle: 1.,
+                enter_from: Some(0.),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
     }
 
     fn checkbox_container() -> impl Bundle {

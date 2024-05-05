@@ -289,6 +289,11 @@ enum _StyleAttributes {
     FontColor {
         font_color: Color,
     },
+    #[skip_enity_command]
+    #[animatable]
+    Scale {
+        scale: f32,
+    },
 }
 
 #[derive(Component, Debug, Default, Reflect)]
@@ -1396,5 +1401,26 @@ impl<'a> SetLockedAttributeUncheckedExt<'a> for UiStyleUnchecked<'a> {
             locked: false,
         });
         self
+    }
+}
+
+impl EntityCommand for SetScale {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "scale", LockableStyleAttribute::Scale);
+        }
+
+        let Some(mut transform) = world.get_mut::<Transform>(entity) else {
+            warn!(
+                "Failed to set scale on entity {:?}: No Transform component found!",
+                entity
+            );
+            return;
+        };
+
+        let new_scale = Vec3::ONE * self.scale;
+        if transform.scale != new_scale {
+            transform.scale = new_scale;
+        }
     }
 }

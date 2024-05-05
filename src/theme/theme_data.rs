@@ -47,6 +47,7 @@ pub struct ThemeData {
     pub text: ThemeTypography,
     pub icons: Icons,
     pub interaction_animation: AnimationSettings,
+    pub enter_animation: AnimationSettings,
 }
 
 impl Default for ThemeData {
@@ -57,6 +58,9 @@ impl Default for ThemeData {
             .pointer_leave(0.1, Ease::OutExpo, None)
             .press(0.1, Ease::OutExpo, None);
 
+        let mut enter_animation = AnimationSettings::new();
+        enter_animation.enter(0.1, Ease::OutExpo, None);
+
         Self {
             active_scheme: Default::default(),
             colors: Default::default(),
@@ -64,6 +68,7 @@ impl Default for ThemeData {
             text: Default::default(),
             icons: Default::default(),
             interaction_animation,
+            enter_animation,
         }
     }
 }
