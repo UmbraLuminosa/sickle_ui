@@ -183,12 +183,7 @@ fn update_dynamic_style_on_stopwatch_change(
             };
 
             if let Some(ref mut stopwatch) = stopwatch {
-                let entering = controller.entering();
                 controller.update(interaction, stopwatch.0.elapsed_secs());
-
-                if entering && !controller.entering() {
-                    stopwatch.0.reset();
-                }
             }
 
             if style_changed || controller.dirty() {

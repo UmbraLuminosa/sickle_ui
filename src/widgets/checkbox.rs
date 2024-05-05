@@ -193,7 +193,7 @@ impl Checkbox {
 
         style_builder
             .switch_context(CHECKMARK_BACKGROUND)
-            .background_color(colors.container(Container::Primary))
+            // .background_color(colors.container(Container::Primary))
             .animated()
             .border(AnimatedVals {
                 idle: UiRect::all(Val::Px(0.)),
@@ -201,6 +201,16 @@ impl Checkbox {
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_context(CHECKMARK_BACKGROUND)
+            .animated()
+            .background_color(AnimatedVals {
+                idle: colors.container(Container::Primary),
+                enter_from: Some(Color::NONE),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
 
         style_builder
             .switch_context(CHECKMARK)
