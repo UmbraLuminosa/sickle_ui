@@ -31,6 +31,7 @@ use self::{
     foldable::FoldablePlugin,
     menu::MenuPlugin,
     menu_item::MenuItemPlugin,
+    panel::PanelPlugin,
     radio_group::RadioGroupPlugin,
     scroll_view::ScrollViewPlugin,
     sized_zone::SizedZonePlugin,
@@ -82,8 +83,11 @@ impl Plugin for WidgetsPlugin {
                 DropdownPlugin,
                 FloatingPanelPlugin,
                 FoldablePlugin,
+            ))
+            .add_plugins((
                 MenuPlugin,
                 MenuItemPlugin,
+                PanelPlugin,
                 RadioGroupPlugin,
                 SliderPlugin,
                 ScrollViewPlugin,

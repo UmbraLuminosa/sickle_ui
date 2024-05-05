@@ -613,6 +613,26 @@ pub struct StyleBuilder {
     attributes: Vec<(Option<String>, DynamicStyleAttribute)>,
 }
 
+impl From<StyleBuilder> for DynamicStyle {
+    fn from(value: StyleBuilder) -> Self {
+        value
+            .attributes
+            .iter()
+            .for_each(|attr| if let Some(context) = &attr.0 {
+                warn!("StyleBuilder with context-bound attributes converted without context! [{}] attributes discarded!", context);
+            });
+
+        DynamicStyle::new(
+            value
+                .attributes
+                .iter()
+                .filter(|attr| attr.0.is_none())
+                .map(|attr| attr.1.clone())
+                .collect(),
+        )
+    }
+}
+
 impl StyleBuilder {
     pub fn new() -> Self {
         Self {
@@ -703,26 +723,6 @@ impl StyleBuilder {
         }
 
         DynamicStyle::copy_from(attributes)
-    }
-}
-
-impl From<StyleBuilder> for DynamicStyle {
-    fn from(value: StyleBuilder) -> Self {
-        value
-            .attributes
-            .iter()
-            .for_each(|attr| if let Some(context) = &attr.0 {
-                warn!("StyleBuilder with context-bound attributes converted without context! [{}] attributes discarded!", context);
-            });
-
-        DynamicStyle::new(
-            value
-                .attributes
-                .iter()
-                .filter(|attr| attr.0.is_none())
-                .map(|attr| attr.1.clone())
-                .collect(),
-        )
     }
 }
 

@@ -2,6 +2,7 @@ mod event_handler;
 mod simple_interaction_plugin;
 mod style_command;
 mod style_commands;
+mod ui_context;
 
 use proc_macro::TokenStream;
 use syn::DeriveInput;
@@ -127,4 +128,10 @@ pub fn style_command_macro_derive(input: TokenStream) -> TokenStream {
 pub fn style_commands_macro_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input.clone()).unwrap();
     style_commands::derive_style_commands_macro(&ast)
+}
+
+#[proc_macro_derive(UiContext)]
+pub fn ui_context_macro_derive(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input.clone()).unwrap();
+    ui_context::derive_ui_context_macro(&ast)
 }

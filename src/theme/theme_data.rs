@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use sickle_math::ease::Ease;
 
+use crate::ui_style::StyleBuilder;
+
 use super::{
     icons::Icons,
     theme_colors::{SchemeColors, ThemeColors},
@@ -74,6 +76,14 @@ impl Default for ThemeData {
 }
 
 impl ThemeData {
+    pub fn with_default(builder: fn(&mut StyleBuilder, &ThemeData)) -> StyleBuilder {
+        let theme_data = ThemeData::default();
+        let mut style_builder = StyleBuilder::new();
+        builder(&mut style_builder, &theme_data);
+
+        style_builder
+    }
+
     /// Returns the scheme colors of the current active scheme / contrast
     pub fn colors(&self) -> SchemeColors {
         match self.active_scheme {

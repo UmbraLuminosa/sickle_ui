@@ -13,7 +13,7 @@ use sickle_ui::{
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
-        AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetFlexDirectionExt,
+        AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetJustifyContentsExt,
         SetWidthExt, StyleBuilder,
     },
     widgets::{prelude::*, tab_container::UiTabContainerSubExt},
@@ -365,8 +365,6 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                     |tab_container| {
                         for i in 0..10 {
                             tab_container.add_tab(format!("Tab {}", i).into(), |panel| {
-                                panel.style().flex_direction(FlexDirection::Row);
-
                                 panel.label(LabelConfig {
                                     label: format!("Tab {} content", i).into(),
                                     ..default()
@@ -377,26 +375,58 @@ fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
                                     return;
                                 }
 
-                                let id = panel.id();
-                                panel.spawn((NodeBundle::default(), ThemeTestBox { content: id }));
-                                panel.spawn((
-                                    NodeBundle::default(),
-                                    ThemeTestBox { content: id },
-                                    ThemeTestBox::override_theme(),
-                                    DynamicStyleEnterState::default(),
-                                ));
-                                panel.spawn((
-                                    ButtonBundle {
-                                        style: Style {
-                                            width: Val::Px(100.),
-                                            height: Val::Px(100.),
+                                panel.row(|row| {
+                                    row.style().justify_content(JustifyContent::Center);
+
+                                    let mut id = Entity::PLACEHOLDER;
+                                    row.container(NodeBundle::default(), |row_box| {
+                                        id = row_box
+                                            .spawn(NodeBundle {
+                                                style: Style {
+                                                    width: Val::Px(50.),
+                                                    height: Val::Px(50.),
+                                                    ..default()
+                                                },
+                                                ..default()
+                                            })
+                                            .id();
+                                    })
+                                    .insert(ThemeTestBox { content: id });
+
+                                    row.container(
+                                        (
+                                            NodeBundle::default(),
+                                            ThemeTestBox::override_theme(),
+                                            DynamicStyleEnterState::default(),
+                                        ),
+                                        |row_box| {
+                                            id = row_box
+                                                .spawn(NodeBundle {
+                                                    style: Style {
+                                                        width: Val::Px(50.),
+                                                        height: Val::Px(50.),
+                                                        ..default()
+                                                    },
+                                                    ..default()
+                                                })
+                                                .id();
+                                        },
+                                    )
+                                    .insert(ThemeTestBox { content: id });
+
+                                    row.spawn((
+                                        ButtonBundle {
+                                            style: Style {
+                                                width: Val::Px(100.),
+                                                height: Val::Px(100.),
+                                                ..default()
+                                            },
+                                            background_color: Color::BISQUE.into(),
                                             ..default()
                                         },
-                                        background_color: Color::BISQUE.into(),
-                                        ..default()
-                                    },
-                                    ThemeTestBoxToggle,
-                                ));
+                                        ThemeTestBoxToggle,
+                                    ));
+                                });
                             });
                         }
                     },

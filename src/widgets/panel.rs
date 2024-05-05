@@ -1,10 +1,26 @@
 use bevy::prelude::*;
+use sickle_macros::UiContext;
 
-use crate::ui_builder::UiBuilder;
+use crate::{
+    theme::{
+        dynamic_style::DynamicStyle, theme_colors::Surface, theme_data::ThemeData,
+        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+    },
+    ui_builder::UiBuilder,
+    ui_style::StyleBuilder,
+};
 
 use super::prelude::UiContainerExt;
 
-#[derive(Component, Clone, Debug, Reflect)]
+pub struct PanelPlugin;
+
+impl Plugin for PanelPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(ComponentThemePlugin::<Panel>::default());
+    }
+}
+
+#[derive(Component, Clone, Debug, Reflect, UiContext)]
 #[reflect(Component)]
 pub struct Panel {
     own_id: Entity,
@@ -20,6 +36,12 @@ impl Default for Panel {
     }
 }
 
+impl Default for Theme<Panel> {
+    fn default() -> Self {
+        Panel::theme()
+    }
+}
+
 impl Panel {
     pub fn own_id(&self) -> Entity {
         self.own_id
@@ -29,16 +51,22 @@ impl Panel {
         self.title.clone()
     }
 
+    pub fn theme() -> Theme<Panel> {
+        let base_theme = PseudoTheme::deferred(None, Panel::container);
+        Theme::<Panel>::new(vec![base_theme])
+    }
+
+    fn container(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        style_builder
+            .width(Val::Percent(100.))
+            .height(Val::Percent(100.))
+            .flex_direction(FlexDirection::Column)
+            .background_color(theme_data.colors().surface(Surface::Surface));
+    }
+
     fn frame() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            ..default()
-        }
+        let style: DynamicStyle = ThemeData::with_default(Panel::container).into();
+        (NodeBundle::default(), style)
     }
 }
 

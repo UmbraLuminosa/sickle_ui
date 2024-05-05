@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::widgets::prelude::Checkbox;
+use crate::widgets::{context_menu::ContextMenu, panel::Panel, prelude::Checkbox};
 
 use super::Theme;
 
@@ -18,9 +18,7 @@ fn inject_default_theme(
     mut commands: Commands,
 ) {
     for entity in &q_root_nodes {
-        commands
-            .entity(entity)
-            .insert(DefaultThemeBundle::default());
+        commands.entity(entity).insert(ThemeBundle::default());
     }
 }
 
@@ -28,7 +26,9 @@ fn inject_default_theme(
 pub struct DefaultTheme;
 
 #[derive(Bundle, Debug, Default)]
-pub struct DefaultThemeBundle {
+pub struct ThemeBundle {
     marker: DefaultTheme,
     checkbox: Theme<Checkbox>,
+    context_menu: Theme<ContextMenu>,
+    panel: Theme<Panel>,
 }

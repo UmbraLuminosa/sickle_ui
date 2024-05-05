@@ -1,8 +1,15 @@
-use bevy::{ecs::system::CommandQueue, prelude::*, window::PrimaryWindow};
+use bevy::{ecs::system::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow};
+use sickle_macros::UiContext;
 
 use crate::{
+    theme::{
+        dynamic_style::DynamicStyle,
+        theme_colors::{Container, Surface},
+        theme_data::ThemeData,
+        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+    },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
-    ui_style::{SetAbsolutePositionExt, UiStyleExt},
+    ui_style::{SetAbsolutePositionExt, StyleBuilder, UiStyleExt},
     FluxInteractionUpdate,
 };
 
@@ -16,6 +23,7 @@ pub struct ContextMenuPlugin;
 impl Plugin for ContextMenuPlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(Update, ContextMenuUpdate.after(FluxInteractionUpdate))
+            .add_plugins(ComponentThemePlugin::<ContextMenu>::default())
             .add_systems(
                 Update,
                 (
@@ -311,7 +319,7 @@ impl GenerateContextMenu {
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect, UiContext)]
 #[reflect(Component)]
 pub struct ContextMenu {
     context: Entity,
@@ -325,30 +333,46 @@ impl Default for ContextMenu {
     }
 }
 
+impl Default for Theme<ContextMenu> {
+    fn default() -> Self {
+        ContextMenu::theme()
+    }
+}
+
 impl ContextMenu {
     pub fn context(&self) -> Entity {
         self.context
     }
 
+    pub fn theme() -> Theme<ContextMenu> {
+        let base_theme = PseudoTheme::deferred(None, ContextMenu::container);
+        Theme::<ContextMenu>::new(vec![base_theme])
+    }
+
+    fn container(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder
+            .max_height(Val::Percent(100.))
+            .position_type(PositionType::Absolute)
+            .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
+            .padding(UiRect::px(
+                theme_spacing.gaps.small,
+                theme_spacing.gaps.small,
+                theme_spacing.gaps.small,
+                theme_spacing.gaps.medium,
+            ))
+            .flex_direction(FlexDirection::Column)
+            .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
+            .background_color(colors.container(Container::SurfaceHigh))
+            .border_color(colors.surface(Surface::SurfaceVariant))
+            .visibility(Visibility::Hidden)
+            .focus_policy(FocusPolicy::Block);
+    }
+
     fn frame() -> impl Bundle {
-        (
-            NodeBundle {
-                style: Style {
-                    max_height: Val::Percent(100.),
-                    position_type: PositionType::Absolute,
-                    border: UiRect::px(1., 1., 1., 1.),
-                    padding: UiRect::px(5., 5., 5., 10.),
-                    flex_direction: FlexDirection::Column,
-                    ..default()
-                },
-                z_index: ZIndex::Global(MENU_CONTAINER_Z_INDEX),
-                background_color: Color::rgb(0.1, 0.1, 0.1).into(),
-                border_color: Color::ANTIQUE_WHITE.into(),
-                focus_policy: bevy::ui::FocusPolicy::Block,
-                visibility: Visibility::Hidden,
-                ..default()
-            },
-            Interaction::default(),
-        )
+        let style: DynamicStyle = ThemeData::with_default(ContextMenu::container).into();
+        (NodeBundle::default(), Interaction::default(), style)
     }
 }

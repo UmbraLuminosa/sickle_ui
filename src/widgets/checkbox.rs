@@ -2,7 +2,6 @@ use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle,
         pseudo_state::PseudoState,
         theme_colors::{Container, On},
         theme_data::ThemeData,
@@ -306,10 +305,7 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             label: label_id,
         };
 
-        let theme_data = ThemeData::default();
-        let mut style_builder = StyleBuilder::new();
-        Checkbox::primary_style(&mut style_builder, &theme_data);
-        let style: DynamicStyle = style_builder.convert_with(&checkbox);
+        let style = ThemeData::with_default(Checkbox::primary_style).convert_with(&checkbox);
 
         input.insert((Name::new(name_attr), checkbox, style));
 

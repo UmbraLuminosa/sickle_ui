@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::ui_builder::*;
+use crate::{
+    ui_builder::*,
+    ui_style::{LockableStyleAttribute, LockedStyleAttributes},
+};
 
 use super::prelude::UiContainerExt;
 
@@ -18,8 +21,10 @@ impl Row {
                     align_items: AlignItems::Center,
                     ..default()
                 },
+                background_color: Color::NONE.into(),
                 ..default()
             },
+            LockedStyleAttributes::new(LockableStyleAttribute::FlexDirection),
         )
     }
 }
