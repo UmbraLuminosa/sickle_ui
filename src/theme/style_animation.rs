@@ -633,8 +633,8 @@ impl AnimationState {
     ) -> AnimationState {
         let tween_ratio = ((elapsed - delay) / tween_time).clamp(0., 1.).ease(easing);
         match previous_result {
-            AnimationResult::Hold(style) => {
-                AnimationState::process_hold(target_style, style, tween_ratio)
+            AnimationResult::Hold(prev_style) => {
+                AnimationState::process_hold(target_style, prev_style, tween_ratio)
             }
             AnimationResult::Interpolate {
                 from,
@@ -665,13 +665,13 @@ impl AnimationState {
 
     fn process_hold(
         target_style: InteractionStyle,
-        style: &InteractionStyle,
+        prev_style: &InteractionStyle,
         tween_ratio: f32,
     ) -> AnimationState {
-        if *style != target_style {
+        if *prev_style != target_style {
             AnimationState {
                 result: AnimationResult::Interpolate {
-                    from: *style,
+                    from: *prev_style,
                     to: target_style,
                     t: tween_ratio,
                     offset: 0.,

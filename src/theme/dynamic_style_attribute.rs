@@ -158,6 +158,11 @@ impl DynamicStyleController {
             true => InteractionStyle::Idle,
             false => flux_interaction.into(),
         };
+
+        // In case a button switches it's own dynamic style and the new style has an enter animation
+        // The animation will be played, HOWEVER it's flux will still be "Released". This means that the
+        // Idle -> Hover animation would be skipped if there is no Release tween set (otherwise the Release
+        // tween will be used instead of the PointerEnter).
         let mut tween = match entering {
             true => self.animation.enter,
             false => self.animation.to_tween(&flux_interaction),

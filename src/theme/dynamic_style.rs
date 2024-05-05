@@ -187,8 +187,6 @@ fn update_dynamic_style_on_stopwatch_change(
                 controller.update(interaction, stopwatch.0.elapsed_secs());
 
                 if entering && !controller.entering() {
-                    // TODO: Fix enter animation follow-up state. When an entity is hovered the state jumps
-                    // to hover after the enter is done, even with this reset.
                     stopwatch.0.reset();
                 }
             }

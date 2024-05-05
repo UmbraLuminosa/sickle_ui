@@ -222,7 +222,6 @@ impl Checkbox {
         (
             Name::new("Checkmark Background"),
             NodeBundle {
-                // TODO: Lock attribute
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
@@ -234,7 +233,6 @@ impl Checkbox {
         (
             Name::new("Checkmark"),
             ImageBundle {
-                // TODO: Lock attribute
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },

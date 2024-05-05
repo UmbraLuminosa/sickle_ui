@@ -437,9 +437,6 @@ where
                     world.entity_mut(entity).insert(Interaction::default());
                 }
 
-                // if let Some(mut flux_interaction) = world.get_mut::<FluxInteraction>(entity) {
-                //     // *flux_interaction = FluxInteraction::None;
-                // } else {
                 if world.get_mut::<FluxInteraction>(entity).is_none() {
                     world
                         .entity_mut(entity)
