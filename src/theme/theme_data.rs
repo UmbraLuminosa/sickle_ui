@@ -8,7 +8,7 @@ use super::{
     theme_colors::{SchemeColors, ThemeColors},
     theme_spacing::ThemeSpacing,
     typography::ThemeTypography,
-    AnimationSettings,
+    AnimationSettings, DynamicStyle, UiContext,
 };
 
 #[derive(Clone, Copy, Debug, Default, Reflect)]
@@ -82,6 +82,19 @@ impl ThemeData {
         builder(&mut style_builder, &theme_data);
 
         style_builder
+    }
+
+    pub fn with_default_and_override(
+        builder: fn(&mut StyleBuilder, &ThemeData),
+        context: &impl UiContext,
+        style_override: impl FnOnce(&mut StyleBuilder),
+    ) -> DynamicStyle {
+        let mut override_style_builder = StyleBuilder::new();
+        style_override(&mut override_style_builder);
+        let override_style = override_style_builder.convert_with(context);
+        ThemeData::with_default(builder)
+            .convert_with(context)
+            .merge(override_style)
     }
 
     /// Returns the scheme colors of the current active scheme / contrast

@@ -1,5 +1,38 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::view::VisibilitySystems};
 use serde::{Deserialize, Serialize};
+
+use super::ThemeUpdate;
+
+pub struct AutoPseudoStatePlugin;
+
+impl Plugin for AutoPseudoStatePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            PostUpdate,
+            track_node_visibility
+                .after(VisibilitySystems::VisibilityPropagate)
+                .before(ThemeUpdate),
+        );
+    }
+}
+
+fn track_node_visibility(
+    mut q_nodes: Query<
+        (&mut PseudoStates, &Visibility, &InheritedVisibility),
+        Or<(Changed<Visibility>, Changed<InheritedVisibility>)>,
+    >,
+) {
+    for (mut state, visibility, inherited) in &mut q_nodes {
+        let visible = visibility == Visibility::Visible
+            || (inherited.get() && visibility == Visibility::Inherited);
+
+        if visible {
+            state.add(PseudoState::Visible);
+        } else {
+            state.remove(PseudoState::Visible);
+        }
+    }
+}
 
 #[derive(
     Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Reflect, Serialize, Deserialize,
@@ -8,6 +41,7 @@ pub enum PseudoState {
     #[default]
     Enabled,
     Disabled,
+    Visible,
     Selected,
     Checked,
     Empty,

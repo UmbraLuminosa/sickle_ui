@@ -29,7 +29,11 @@ impl Plugin for ThemePlugin {
             (ThemeUpdate, CustomThemeUpdate.after(ThemeUpdate)).before(UiSystem::Layout),
         )
         .init_resource::<ThemeData>()
-        .add_plugins((DefaultThemePlugin, DynamicStylePlugin));
+        .add_plugins((
+            AutoPseudoStatePlugin,
+            DefaultThemePlugin,
+            DynamicStylePlugin,
+        ));
     }
 }
 

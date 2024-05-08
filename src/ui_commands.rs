@@ -336,6 +336,10 @@ impl<C> EntityCommand for RefreshEntityTheme<C>
 where
     C: Clone + Component + UiContext,
 {
+    // TODO: This _could_ be executed concurrently from a system, except we need the world
+    // for DynamicStyleBuilder::WorldStyleBuilder building. Even then, we only _read_ from
+    // the world (or should only read) and we always apply styling to a single entity at a
+    // time, which should let us parallelize this somehow. This is not a hot path though.
     fn apply(self, entity: Entity, world: &mut World) {
         let context = world.get::<C>(entity).unwrap().clone();
 

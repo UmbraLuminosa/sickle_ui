@@ -15,6 +15,7 @@ use crate::{
         dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
         icons::IconData,
         style_animation::{AnimationSettings, AnimationState, InteractionStyle},
+        typography::SizedFont,
         UiContext,
     },
     FluxInteraction,
@@ -282,6 +283,11 @@ enum _StyleAttributes {
     #[animatable]
     FontSize {
         font_size: f32,
+    },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    SizedFont {
+        sized_font: SizedFont,
     },
     #[skip_lockable_enum]
     #[skip_enity_command]
@@ -1318,6 +1324,30 @@ impl EntityCommand for SetFontSize {
             .iter_mut()
             .map(|section| {
                 section.style.font_size = self.font_size;
+                section.clone()
+            })
+            .collect();
+    }
+}
+
+impl EntityCommand for SetSizedFont {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let font = world.resource::<AssetServer>().load(self.sized_font.font);
+
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
+            warn!(
+                "Failed to set sized font on entity {:?}: No Text component found!",
+                entity
+            );
+            return;
+        };
+
+        text.sections = text
+            .sections
+            .iter_mut()
+            .map(|section| {
+                section.style.font = font.clone();
+                section.style.font_size = self.sized_font.size;
                 section.clone()
             })
             .collect();

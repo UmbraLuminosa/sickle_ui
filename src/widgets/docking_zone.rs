@@ -1,18 +1,25 @@
 use bevy::{
     ecs::system::{Command, CommandQueue},
     prelude::*,
-    ui::RelativeCursorPosition,
+    ui::{FocusPolicy, RelativeCursorPosition},
 };
+use sickle_macros::UiContext;
 
 use crate::{
     drag_interaction::{DragState, Draggable},
     drop_interaction::{DropPhase, DropZone, DroppableUpdate},
     hierarchy_delay::DelayActions,
+    theme::{
+        pseudo_state::{PseudoState, PseudoStates},
+        theme_colors::Accent,
+        theme_data::ThemeData,
+        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+    },
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ResetChildrenInUiSurface,
     ui_style::{
-        SetBackgroundColorExt, SetHeightExt, SetLeftExt, SetNodeShowHideExt, SetTopExt,
-        SetWidthExt, UiStyleExt,
+        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetHeightExt, SetLeftExt,
+        SetNodeShowHideExt, SetTopExt, SetVisibilityExt, SetWidthExt, StyleBuilder, UiStyleExt,
     },
 };
 
@@ -28,6 +35,7 @@ pub struct DockingZonePlugin;
 impl Plugin for DockingZonePlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(Update, DockingZoneUpdate.after(DroppableUpdate))
+            .add_plugins(ComponentThemePlugin::<DockingZoneHighlight>::default())
             .add_systems(
                 PreUpdate,
                 (
@@ -454,7 +462,7 @@ fn handle_docking_zone_drop_zone_change(
         {
             commands
                 .style(docking_zone.zone_highlight)
-                .background_color(Color::NONE);
+                .visibility(Visibility::Hidden);
 
             continue;
         }
@@ -490,7 +498,7 @@ fn handle_docking_zone_drop_zone_change(
                 .height(height)
                 .left(left)
                 .top(top)
-                .background_color(Color::rgba(0.7, 0.8, 0.9, 0.2));
+                .visibility(Visibility::Inherited);
         } else if drop_zone.drop_phase() == DropPhase::Dropped {
             // Validated above
             let droppable_title = q_accepted_query
@@ -519,7 +527,7 @@ fn handle_docking_zone_drop_zone_change(
 
             commands
                 .style(docking_zone.zone_highlight)
-                .background_color(Color::NONE);
+                .visibility(Visibility::Hidden);
         }
     }
 }
@@ -723,7 +731,7 @@ impl Default for DockingZone {
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect, UiContext)]
 #[reflect(Component)]
 pub struct DockingZoneHighlight {
     zone: Entity,
@@ -734,6 +742,62 @@ impl Default for DockingZoneHighlight {
         Self {
             zone: Entity::PLACEHOLDER,
         }
+    }
+}
+
+impl Default for Theme<DockingZoneHighlight> {
+    fn default() -> Self {
+        DockingZoneHighlight::theme()
+    }
+}
+
+impl DockingZoneHighlight {
+    pub fn theme() -> Theme<DockingZoneHighlight> {
+        let base_theme = PseudoTheme::build(None, DockingZoneHighlight::primary_style);
+        let visible_theme = PseudoTheme::deferred(
+            vec![PseudoState::Visible],
+            DockingZoneHighlight::visible_style,
+        );
+        Theme::<DockingZoneHighlight>::new(vec![base_theme, visible_theme])
+    }
+
+    fn bundle() -> impl Bundle {
+        (
+            Name::new("Zone Highlight"),
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    ..default()
+                },
+                focus_policy: FocusPolicy::Pass,
+                visibility: Visibility::Hidden,
+                ..default()
+            },
+            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
+            PseudoStates::new(),
+        )
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder) {
+        style_builder
+            .position_type(PositionType::Absolute)
+            .width(Val::Percent(100.))
+            .height(Val::Percent(100.))
+            .background_color(Color::NONE)
+            .z_index(ZIndex::Local(100));
+    }
+
+    fn visible_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let colors = theme_data.colors();
+
+        style_builder
+            .animated()
+            .background_color(AnimatedVals {
+                idle: colors.accent(Accent::InversePrimary).with_a(0.2),
+                enter_from: Some(Color::NONE),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
     }
 }
 
@@ -748,25 +812,6 @@ impl Default for RemoveEmptyDockingZone {
         Self {
             zone: Entity::PLACEHOLDER,
         }
-    }
-}
-
-impl DockingZone {
-    fn zone_highlight() -> impl Bundle {
-        (
-            Name::new("Zone Highlight"),
-            NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    ..default()
-                },
-                background_color: Color::NONE.into(),
-                z_index: ZIndex::Local(100),
-                ..default()
-            },
-        )
     }
 }
 
@@ -806,7 +851,7 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
 
             zone_highlight = zone
                 .spawn((
-                    DockingZone::zone_highlight(),
+                    DockingZoneHighlight::bundle(),
                     DockingZoneHighlight { zone: zone_id },
                 ))
                 .id();

@@ -175,8 +175,7 @@ impl Checkbox {
                 0.,
                 0.,
             ))
-            .font(font.0)
-            .font_size(font.1)
+            .sized_font(font)
             .animated()
             .font_color(AnimatedVals {
                 idle: colors.on(On::SurfaceVariant),
@@ -192,7 +191,6 @@ impl Checkbox {
 
         style_builder
             .switch_context(CHECKMARK_BACKGROUND)
-            // .background_color(colors.container(Container::Primary))
             .animated()
             .border(AnimatedVals {
                 idle: UiRect::all(Val::Px(0.)),
@@ -266,6 +264,13 @@ pub trait UiCheckboxExt<'w, 's> {
         label: Option<impl Into<String>>,
         value: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity>;
+
+    fn styled_checkbox<'a>(
+        &'a mut self,
+        label: Option<impl Into<String>>,
+        value: bool,
+        style_builder: impl FnOnce(&mut StyleBuilder),
+    ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
 impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
@@ -273,6 +278,15 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         &'a mut self,
         label: Option<impl Into<String>>,
         value: bool,
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        self.styled_checkbox(label, value, |_| {})
+    }
+
+    fn styled_checkbox<'a>(
+        &'a mut self,
+        label: Option<impl Into<String>>,
+        value: bool,
+        style_override: impl FnOnce(&mut StyleBuilder),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut checkmark_background: Entity = Entity::PLACEHOLDER;
         let mut checkmark: Entity = Entity::PLACEHOLDER;
@@ -305,8 +319,11 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             label: label_id,
         };
 
-        let style = ThemeData::with_default(Checkbox::primary_style).convert_with(&checkbox);
-
+        let style = ThemeData::with_default_and_override(
+            Checkbox::primary_style,
+            &checkbox,
+            style_override,
+        );
         input.insert((Name::new(name_attr), checkbox, style));
 
         input

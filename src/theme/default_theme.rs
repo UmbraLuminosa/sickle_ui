@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::widgets::{context_menu::ContextMenu, panel::Panel, prelude::Checkbox};
+use crate::widgets::{
+    context_menu::ContextMenu, docking_zone::DockingZoneHighlight, panel::Panel, prelude::Checkbox,
+};
 
 use super::Theme;
 
@@ -31,4 +33,5 @@ pub struct ThemeBundle {
     checkbox: Theme<Checkbox>,
     context_menu: Theme<ContextMenu>,
     panel: Theme<Panel>,
+    docking_zone_highlight: Theme<DockingZoneHighlight>,
 }

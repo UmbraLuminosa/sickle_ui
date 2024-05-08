@@ -24,6 +24,12 @@ pub enum FontType {
     BoldItalic,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct SizedFont {
+    pub font: String,
+    pub size: f32,
+}
+
 #[derive(Clone, Debug, Default, Reflect)]
 pub struct FontSet {
     pub regular: String,
@@ -47,12 +53,24 @@ pub struct FontConfig {
 }
 
 impl FontConfig {
-    pub fn get(&self, font_type: FontType) -> (String, f32) {
+    pub fn get(&self, font_type: FontType) -> SizedFont {
         match font_type {
-            FontType::Regular => (self.font.regular.clone(), self.size),
-            FontType::Bold => (self.font.bold.clone(), self.size),
-            FontType::Italic => (self.font.italic.clone(), self.size),
-            FontType::BoldItalic => (self.font.bold_italic.clone(), self.size),
+            FontType::Regular => SizedFont {
+                font: self.font.regular.clone(),
+                size: self.size,
+            },
+            FontType::Bold => SizedFont {
+                font: self.font.bold.clone(),
+                size: self.size,
+            },
+            FontType::Italic => SizedFont {
+                font: self.font.italic.clone(),
+                size: self.size,
+            },
+            FontType::BoldItalic => SizedFont {
+                font: self.font.bold_italic.clone(),
+                size: self.size,
+            },
         }
     }
 }
@@ -84,7 +102,7 @@ pub struct ThemeTypography {
 }
 
 impl ThemeTypography {
-    pub fn get(&self, style: FontStyle, scale: FontScale, font_type: FontType) -> (String, f32) {
+    pub fn get(&self, style: FontStyle, scale: FontScale, font_type: FontType) -> SizedFont {
         match style {
             FontStyle::Display => self.display.get(scale).get(font_type),
             FontStyle::Headline => self.headline.get(scale).get(font_type),
