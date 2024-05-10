@@ -10,7 +10,7 @@ use bevy::{
 
 use crate::{
     ui_commands::EntityCommandsNamedExt,
-    ui_style::{UiStyle, UiStyleExt},
+    ui_style::{UiStyle, UiStyleExt, UiStyleUnchecked, UiStyleUncheckedExt},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -58,6 +58,11 @@ impl<'w, 's> UiBuilder<'w, 's, '_, Entity> {
     pub fn style(&mut self) -> UiStyle<'_> {
         let entity = self.id();
         self.commands().style(entity)
+    }
+
+    pub fn style_unchecked(&mut self) -> UiStyleUnchecked<'_> {
+        let entity = self.id();
+        self.commands().style_unchecked(entity)
     }
 
     pub fn spawn<'a>(&'a mut self, bundle: impl Bundle) -> UiBuilder<'w, 's, 'a, Entity> {

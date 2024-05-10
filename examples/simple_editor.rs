@@ -420,7 +420,14 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                         },
                         true,
                         |tab_container| {
-                            tab_container.add_tab("Placeholder".into(), |_| {});
+                            tab_container.add_tab("Placeholder".into(), |placeholder| {
+                                placeholder.radio_group(vec!["Light", "Dark"], false);
+                                placeholder.dropdown(vec![
+                                    "Standard",
+                                    "Medium Contrast",
+                                    "High Contrast",
+                                ]);
+                            });
                         },
                     );
                 },

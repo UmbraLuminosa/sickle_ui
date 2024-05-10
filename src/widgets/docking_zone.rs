@@ -10,6 +10,7 @@ use crate::{
     drop_interaction::{DropPhase, DropZone, DroppableUpdate},
     hierarchy_delay::DelayActions,
     theme::{
+        dynamic_style::DynamicStyle,
         pseudo_state::{PseudoState, PseudoStates},
         theme_colors::Accent,
         theme_data::ThemeData,
@@ -19,7 +20,8 @@ use crate::{
     ui_commands::ResetChildrenInUiSurface,
     ui_style::{
         AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetHeightExt, SetLeftExt,
-        SetNodeShowHideExt, SetTopExt, SetVisibilityExt, SetWidthExt, StyleBuilder, UiStyleExt,
+        SetNodeShowHideExt, SetTopExt, SetVisibilityUncheckedExt, SetWidthExt, StyleBuilder,
+        UiStyleExt, UiStyleUncheckedExt,
     },
 };
 
@@ -461,7 +463,7 @@ fn handle_docking_zone_drop_zone_change(
                 .is_err()
         {
             commands
-                .style(docking_zone.zone_highlight)
+                .style_unchecked(docking_zone.zone_highlight)
                 .visibility(Visibility::Hidden);
 
             continue;
@@ -497,7 +499,9 @@ fn handle_docking_zone_drop_zone_change(
                 .width(width)
                 .height(height)
                 .left(left)
-                .top(top)
+                .top(top);
+            commands
+                .style_unchecked(docking_zone.zone_highlight)
                 .visibility(Visibility::Inherited);
         } else if drop_zone.drop_phase() == DropPhase::Dropped {
             // Validated above
@@ -526,7 +530,7 @@ fn handle_docking_zone_drop_zone_change(
             }
 
             commands
-                .style(docking_zone.zone_highlight)
+                .style_unchecked(docking_zone.zone_highlight)
                 .visibility(Visibility::Hidden);
         }
     }
@@ -753,7 +757,7 @@ impl Default for Theme<DockingZoneHighlight> {
 
 impl DockingZoneHighlight {
     pub fn theme() -> Theme<DockingZoneHighlight> {
-        let base_theme = PseudoTheme::build(None, DockingZoneHighlight::primary_style);
+        let base_theme = PseudoTheme::deferred(None, DockingZoneHighlight::primary_style);
         let visible_theme = PseudoTheme::deferred(
             vec![PseudoState::Visible],
             DockingZoneHighlight::visible_style,
@@ -773,27 +777,36 @@ impl DockingZoneHighlight {
                 visibility: Visibility::Hidden,
                 ..default()
             },
-            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FocusPolicy,
+                LockableStyleAttribute::PositionType,
+                LockableStyleAttribute::Visibility,
+            ]),
             PseudoStates::new(),
         )
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder) {
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
         style_builder
-            .position_type(PositionType::Absolute)
             .width(Val::Percent(100.))
             .height(Val::Percent(100.))
-            .background_color(Color::NONE)
+            .background_color(
+                theme_data
+                    .colors()
+                    .accent(Accent::InversePrimary)
+                    .with_a(0.2),
+            )
             .z_index(ZIndex::Local(100));
     }
 
     fn visible_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
-        let colors = theme_data.colors();
-
         style_builder
             .animated()
             .background_color(AnimatedVals {
-                idle: colors.accent(Accent::InversePrimary).with_a(0.2),
+                idle: theme_data
+                    .colors()
+                    .accent(Accent::InversePrimary)
+                    .with_a(0.2),
                 enter_from: Some(Color::NONE),
                 ..default()
             })
@@ -849,10 +862,13 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             }
             tab_container = new_tab_container.id();
 
+            let zone_style: DynamicStyle =
+                ThemeData::with_default(DockingZoneHighlight::primary_style).into();
             zone_highlight = zone
                 .spawn((
                     DockingZoneHighlight::bundle(),
                     DockingZoneHighlight { zone: zone_id },
+                    zone_style,
                 ))
                 .id();
         });

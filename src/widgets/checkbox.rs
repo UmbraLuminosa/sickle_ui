@@ -265,6 +265,7 @@ pub trait UiCheckboxExt<'w, 's> {
         value: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 
+    /// Useful when Theming is disabled
     fn styled_checkbox<'a>(
         &'a mut self,
         label: Option<impl Into<String>>,

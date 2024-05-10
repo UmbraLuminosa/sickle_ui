@@ -78,7 +78,12 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
-            chevron_down: IconData::Image("".into(), Color::WHITE),
+            chevron_down: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E5CF}',
+                Color::WHITE,
+                12.,
+            ),
             chevron_left: IconData::Image("".into(), Color::WHITE),
             chevron_right: IconData::Image("".into(), Color::WHITE),
             chevron_up: IconData::Image("".into(), Color::WHITE),

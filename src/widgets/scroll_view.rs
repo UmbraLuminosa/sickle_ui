@@ -47,17 +47,12 @@ fn update_scroll_view_on_content_change(
 
 fn update_scroll_view_on_scroll(
     q_scrollables: Query<
-        (
-            Entity,
-            AnyOf<(&ScrollViewViewport, &ScrollBarHandle, &ScrollThrough)>,
-            &Scrollable,
-        ),
+        (AnyOf<(&ScrollViewViewport, &ScrollBarHandle)>, &Scrollable),
         Changed<Scrollable>,
     >,
-    q_parent: Query<&Parent>,
     mut q_scroll_view: Query<&mut ScrollView>,
 ) {
-    for (entity, (viewport, handle, scroll_through), scrollable) in &q_scrollables {
+    for ((viewport, handle), scrollable) in &q_scrollables {
         let Some((axis, diff, unit)) = scrollable.last_change() else {
             continue;
         };
@@ -66,15 +61,6 @@ fn update_scroll_view_on_scroll(
             viewport.scroll_view
         } else if let Some(handle) = handle {
             handle.scroll_view
-        } else if let Some(_) = scroll_through {
-            let mut found = Entity::PLACEHOLDER;
-            for parent in q_parent.iter_ancestors(entity) {
-                if let Ok(_) = q_scroll_view.get(parent) {
-                    found = parent;
-                }
-            }
-
-            found
         } else {
             continue;
         };
@@ -313,9 +299,6 @@ fn update_scroll_view_layout(
             ));
     }
 }
-
-#[derive(Component, Debug)]
-pub struct ScrollThrough;
 
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
@@ -582,7 +565,7 @@ impl ScrollView {
 pub trait UiScrollViewExt<'w, 's> {
     fn scroll_view<'a>(
         &'a mut self,
-        restrict_to: Option<ScrollAxis>,
+        restrict_to: impl Into<Option<ScrollAxis>>,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
@@ -590,9 +573,10 @@ pub trait UiScrollViewExt<'w, 's> {
 impl<'w, 's> UiScrollViewExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn scroll_view<'a>(
         &'a mut self,
-        restrict_to: Option<ScrollAxis>,
+        restrict_to: impl Into<Option<ScrollAxis>>,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let restrict_to = restrict_to.into();
         let mut viewport = Entity::PLACEHOLDER;
         let mut content_container = Entity::PLACEHOLDER;
         let mut horizontal_scroll_id: Option<Entity> = None;

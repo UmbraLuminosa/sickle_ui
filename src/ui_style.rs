@@ -64,11 +64,11 @@ impl<'a> UiStyleUnchecked<'a> {
 }
 
 pub trait UiStyleUncheckedExt<'a> {
-    fn style(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a>;
+    fn style_unchecked(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a>;
 }
 
 impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
-    fn style(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a> {
+    fn style_unchecked(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a> {
         UiStyleUnchecked {
             commands: self.entity(entity),
         }
@@ -308,6 +308,17 @@ pub struct LockedStyleAttributes(HashSet<LockableStyleAttribute>);
 impl LockedStyleAttributes {
     pub fn new(attributes: impl Into<HashSet<LockableStyleAttribute>>) -> Self {
         Self(attributes.into())
+    }
+
+    pub fn from_vec(attributes: Vec<LockableStyleAttribute>) -> Self {
+        let mut set = HashSet::<LockableStyleAttribute>::with_capacity(attributes.len());
+        for attribute in attributes.iter() {
+            if !set.contains(attribute) {
+                set.insert(*attribute);
+            }
+        }
+
+        Self(set)
     }
 
     pub fn contains(&self, attr: LockableStyleAttribute) -> bool {
