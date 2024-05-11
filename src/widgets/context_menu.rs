@@ -6,7 +6,7 @@ use crate::{
         dynamic_style::DynamicStyle,
         theme_colors::{Container, Surface},
         theme_data::ThemeData,
-        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{SetAbsolutePositionExt, StyleBuilder, UiStyleExt},
@@ -333,9 +333,9 @@ impl Default for ContextMenu {
     }
 }
 
-impl Default for Theme<ContextMenu> {
-    fn default() -> Self {
-        ContextMenu::theme()
+impl DefaultTheme for ContextMenu {
+    fn default_theme() -> Option<Theme<ContextMenu>> {
+        ContextMenu::theme().into()
     }
 }
 

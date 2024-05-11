@@ -6,13 +6,13 @@ use crate::{
         theme_colors::{Container, On},
         theme_data::ThemeData,
         typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::UiBuilder,
     ui_commands::ManagePseudoStateExt,
     ui_style::{
-        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityExt,
-        StyleBuilder, UiStyleExt,
+        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityUncheckedExt,
+        StyleBuilder, UiStyleUncheckedExt,
     },
     FluxInteraction, TrackedInteraction,
 };
@@ -51,7 +51,7 @@ fn update_checkbox(
 ) {
     for (entity, checkbox) in &q_checkboxes {
         commands
-            .style(checkbox.checkmark)
+            .style_unchecked(checkbox.checkmark)
             .visibility(match checkbox.checked {
                 true => Visibility::Inherited,
                 false => Visibility::Hidden,
@@ -107,9 +107,9 @@ impl UiContext for Checkbox {
     }
 }
 
-impl Default for Theme<Checkbox> {
-    fn default() -> Self {
-        Checkbox::theme()
+impl DefaultTheme for Checkbox {
+    fn default_theme() -> Option<Theme<Checkbox>> {
+        Checkbox::theme().into()
     }
 }
 
@@ -253,7 +253,10 @@ impl Checkbox {
                 ..default()
             },
             BorderColor::default(),
-            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FocusPolicy,
+                LockableStyleAttribute::Visibility,
+            ]),
         )
     }
 }
@@ -264,14 +267,6 @@ pub trait UiCheckboxExt<'w, 's> {
         label: Option<impl Into<String>>,
         value: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity>;
-
-    /// Useful when Theming is disabled
-    fn styled_checkbox<'a>(
-        &'a mut self,
-        label: Option<impl Into<String>>,
-        value: bool,
-        style_builder: impl FnOnce(&mut StyleBuilder),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
 impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
@@ -279,15 +274,6 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         &'a mut self,
         label: Option<impl Into<String>>,
         value: bool,
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
-        self.styled_checkbox(label, value, |_| {})
-    }
-
-    fn styled_checkbox<'a>(
-        &'a mut self,
-        label: Option<impl Into<String>>,
-        value: bool,
-        style_override: impl FnOnce(&mut StyleBuilder),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut checkmark_background: Entity = Entity::PLACEHOLDER;
         let mut checkmark: Entity = Entity::PLACEHOLDER;
@@ -320,13 +306,7 @@ impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             label: label_id,
         };
 
-        let style = ThemeData::with_default_and_override(
-            Checkbox::primary_style,
-            &checkbox,
-            style_override,
-        );
-        input.insert((Name::new(name_attr), checkbox, style));
-
+        input.insert((Name::new(name_attr), checkbox));
         input
     }
 }

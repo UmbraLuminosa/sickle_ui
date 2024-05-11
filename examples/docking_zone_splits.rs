@@ -9,7 +9,7 @@ use sickle_ui::{
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
         theme_data::{Contrast::Standard, Scheme, ThemeData},
-        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
     ui_style::{
@@ -78,12 +78,18 @@ impl UiContext for ThemeTestBox {
     }
 }
 
+impl DefaultTheme for ThemeTestBox {
+    fn default_theme() -> Option<Theme<Self>> {
+        ThemeTestBox::base_theme().into()
+    }
+}
+
 #[derive(Component)]
 pub struct ThemeTestBoxToggle;
 
 impl ThemeTestBox {
     fn base_theme() -> Theme<ThemeTestBox> {
-        let base_style = PseudoTheme::build(None, |base_style| {
+        let base_style = PseudoTheme::deferred(None, |base_style, _| {
             base_style
                 .border(UiRect::all(Val::Px(2.)))
                 .background_color(Color::BLACK)
@@ -303,7 +309,6 @@ fn setup(
                 ..default()
             },
             TargetCamera(main_camera),
-            ThemeTestBox::base_theme(),
         ),
         |container| {
             container

@@ -5,7 +5,7 @@ use crate::{
         dynamic_style::DynamicStyle,
         pseudo_state::{PseudoState, PseudoStates},
         theme_data::ThemeData,
-        DynamicStyleBuilder, PseudoTheme, Theme, UiContext,
+        DefaultTheme, DynamicStyleBuilder, PseudoTheme, Theme,
     },
     ui_style::StyleBuilder,
     FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,
@@ -13,7 +13,7 @@ use crate::{
 use bevy::{
     core::Name,
     ecs::{
-        component::{Component, ComponentInfo},
+        component::ComponentInfo,
         entity::Entity,
         query::With,
         system::{Command, Commands, EntityCommand, EntityCommands},
@@ -310,13 +310,13 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
 pub trait RefreshThemeExt<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
-        C: Clone + Component + UiContext;
+        C: DefaultTheme;
 }
 
 impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
     fn refresh_theme<C>(&'a mut self) -> &mut EntityCommands<'a>
     where
-        C: Clone + Component + UiContext,
+        C: DefaultTheme,
     {
         self.add(RefreshEntityTheme::<C> {
             context: PhantomData,
@@ -327,22 +327,17 @@ impl<'a> RefreshThemeExt<'a> for EntityCommands<'a> {
 
 struct RefreshEntityTheme<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     context: PhantomData<C>,
 }
 
 impl<C> EntityCommand for RefreshEntityTheme<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
-    // TODO: This _could_ be executed concurrently from a system, except we need the world
-    // for DynamicStyleBuilder::WorldStyleBuilder building. Even then, we only _read_ from
-    // the world (or should only read) and we always apply styling to a single entity at a
-    // time, which should let us parallelize this somehow. This is not a hot path though.
     fn apply(self, entity: Entity, world: &mut World) {
         let context = world.get::<C>(entity).unwrap().clone();
-
         let theme_data = world.resource::<ThemeData>().clone();
         let pseudo_states = world.get::<PseudoStates>(entity);
         let empty_pseudo_state = Vec::new();
@@ -370,6 +365,11 @@ where
             }
         }
 
+        let default_theme = C::default_theme();
+        if let Some(ref default_theme) = default_theme {
+            themes.push(default_theme);
+        }
+
         if themes.len() == 0 {
             warn!(
                 "Theme missing for component {} on entity: {:?}",
@@ -377,7 +377,7 @@ where
                 entity
             );
             return;
-        };
+        }
 
         // The list contains themes in reverse order of application
         themes.reverse();

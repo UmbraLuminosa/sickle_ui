@@ -632,12 +632,17 @@ pub struct StyleBuilder {
 
 impl From<StyleBuilder> for DynamicStyle {
     fn from(value: StyleBuilder) -> Self {
-        value
-            .attributes
-            .iter()
-            .for_each(|attr| if let Some(context) = &attr.0 {
-                warn!("StyleBuilder with context-bound attributes converted without context! [{}] attributes discarded!", context);
-            });
+        value.attributes.iter().for_each(|attr| {
+            if let Some(context) = &attr.0 {
+                warn!(
+                    "StyleBuilder with context-bound attributes converted without context! \
+                    [{}] attributes discarded! \
+                    This can be the result of using `PseudoTheme::build()` and calling \
+                    `style_builder.switch_context(CONTEXT)` in the callback, which is not supported.",
+                    context
+                );
+            }
+        });
 
         DynamicStyle::new(
             value

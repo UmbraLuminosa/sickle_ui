@@ -1,3 +1,4 @@
+mod default_theme;
 mod event_handler;
 mod simple_interaction_plugin;
 mod style_command;
@@ -134,4 +135,10 @@ pub fn style_commands_macro_derive(input: TokenStream) -> TokenStream {
 pub fn ui_context_macro_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input.clone()).unwrap();
     ui_context::derive_ui_context_macro(&ast)
+}
+
+#[proc_macro_derive(DefaultTheme)]
+pub fn default_theme_macro_derive(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input.clone()).unwrap();
+    default_theme::derive_default_theme_macro(&ast)
 }

@@ -12,7 +12,7 @@ use sickle_ui::{
         pseudo_state::{PseudoState, PseudoStates},
         style_animation::AnimationLoop,
         theme_data::{Contrast, Scheme, ThemeData},
-        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
     ui_style::{AnimatedVals, SetWidthExt, StyleBuilder},
@@ -78,6 +78,12 @@ struct IconCache(Vec<Handle<Image>>);
 
 #[derive(Component, Clone, UiContext)]
 pub struct ThemeTestBox;
+
+impl DefaultTheme for ThemeTestBox {
+    fn default_theme() -> Option<Theme<Self>> {
+        ThemeTestBox::base_theme().into()
+    }
+}
 
 const BOX_SIZE: f32 = 100.;
 const COLOR_B: Color = Color::rgb(0.1, 0.1, 0.1);
@@ -275,7 +281,6 @@ fn setup(
                 ..default()
             },
             TargetCamera(main_camera),
-            ThemeTestBox::base_theme(),
         ),
         |container| {
             // container.spawn((NodeBundle::default(), ThemeTestBox));

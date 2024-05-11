@@ -14,7 +14,7 @@ use crate::{
         pseudo_state::{PseudoState, PseudoStates},
         theme_colors::Accent,
         theme_data::ThemeData,
-        ComponentThemePlugin, PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ResetChildrenInUiSurface,
@@ -749,9 +749,9 @@ impl Default for DockingZoneHighlight {
     }
 }
 
-impl Default for Theme<DockingZoneHighlight> {
-    fn default() -> Self {
-        DockingZoneHighlight::theme()
+impl DefaultTheme for DockingZoneHighlight {
+    fn default_theme() -> Option<Theme<DockingZoneHighlight>> {
+        DockingZoneHighlight::theme().into()
     }
 }
 

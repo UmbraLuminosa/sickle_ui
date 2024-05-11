@@ -11,7 +11,7 @@ use crate::{
         theme_colors::{Accent, Container, On},
         theme_data::ThemeData,
         typography::{FontScale, FontStyle, FontType},
-        PseudoTheme, Theme, UiContext,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::UiBuilder,
     ui_style::{
@@ -34,16 +34,17 @@ pub struct DropdownPlugin;
 
 impl Plugin for DropdownPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                handle_option_press,
-                update_dropdown_label,
-                handle_click_or_touch.after(FluxInteractionUpdate),
-                update_dropdown_panel_visibility,
-            )
-                .chain(),
-        );
+        app.add_plugins(ComponentThemePlugin::<Dropdown>::default())
+            .add_systems(
+                Update,
+                (
+                    handle_option_press,
+                    update_dropdown_label,
+                    handle_click_or_touch.after(FluxInteractionUpdate),
+                    update_dropdown_panel_visibility,
+                )
+                    .chain(),
+            );
     }
 }
 
@@ -145,6 +146,7 @@ fn update_dropdown_panel_visibility(
                 .map(|entry| entry.unwrap())
                 .collect();
             let size = options.len() as f32 * 32.;
+            // TODO: correct sizing and placement of panel
             // let size = options
             //     .iter()
             //     .fold(0., |acc, (_, node)| acc + node.size().y);
@@ -167,7 +169,7 @@ fn update_dropdown_panel_visibility(
 #[reflect(Component)]
 pub struct DropdownOptions(Vec<String>);
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct DropdownOption {
     dropdown: Entity,
@@ -257,9 +259,9 @@ impl UiContext for Dropdown {
     }
 }
 
-impl Default for Theme<Dropdown> {
-    fn default() -> Self {
-        Dropdown::theme()
+impl DefaultTheme for Dropdown {
+    fn default_theme() -> Option<Theme<Dropdown>> {
+        Dropdown::theme().into()
     }
 }
 
@@ -468,22 +470,12 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 .id();
         });
 
-        let dropdown_data = Dropdown {
+        dropdown.insert(Dropdown {
             label: label_id,
             panel: panel_id,
             icon: icon_id,
             ..default()
-        };
-
-        // let style = ThemeData::with_default_and_override(
-        //     Dropdown::primary_style,
-        //     &dropdown_data,
-        //     style_override,
-        // );
-
-        let style = ThemeData::with_default(Dropdown::primary_style).convert_with(&dropdown_data);
-
-        dropdown.insert((dropdown_data, style));
+        });
 
         dropdown
     }

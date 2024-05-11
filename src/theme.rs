@@ -1,4 +1,3 @@
-pub mod default_theme;
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
 pub mod icons;
@@ -16,8 +15,8 @@ use bevy::{prelude::*, ui::UiSystem};
 use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder};
 
 use self::{
-    default_theme::DefaultThemePlugin, dynamic_style::*, dynamic_style_attribute::*,
-    pseudo_state::*, style_animation::*, theme_data::ThemeData,
+    dynamic_style::*, dynamic_style_attribute::*, pseudo_state::*, style_animation::*,
+    theme_data::ThemeData,
 };
 
 pub struct ThemePlugin;
@@ -29,11 +28,7 @@ impl Plugin for ThemePlugin {
             (ThemeUpdate, CustomThemeUpdate.after(ThemeUpdate)).before(UiSystem::Layout),
         )
         .init_resource::<ThemeData>()
-        .add_plugins((
-            AutoPseudoStatePlugin,
-            DefaultThemePlugin,
-            DynamicStylePlugin,
-        ));
+        .add_plugins((AutoPseudoStatePlugin, DynamicStylePlugin));
     }
 }
 
@@ -143,10 +138,16 @@ pub trait UiContext {
     fn contexts() -> Vec<&'static str>;
 }
 
+pub trait DefaultTheme: Clone + Component + UiContext {
+    fn default_theme() -> Option<Theme<Self>> {
+        None
+    }
+}
+
 #[derive(Component, Debug)]
 pub struct Theme<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     context: PhantomData<C>,
     pseudo_themes: Vec<PseudoTheme>,
@@ -154,7 +155,7 @@ where
 
 impl<C> Theme<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     pub fn new(pseudo_themes: impl Into<Vec<PseudoTheme>>) -> Self {
         Self {
@@ -183,7 +184,6 @@ where
             .in_set(set)
     }
 
-    // TODO: Implement ui_builder.themed_root(theme) extension?
     fn process_theme_update(
         q_targets: Query<Entity, With<C>>,
         q_added_targets: Query<Entity, Added<C>>,
@@ -227,7 +227,7 @@ where
 #[derive(Default)]
 pub struct ComponentThemePlugin<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     context: PhantomData<C>,
     is_custom: bool,
@@ -235,7 +235,7 @@ where
 
 impl<C> ComponentThemePlugin<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     pub fn new() -> Self {
         Self {
@@ -255,7 +255,7 @@ where
 
 impl<C> Plugin for ComponentThemePlugin<C>
 where
-    C: Clone + Component + UiContext,
+    C: DefaultTheme,
 {
     fn build(&self, app: &mut App) {
         // TODO: only add systems when theming cfg is set
