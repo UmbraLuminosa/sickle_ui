@@ -17,6 +17,7 @@ pub mod ui_commands;
 pub mod ui_style;
 pub mod widgets;
 
+use animated_interaction::AnimatedInteractionPlugin;
 use assets::BuiltInAssetsPlugin;
 use drag_interaction::DragInteractionPlugin;
 use drop_interaction::DropInteractionPlugin;
@@ -27,8 +28,6 @@ use resize_interaction::ResizeHandlePlugin;
 use scroll_interaction::ScrollInteractionPlugin;
 use theme::ThemePlugin;
 use widgets::WidgetsPlugin;
-
-use self::animated_interaction::AnimatedInteractionPlugin;
 
 pub use sickle_math::*;
 
