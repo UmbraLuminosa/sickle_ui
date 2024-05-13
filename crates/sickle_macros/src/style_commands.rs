@@ -681,7 +681,7 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
     );
 
     quote! {
-        struct #cmd_struct_ident {
+        pub struct #cmd_struct_ident {
             #target_attr: #target_type,
             check_lock: bool,
         }

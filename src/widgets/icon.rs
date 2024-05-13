@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{ui_builder::*, ui_style::SetImageExt};
+use crate::{
+    ui_builder::*,
+    ui_style::{ImageSource, SetImageExt},
+};
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component)]
@@ -27,7 +30,7 @@ impl<'w, 's> UiIconExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn icon<'a>(&'a mut self, path: impl Into<String>) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut icon = self.spawn((Name::new("Icon"), Icon::bundle(), Icon));
 
-        icon.style().image(path);
+        icon.style().image(ImageSource::Path(path.into()));
 
         icon
     }

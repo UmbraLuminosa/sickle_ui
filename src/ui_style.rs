@@ -21,7 +21,10 @@ use crate::{
     FluxInteraction,
 };
 
-use std::sync::Arc;
+use std::{
+    fmt::{Debug, Formatter, Result},
+    sync::Arc,
+};
 
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
@@ -243,7 +246,7 @@ enum _StyleAttributes {
     },
     #[skip_ui_style_ext]
     Image {
-        image: String,
+        image: ImageSource,
     },
     #[skip_enity_command]
     #[animatable]
@@ -306,7 +309,10 @@ enum _StyleAttributes {
 pub struct LockedStyleAttributes(HashSet<LockableStyleAttribute>);
 
 impl LockedStyleAttributes {
-    pub fn new(attributes: impl Into<HashSet<LockableStyleAttribute>>) -> Self {
+    pub fn new() -> Self {
+        Self(HashSet::<LockableStyleAttribute>::new())
+    }
+    pub fn lock(attributes: impl Into<HashSet<LockableStyleAttribute>>) -> Self {
         Self(attributes.into())
     }
 
@@ -486,8 +492,8 @@ impl CustomStaticStyleAttribute {
     }
 }
 
-impl std::fmt::Debug for CustomStaticStyleAttribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Debug for CustomStaticStyleAttribute {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.debug_struct("CustomStaticStyleAttribute").finish()
     }
 }
@@ -513,8 +519,8 @@ impl CustomInteractiveStyleAttribute {
     }
 }
 
-impl std::fmt::Debug for CustomInteractiveStyleAttribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Debug for CustomInteractiveStyleAttribute {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.debug_struct("CustomInteractiveStyleAttribute").finish()
     }
 }
@@ -540,8 +546,8 @@ impl CustomAnimatedStyleAttribute {
     }
 }
 
-impl std::fmt::Debug for CustomAnimatedStyleAttribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Debug for CustomAnimatedStyleAttribute {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.debug_struct("CustomAnimatedStyleAttribute").finish()
     }
 }
@@ -792,8 +798,21 @@ impl EntityCommand for SetZIndex {
     }
 }
 
-struct SetImage {
-    path: String,
+#[derive(Clone, Debug)]
+pub enum ImageSource {
+    Path(String),
+    Lookup(String, fn(String, Entity, &mut World) -> Handle<Image>),
+    Handle(Handle<Image>),
+}
+
+impl Default for ImageSource {
+    fn default() -> Self {
+        Self::Handle(Handle::default())
+    }
+}
+
+pub struct SetImage {
+    source: ImageSource,
     check_lock: bool,
 }
 
@@ -803,10 +822,16 @@ impl EntityCommand for SetImage {
             check_lock!(world, entity, "image", LockableStyleAttribute::Image);
         }
 
-        let handle = if self.path == "" {
-            Handle::default()
-        } else {
-            world.resource::<AssetServer>().load(self.path)
+        let handle = match self.source {
+            ImageSource::Path(path) => {
+                if path == "" {
+                    Handle::default()
+                } else {
+                    world.resource::<AssetServer>().load(path)
+                }
+            }
+            ImageSource::Lookup(path, callback) => callback(path, entity, world),
+            ImageSource::Handle(handle) => handle,
         };
 
         let Some(mut image) = world.get_mut::<UiImage>(entity) else {
@@ -824,13 +849,13 @@ impl EntityCommand for SetImage {
 }
 
 pub trait SetImageExt<'a> {
-    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyle<'a>;
+    fn image(&'a mut self, source: ImageSource) -> &mut UiStyle<'a>;
 }
 
 impl<'a> SetImageExt<'a> for UiStyle<'a> {
-    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyle<'a> {
+    fn image(&'a mut self, source: ImageSource) -> &mut UiStyle<'a> {
         self.commands.add(SetImage {
-            path: path.into(),
+            source,
             check_lock: true,
         });
         self
@@ -838,13 +863,13 @@ impl<'a> SetImageExt<'a> for UiStyle<'a> {
 }
 
 pub trait SetImageUncheckedExt<'a> {
-    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyleUnchecked<'a>;
+    fn image(&'a mut self, source: ImageSource) -> &mut UiStyleUnchecked<'a>;
 }
 
 impl<'a> SetImageUncheckedExt<'a> for UiStyleUnchecked<'a> {
-    fn image(&'a mut self, path: impl Into<String>) -> &mut UiStyleUnchecked<'a> {
+    fn image(&'a mut self, source: ImageSource) -> &mut UiStyleUnchecked<'a> {
         self.commands.add(SetImage {
-            path: path.into(),
+            source,
             check_lock: false,
         });
         self
@@ -927,7 +952,7 @@ impl EntityCommand for SetImageScaleMode {
     }
 }
 
-struct SetFluxInteractionEnabled {
+pub struct SetFluxInteractionEnabled {
     enabled: bool,
     check_lock: bool,
 }
@@ -1148,7 +1173,7 @@ impl<'a> SetNodeShowHideUncheckedExt<'a> for UiStyleUnchecked<'a> {
     }
 }
 
-struct SetAbsolutePosition {
+pub struct SetAbsolutePosition {
     absolute_position: Vec2,
     check_lock: bool,
 }
@@ -1251,7 +1276,7 @@ impl EntityCommand for SetIcon {
             }
             IconData::Image(path, color) => {
                 SetImage {
-                    path,
+                    source: ImageSource::Path(path),
                     check_lock: self.check_lock,
                 }
                 .apply(entity, world);

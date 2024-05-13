@@ -24,7 +24,7 @@ impl Row {
                 background_color: Color::NONE.into(),
                 ..default()
             },
-            LockedStyleAttributes::new(LockableStyleAttribute::FlexDirection),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FlexDirection),
         )
     }
 }

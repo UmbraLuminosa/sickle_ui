@@ -361,7 +361,7 @@ impl Dropdown {
                 ..default()
             },
             TrackedInteraction::default(),
-            LockedStyleAttributes::new(LockableStyleAttribute::FlexDirection),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FlexDirection),
             DropdownOptions(options),
         )
     }
@@ -374,7 +374,7 @@ impl Dropdown {
                 ..default()
             },
             BorderColor::default(),
-            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 

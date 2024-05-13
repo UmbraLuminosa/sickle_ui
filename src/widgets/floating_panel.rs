@@ -12,9 +12,9 @@ use crate::interactions::InteractiveBackground;
 use crate::resize_interaction::ResizeHandle;
 use crate::ui_builder::UiBuilderExt;
 use crate::ui_style::{
-    SetAbsolutePositionExt, SetBackgroundColorExt, SetFlexGrowExt, SetFluxInteractionExt,
-    SetFocusPolicyExt, SetHeightExt, SetImageExt, SetMarginExt, SetNodeShowHideExt,
-    SetVisibilityExt, SetWidthExt, SetZIndexExt, UiStyleExt,
+    ImageSource, SetAbsolutePositionExt, SetBackgroundColorExt, SetFlexGrowExt,
+    SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetImageExt, SetMarginExt,
+    SetNodeShowHideExt, SetVisibilityExt, SetWidthExt, SetZIndexExt, UiStyleExt,
 };
 use crate::FluxInteraction;
 use crate::{
@@ -361,10 +361,10 @@ fn update_panel_layout(
             commands.style(panel.content_view).render(!config.folded);
             commands
                 .style(panel.fold_button)
-                .image(match config.folded {
-                    true => "embedded://sickle_ui/icons/chevron_right.png",
-                    false => "embedded://sickle_ui/icons/chevron_down.png",
-                });
+                .image(ImageSource::Path(match config.folded {
+                    true => "embedded://sickle_ui/icons/chevron_right.png".into(),
+                    false => "embedded://sickle_ui/icons/chevron_down.png".into(),
+                }));
         }
 
         let render_resize_handles = !config.folded && config.resizable && !panel.moving;

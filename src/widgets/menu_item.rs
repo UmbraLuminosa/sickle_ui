@@ -6,7 +6,7 @@ use crate::{
     input_extension::{ShortcutTextExt, SymmetricKeysExt},
     interactions::InteractiveBackground,
     ui_builder::*,
-    ui_style::{SetBackgroundColorExt, SetImageExt, UiStyleExt},
+    ui_style::{ImageSource, SetBackgroundColorExt, SetImageExt, UiStyleExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
@@ -116,7 +116,7 @@ fn update_menu_item_on_config_change(
                 .try_insert(UiImage::default());
             commands
                 .style(menu_item.leading)
-                .image(leading)
+                .image(ImageSource::Path(leading))
                 .background_color(Color::WHITE);
         } else {
             commands.entity(menu_item.leading).remove::<UiImage>();
@@ -141,7 +141,7 @@ fn update_menu_item_on_config_change(
                 .try_insert(UiImage::default());
             commands
                 .style(menu_item.trailing)
-                .image(trailing)
+                .image(ImageSource::Path(trailing))
                 .background_color(Color::WHITE);
         } else {
             commands.entity(menu_item.trailing).remove::<UiImage>();

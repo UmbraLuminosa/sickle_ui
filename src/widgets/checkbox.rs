@@ -241,7 +241,7 @@ impl Checkbox {
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            LockedStyleAttributes::new(LockableStyleAttribute::FocusPolicy),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 
