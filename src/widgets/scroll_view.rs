@@ -7,7 +7,7 @@ use crate::{
     interactions::InteractiveBackground,
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
-    ui_style::{SetPaddingExt, UiStyleExt},
+    ui_style::{SetPaddingExt, SetVisibilityExt, TrackedStyleState, UiStyleExt},
     TrackedInteraction,
 };
 
@@ -20,6 +20,7 @@ impl Plugin for ScrollViewPlugin {
         app.add_systems(
             Update,
             (
+                update_scroll_view_on_tracked_style_state_change,
                 update_scroll_view_on_content_change,
                 update_scroll_view_on_scroll.after(ScrollableUpdate),
                 update_scroll_view_on_drag.after(DraggableUpdate),
@@ -28,6 +29,18 @@ impl Plugin for ScrollViewPlugin {
             )
                 .chain(),
         );
+    }
+}
+
+fn update_scroll_view_on_tracked_style_state_change(
+    mut q_scroll_views: Query<(&mut ScrollView, &TrackedStyleState), Changed<TrackedStyleState>>,
+) {
+    for (mut scroll_view, state) in &mut q_scroll_views {
+        let should_disable = *state == TrackedStyleState::Transitioning;
+
+        if scroll_view.disabled != should_disable {
+            scroll_view.disabled = should_disable;
+        }
     }
 }
 
@@ -69,6 +82,10 @@ fn update_scroll_view_on_scroll(
             continue;
         };
 
+        if scroll_view.disabled {
+            continue;
+        }
+
         let offset = match axis {
             ScrollAxis::Horizontal => Vec2 { x: diff, y: 0. },
             ScrollAxis::Vertical => Vec2 { x: 0., y: diff },
@@ -97,6 +114,10 @@ fn update_scroll_view_on_drag(
         let Ok(mut scroll_view) = q_scroll_view.get_mut(bar_handle.scroll_view) else {
             continue;
         };
+        if scroll_view.disabled {
+            continue;
+        }
+
         let Some(diff) = draggable.diff else {
             continue;
         };
@@ -191,6 +212,22 @@ fn update_scroll_view_layout(
     mut commands: Commands,
 ) {
     for (entity, scroll_view) in &q_scroll_view {
+        if scroll_view.disabled {
+            if let Some(vertical_scroll_bar) = scroll_view.vertical_scroll_bar {
+                commands
+                    .style(vertical_scroll_bar)
+                    .visibility(Visibility::Hidden);
+            }
+
+            if let Some(horizontal_scroll_bar) = scroll_view.horizontal_scroll_bar {
+                commands
+                    .style(horizontal_scroll_bar)
+                    .visibility(Visibility::Hidden);
+            }
+
+            continue;
+        }
+
         let Ok(container_node) = q_node.get(entity) else {
             continue;
         };
@@ -372,6 +409,7 @@ pub struct ScrollView {
     vertical_scroll_bar: Option<Entity>,
     vertical_scroll_bar_handle: Option<Entity>,
     scroll_offset: Vec2,
+    disabled: bool,
 }
 
 impl Default for ScrollView {
@@ -384,6 +422,7 @@ impl Default for ScrollView {
             vertical_scroll_bar: None,
             vertical_scroll_bar_handle: None,
             scroll_offset: Vec2::ZERO,
+            disabled: false,
         }
     }
 }

@@ -8,8 +8,7 @@ use crate::{
     interactions::InteractiveBackground,
     scroll_interaction::ScrollAxis,
     theme::{
-        pseudo_state::PseudoState,
-        style_animation::AnimationState,
+        pseudo_state::{PseudoState, PseudoStates},
         theme_colors::{Accent, Container, On},
         theme_data::ThemeData,
         typography::{FontScale, FontStyle, FontType},
@@ -19,7 +18,8 @@ use crate::{
     ui_commands::ManagePseudoStateExt,
     ui_style::{
         AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetDisplayUncheckedExt,
-        SetFocusPolicyUncheckedExt, SetVisibilityUncheckedExt, StyleBuilder, UiStyleUncheckedExt,
+        SetFocusPolicyUncheckedExt, SetHeightUncheckedExt, SetVisibilityUncheckedExt, StyleBuilder,
+        TrackedStyleState, UiStyleUncheckedExt,
     },
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
@@ -27,8 +27,9 @@ use crate::{
 use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiScrollViewExt};
 
 const DROPDOWN_LABEL: &'static str = "Label";
-const DROPDOWN_PANEL: &'static str = "Panel";
 const DROPDOWN_ICON: &'static str = "Icon";
+const DROPDOWN_PANEL: &'static str = "Panel";
+const DROPDOWN_SCROLL_VIEW: &'static str = "ScrollView";
 const DROPDOWN_OPTION_LABEL: &'static str = "Label";
 const DROPDOWN_PANEL_Z_INDEX: usize = 11000;
 
@@ -43,6 +44,7 @@ impl Plugin for DropdownPlugin {
                     handle_option_press,
                     update_dropdown_label,
                     handle_click_or_touch.after(FluxInteractionUpdate),
+                    update_drowdown_pseudo_state,
                     update_dropdown_panel_visibility,
                 )
                     .chain(),
@@ -124,36 +126,39 @@ fn handle_option_press(
     }
 }
 
-fn update_dropdown_panel_visibility(
-    q_panels: Query<(Entity, &DropdownPanel)>,
-    q_dropdown: Query<Ref<Dropdown>>,
+fn update_drowdown_pseudo_state(
+    q_panels: Query<(&DropdownPanel, &PseudoStates), Changed<PseudoStates>>,
     mut commands: Commands,
 ) {
-    for (entity, panel) in &q_panels {
-        let Ok(dropdown) = q_dropdown.get(panel.dropdown) else {
-            continue;
-        };
-
-        if !dropdown.is_changed() {
-            continue;
-        }
-
-        if dropdown.is_open {
-            commands
-                .style_unchecked(entity)
-                .display(Display::Flex)
-                .visibility(Visibility::Inherited);
+    for (panel, states) in &q_panels {
+        if states.has(PseudoState::Visible) {
             commands
                 .entity(panel.dropdown)
                 .add_pseudo_state(PseudoState::Open);
         } else {
             commands
-                .style_unchecked(entity)
-                .display(Display::None)
-                .visibility(Visibility::Hidden);
-            commands
                 .entity(panel.dropdown)
                 .remove_pseudo_state(PseudoState::Open);
+        }
+    }
+}
+
+fn update_dropdown_panel_visibility(
+    q_dropdowns: Query<&Dropdown, Changed<Dropdown>>,
+    mut commands: Commands,
+) {
+    for dropdown in &q_dropdowns {
+        if dropdown.is_open {
+            commands
+                .style_unchecked(dropdown.panel)
+                .display(Display::Flex)
+                .visibility(Visibility::Inherited)
+                .height(Val::Px(0.));
+        } else {
+            commands
+                .style_unchecked(dropdown.panel)
+                .display(Display::None)
+                .visibility(Visibility::Hidden);
         }
     }
 }
@@ -218,7 +223,8 @@ pub struct Dropdown {
     label: Entity,
     icon: Entity,
     panel: Entity,
-    option_list: Entity,
+    scroll_view: Entity,
+    scroll_viewport: Entity,
     is_open: bool,
 }
 
@@ -229,7 +235,8 @@ impl Default for Dropdown {
             label: Entity::PLACEHOLDER,
             icon: Entity::PLACEHOLDER,
             panel: Entity::PLACEHOLDER,
-            option_list: Entity::PLACEHOLDER,
+            scroll_view: Entity::PLACEHOLDER,
+            scroll_viewport: Entity::PLACEHOLDER,
             is_open: false,
         }
     }
@@ -239,8 +246,9 @@ impl UiContext for Dropdown {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
             DROPDOWN_LABEL => Ok(self.label),
-            DROPDOWN_PANEL => Ok(self.panel),
             DROPDOWN_ICON => Ok(self.icon),
+            DROPDOWN_PANEL => Ok(self.panel),
+            DROPDOWN_SCROLL_VIEW => Ok(self.scroll_view),
             _ => Err(format!(
                 "{} doesn't exists for Dropdown. Possible contexts: {:?}",
                 target,
@@ -250,7 +258,12 @@ impl UiContext for Dropdown {
     }
 
     fn contexts() -> Vec<&'static str> {
-        vec![DROPDOWN_LABEL, DROPDOWN_PANEL, DROPDOWN_ICON]
+        vec![
+            DROPDOWN_LABEL,
+            DROPDOWN_ICON,
+            DROPDOWN_PANEL,
+            DROPDOWN_SCROLL_VIEW,
+        ]
     }
 }
 
@@ -267,7 +280,7 @@ impl Dropdown {
 
     pub fn theme() -> Theme<Dropdown> {
         let base_theme = PseudoTheme::deferred(None, Dropdown::primary_style);
-        let open_theme = PseudoTheme::deferred(vec![PseudoState::Open], Dropdown::open_style);
+        let open_theme = PseudoTheme::deferred_world(vec![PseudoState::Open], Dropdown::open_style);
 
         Theme::<Dropdown>::new(vec![base_theme, open_theme])
     }
@@ -339,34 +352,35 @@ impl Dropdown {
             .max_height(Val::Px(theme_spacing.areas.extra_large));
     }
 
-    fn open_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
-        // TODO: Position panel based on window-relative location
-        style_builder
-            .animated()
-            .custom(Dropdown::tween_dropdown_option_list_height)
-            .copy_from(theme_data.enter_animation);
-    }
-
-    fn tween_dropdown_option_list_height(entity: Entity, state: AnimationState, world: &mut World) {
+    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
         let Some(dropdown) = world.get::<Dropdown>(entity) else {
             return;
         };
-        let Some(option_list) = world.get::<Node>(dropdown.option_list) else {
+
+        let Some(option_list) = world.get::<Node>(dropdown.scroll_viewport) else {
             return;
         };
 
+        let idle_height = option_list.size().y.clamp(0., 150.);
+        let enter_animation = world.resource::<ThemeData>().enter_animation.clone();
+
+        // TODO: Position panel based on window-relative location
         // TODO: Clamp to available window space, set width
-        let max_height = option_list.size().y.clamp(0., 150.);
-        let Some(mut dropdown_panel) = world.get_mut::<Style>(dropdown.panel) else {
-            return;
-        };
+        style_builder
+            .switch_context(DROPDOWN_PANEL)
+            .animated()
+            .height(AnimatedVals {
+                idle: Val::Px(idle_height),
+                enter_from: Val::Px(0.).into(),
+                ..default()
+            })
+            .copy_from(enter_animation);
 
-        let bundle = AnimatedVals {
-            idle: 1.,
-            enter_from: Some(0.),
-            ..default()
-        };
-        dropdown_panel.height = Val::Px(max_height * state.extract(&bundle));
+        style_builder
+            .switch_context(DROPDOWN_SCROLL_VIEW)
+            .animated()
+            .tracked_style_state(TrackedStyleState::default_vals())
+            .copy_from(enter_animation);
     }
 
     fn base_tween() -> AnimationConfig {
@@ -445,7 +459,8 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let mut label_id = Entity::PLACEHOLDER;
         let mut icon_id = Entity::PLACEHOLDER;
         let mut panel_id = Entity::PLACEHOLDER;
-        let mut option_list_id = Entity::PLACEHOLDER;
+        let mut scroll_view_id = Entity::PLACEHOLDER;
+        let mut scroll_viewport_id = Entity::PLACEHOLDER;
 
         let option_count = options.len();
         let mut string_options: Vec<String> = Vec::with_capacity(option_count);
@@ -461,29 +476,32 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             icon_id = builder.spawn(Dropdown::button_icon()).id();
             panel_id = builder
                 .panel("Dropdown Options".into(), |container| {
-                    container.scroll_view(ScrollAxis::Vertical, |scroll_view| {
-                        option_list_id = scroll_view.id();
+                    scroll_view_id = container
+                        .scroll_view(ScrollAxis::Vertical, |scroll_view| {
+                            scroll_viewport_id = scroll_view.id();
 
-                        for (index, label) in string_options.iter().enumerate() {
-                            let mut label_id = Entity::PLACEHOLDER;
-                            scroll_view.container(Dropdown::option_bundle(index), |option| {
-                                label_id = option
-                                    .label(LabelConfig {
-                                        label: label.clone(),
-                                        margin: UiRect::horizontal(Val::Px(10.)),
-                                        color: Color::WHITE,
-                                        ..default()
-                                    })
-                                    .id();
+                            for (index, label) in string_options.iter().enumerate() {
+                                let mut label_id = Entity::PLACEHOLDER;
+                                scroll_view.container(Dropdown::option_bundle(index), |option| {
+                                    label_id = option
+                                        .label(LabelConfig {
+                                            label: label.clone(),
+                                            margin: UiRect::horizontal(Val::Px(10.)),
+                                            color: Color::WHITE,
+                                            ..default()
+                                        })
+                                        .id();
 
-                                option.insert(DropdownOption {
-                                    dropdown: dropdown_id,
-                                    option: index,
-                                    label: label_id,
+                                    option.insert(DropdownOption {
+                                        dropdown: dropdown_id,
+                                        option: index,
+                                        label: label_id,
+                                    });
                                 });
-                            });
-                        }
-                    });
+                            }
+                        })
+                        .insert(TrackedStyleState::default())
+                        .id();
                 })
                 .insert((
                     DropdownPanel {
@@ -494,6 +512,7 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                         LockableStyleAttribute::Display,
                         LockableStyleAttribute::FocusPolicy,
                     ]),
+                    PseudoStates::default(),
                 ))
                 .style_unchecked()
                 .focus_policy(bevy::ui::FocusPolicy::Block)
@@ -504,7 +523,8 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             label: label_id,
             icon: icon_id,
             panel: panel_id,
-            option_list: option_list_id,
+            scroll_view: scroll_view_id,
+            scroll_viewport: scroll_viewport_id,
             ..default()
         });
 

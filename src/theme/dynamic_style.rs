@@ -147,6 +147,9 @@ fn update_dynamic_style_on_flux_change(
     }
 }
 
+// TODO: Think about removing hard dependancy on FluxInteraction:
+// In some cases we only care about the enter animation (panels, typically)
+// Perhaps separate the enter animation entirely.
 fn update_dynamic_style_on_stopwatch_change(
     mut q_styles: Query<
         (

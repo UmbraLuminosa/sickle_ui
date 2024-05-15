@@ -24,7 +24,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Sickle UI -  Docking Zone Splits".into(),
+                title: "Sickle UI - Docking Zone Splits".into(),
                 resolution: (1280., 720.).into(),
                 ..default()
             }),

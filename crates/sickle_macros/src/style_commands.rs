@@ -682,8 +682,8 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
 
     quote! {
         pub struct #cmd_struct_ident {
-            #target_attr: #target_type,
-            check_lock: bool,
+            pub #target_attr: #target_type,
+            pub check_lock: bool,
         }
 
         pub trait #extension_ident<'a> {
@@ -722,22 +722,28 @@ fn to_ui_style_command_impl(style_attribute: &StyleAttribute) -> proc_macro2::To
     let target_attr_name = &style_attribute.target_attr_name;
     let setter = to_setter_entity_command_frag(style_attribute);
 
+    let check_lock = match style_attribute.skip_lockable_enum {
+        true => proc_macro2::TokenStream::new(),
+        false => quote! {
+            if self.check_lock {
+                if let Some(locked_attrs) = world.get::<LockedStyleAttributes>(entity) {
+                    if locked_attrs.contains(LockableStyleAttribute::#ident) {
+                        warn!(
+                            "Failed to style {} property on entity {:?}: Attribute locked!",
+                            #target_attr_name,
+                            entity
+                        );
+                        return;
+                    }
+                }
+            }
+        },
+    };
+
     quote! {
         impl EntityCommand for #cmd_struct_ident {
             fn apply(self, entity: Entity, world: &mut World) {
-                if self.check_lock {
-                    if let Some(locked_attrs) = world.get::<LockedStyleAttributes>(entity) {
-                        if locked_attrs.contains(LockableStyleAttribute::#ident) {
-                            warn!(
-                                "Failed to style {} property on entity {:?}: Attribute locked!",
-                                #target_attr_name,
-                                entity
-                            );
-                            return;
-                        }
-                    }
-                }
-
+                #check_lock
                 #setter
             }
         }
