@@ -453,7 +453,7 @@ impl EntityCommand for SetAbsolutePosition {
                 return;
             };
 
-            let size = parent_node.size();
+            let size = parent_node.unrounded_size();
             let Some(parent_transform) = world.get::<GlobalTransform>(parent.get()) else {
                 warn!(
                     "Failed to set position on entity {:?}: Parent has no GlobalTransform component!",

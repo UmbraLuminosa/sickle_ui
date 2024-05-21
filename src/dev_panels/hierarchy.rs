@@ -9,8 +9,8 @@ use crate::{
     widgets::{
         foldable::{Foldable, UiFoldableExt},
         prelude::{
-            MenuItem, MenuItemConfig, SizedZoneConfig, UiColumnExt, UiMenuItemExt, UiRowExt,
-            UiScrollViewExt, UiSizedZoneExt,
+            MenuItem, MenuItemConfig, SizedZoneConfig, UiColumnExt, UiMenuItemExt, UiPanelExt,
+            UiRowExt, UiScrollViewExt, UiSizedZoneExt,
         },
     },
 };
@@ -256,8 +256,8 @@ impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     |zone| {
                         let hierarchy_id = zone.id();
                         let mut refresh_button = Entity::PLACEHOLDER;
-                        zone.scroll_view(None, |scroll_view| {
-                            scroll_view
+                        zone.panel("Hierarchy content".into(), |panel| {
+                            panel
                                 .row(|row| {
                                     refresh_button = row
                                         .menu_item(MenuItemConfig {
@@ -277,19 +277,21 @@ impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                 .margin(UiRect::bottom(Val::Px(10.)))
                                 .border_color(Color::ANTIQUE_WHITE);
 
-                            let node_container = scroll_view
-                                .column(|_| {})
-                                .insert(HierarchyNodeContainer {
-                                    hierarchy: hierarchy_id,
-                                })
-                                .id();
+                            panel.scroll_view(None, |scroll_view| {
+                                let node_container = scroll_view
+                                    .column(|_| {})
+                                    .insert(HierarchyNodeContainer {
+                                        hierarchy: hierarchy_id,
+                                    })
+                                    .id();
 
-                            scroll_view.commands().entity(refresh_button).insert(
-                                RefreshHierarchyButton {
-                                    hierarchy: hierarchy_id,
-                                    container: node_container,
-                                },
-                            );
+                                scroll_view.commands().entity(refresh_button).insert(
+                                    RefreshHierarchyButton {
+                                        hierarchy: hierarchy_id,
+                                        container: node_container,
+                                    },
+                                );
+                            });
                         });
                     },
                 )

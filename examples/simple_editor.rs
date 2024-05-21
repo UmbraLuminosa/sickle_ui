@@ -8,7 +8,7 @@ use sickle_ui::{
     },
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
-    ui_style::{SetBackgroundColorExt, SetHeightExt, SetWidthExt},
+    ui_style::{SetBackgroundColorExt, SetHeightExt, SetJustifyContentsExt, SetWidthExt},
     widgets::{prelude::*, tab_container::UiTabContainerSubExt, WidgetLibraryUpdate},
     SickleUiPlugin,
 };
@@ -228,16 +228,24 @@ fn setup(
                     .insert(ExitAppButton);
                 },
             );
-            row.spawn((
-                NodeBundle {
-                    style: Style {
-                        align_items: AlignItems::Center,
+            row.container(
+                (
+                    NodeBundle {
+                        style: Style {
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::End,
+                            width: Val::Percent(100.),
+                            ..default()
+                        },
                         ..default()
                     },
-                    ..default()
+                    ExtraMenu,
+                ),
+                |row| {
+                    row.radio_group(vec!["Light", "Dark"], false);
+                    row.dropdown(vec!["Standard", "Medium Contrast", "High Contrast"]);
                 },
-                ExtraMenu,
-            ));
+            );
         });
         column
             .row(|_| {})
@@ -422,11 +430,64 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                         |tab_container| {
                             tab_container.add_tab("Placeholder".into(), |placeholder| {
                                 placeholder.radio_group(vec!["Light", "Dark"], false);
-                                placeholder.dropdown(vec![
-                                    "Standard",
-                                    "Medium Contrast",
-                                    "High Contrast",
-                                ]);
+                                placeholder.row(|row| {
+                                    row.style().justify_content(JustifyContent::SpaceBetween);
+                                    row.dropdown(vec![
+                                        "Standard",
+                                        "Medium Contrast",
+                                        "High Contrast - High Contrast",
+                                    ]);
+
+                                    row.dropdown(vec![
+                                        "Standard",
+                                        "Medium Contrast",
+                                        "High Contrast - High Contrast",
+                                    ]);
+                                });
+
+                                placeholder.scroll_view(None, |scroll_view| {
+                                    for _ in 0..10 {
+                                        scroll_view.row(|row| {
+                                            for _ in 0..10 {
+                                                row.container(
+                                                    NodeBundle {
+                                                        style: Style {
+                                                            height: Val::Px(50.),
+                                                            flex_shrink: 0.,
+                                                            border: UiRect::all(Val::Px(1.)),
+                                                            ..default()
+                                                        },
+                                                        background_color: Color::WHITE.into(),
+                                                        border_color: Color::BLACK.into(),
+                                                        ..default()
+                                                    },
+                                                    |container| {
+                                                        container.label(LabelConfig {
+                                                            label: "Test Node".into(),
+                                                            color: Color::BLACK,
+                                                            ..default()
+                                                        });
+                                                    },
+                                                );
+                                            }
+                                        });
+                                    }
+                                });
+
+                                placeholder.row(|row| {
+                                    row.style().justify_content(JustifyContent::SpaceBetween);
+                                    row.dropdown(vec![
+                                        "Standard",
+                                        "Medium Contrast",
+                                        "High Contrast - High Contrast",
+                                    ]);
+
+                                    row.dropdown(vec![
+                                        "Standard",
+                                        "Medium Contrast",
+                                        "High Contrast - High Contrast",
+                                    ]);
+                                });
                             });
                         },
                     );

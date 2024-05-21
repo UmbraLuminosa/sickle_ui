@@ -7,7 +7,7 @@ use crate::{
     interactions::InteractiveBackground,
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
-    ui_style::{SetPaddingExt, SetVisibilityExt, TrackedStyleState, UiStyleExt},
+    ui_style::{SetPaddingExt, TrackedStyleState, UiStyleExt},
     TrackedInteraction,
 };
 
@@ -25,18 +25,22 @@ impl Plugin for ScrollViewPlugin {
                 update_scroll_view_on_scroll.after(ScrollableUpdate),
                 update_scroll_view_on_drag.after(DraggableUpdate),
                 update_scroll_view_offset,
-                update_scroll_view_layout,
+                update_scroll_view_layout.in_set(ScrollViewLayoutUpdate),
             )
                 .chain(),
         );
     }
 }
 
+#[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
+pub struct ScrollViewLayoutUpdate;
+
 fn update_scroll_view_on_tracked_style_state_change(
     mut q_scroll_views: Query<(&mut ScrollView, &TrackedStyleState), Changed<TrackedStyleState>>,
 ) {
     for (mut scroll_view, state) in &mut q_scroll_views {
-        let should_disable = *state == TrackedStyleState::Transitioning;
+        let should_disable =
+            *state == TrackedStyleState::Enter || *state == TrackedStyleState::Transitioning;
 
         if scroll_view.disabled != should_disable {
             scroll_view.disabled = should_disable;
@@ -132,12 +136,12 @@ fn update_scroll_view_on_drag(
         };
 
         let container_size = match bar_handle.axis {
-            ScrollAxis::Horizontal => container_node.size().x,
-            ScrollAxis::Vertical => container_node.size().y,
+            ScrollAxis::Horizontal => container_node.unrounded_size().x,
+            ScrollAxis::Vertical => container_node.unrounded_size().y,
         };
         let content_size = match bar_handle.axis {
-            ScrollAxis::Horizontal => content_node.size().x,
-            ScrollAxis::Vertical => content_node.size().y,
+            ScrollAxis::Horizontal => content_node.unrounded_size().x,
+            ScrollAxis::Vertical => content_node.unrounded_size().y,
         };
         let overflow = content_size - container_size;
         if overflow <= 0. {
@@ -145,8 +149,8 @@ fn update_scroll_view_on_drag(
         }
 
         let bar_size = match bar_handle.axis {
-            ScrollAxis::Horizontal => bar_node.size().x,
-            ScrollAxis::Vertical => bar_node.size().y,
+            ScrollAxis::Horizontal => bar_node.unrounded_size().x,
+            ScrollAxis::Vertical => bar_node.unrounded_size().y,
         };
         let remaining_space = container_size - bar_size;
         let ratio = overflow / remaining_space;
@@ -171,8 +175,8 @@ fn update_scroll_view_offset(
             continue;
         };
 
-        let container_width = container_node.size().x;
-        let container_height = container_node.size().y;
+        let container_width = container_node.unrounded_size().x;
+        let container_height = container_node.unrounded_size().y;
         if container_width == 0. || container_height == 0. {
             continue;
         }
@@ -181,8 +185,8 @@ fn update_scroll_view_offset(
             continue;
         };
 
-        let content_width = content_node.size().x;
-        let content_height = content_node.size().y;
+        let content_width = content_node.unrounded_size().x;
+        let content_height = content_node.unrounded_size().y;
 
         let overflow_x = content_width - container_width;
         let scroll_offset_x = if overflow_x > 0. {
@@ -212,28 +216,12 @@ fn update_scroll_view_layout(
     mut commands: Commands,
 ) {
     for (entity, scroll_view) in &q_scroll_view {
-        if scroll_view.disabled {
-            if let Some(vertical_scroll_bar) = scroll_view.vertical_scroll_bar {
-                commands
-                    .style(vertical_scroll_bar)
-                    .visibility(Visibility::Hidden);
-            }
-
-            if let Some(horizontal_scroll_bar) = scroll_view.horizontal_scroll_bar {
-                commands
-                    .style(horizontal_scroll_bar)
-                    .visibility(Visibility::Hidden);
-            }
-
-            continue;
-        }
-
         let Ok(container_node) = q_node.get(entity) else {
             continue;
         };
 
-        let container_width = container_node.size().x;
-        let container_height = container_node.size().y;
+        let container_width = container_node.unrounded_size().x;
+        let container_height = container_node.unrounded_size().y;
         if container_width == 0. || container_height == 0. {
             continue;
         }
@@ -245,8 +233,8 @@ fn update_scroll_view_layout(
             continue;
         };
 
-        let content_width = content_node.size().x;
-        let content_height = content_node.size().y;
+        let content_width = content_node.unrounded_size().x;
+        let content_height = content_node.unrounded_size().y;
 
         let overflow_x = content_width - container_width;
         let overflow_y = content_height - container_height;
@@ -272,7 +260,10 @@ fn update_scroll_view_layout(
             scroll_view.vertical_scroll_bar_handle,
         ) {
             if let Ok(mut vertical_bar_visibility) = q_visibility.get_mut(vertical_scroll_bar) {
-                if container_height >= content_height || container_height <= 5. {
+                if scroll_view.disabled
+                    || container_height >= content_height
+                    || container_height <= 5.
+                {
                     *vertical_bar_visibility = Visibility::Hidden;
                     padding.0 = false;
                 } else {
@@ -299,7 +290,8 @@ fn update_scroll_view_layout(
         ) {
             // Update horizontal scroll bar
             if let Ok(mut horizontal_bar_visibility) = q_visibility.get_mut(horizontal_scroll_bar) {
-                if container_width >= content_width || container_width <= 5. {
+                if scroll_view.disabled || container_width >= content_width || container_width <= 5.
+                {
                     *horizontal_bar_visibility = Visibility::Hidden;
                     padding.1 = false;
                 } else {
@@ -409,7 +401,7 @@ pub struct ScrollView {
     vertical_scroll_bar: Option<Entity>,
     vertical_scroll_bar_handle: Option<Entity>,
     scroll_offset: Vec2,
-    disabled: bool,
+    pub disabled: bool,
 }
 
 impl Default for ScrollView {
@@ -428,6 +420,10 @@ impl Default for ScrollView {
 }
 
 impl ScrollView {
+    pub fn viewport_id(&self) -> Entity {
+        self.viewport
+    }
+
     fn base_tween() -> AnimationConfig {
         AnimationConfig {
             duration: 0.1,
@@ -509,6 +505,7 @@ impl ScrollView {
                     justify_self: JustifySelf::Start,
                     align_self: AlignSelf::Start,
                     flex_direction: FlexDirection::Column,
+                    flex_shrink: 0.,
                     padding,
                     ..default()
                 },
@@ -562,6 +559,7 @@ impl ScrollView {
                     ..default()
                 },
                 background_color: Color::GRAY.into(),
+                visibility: Visibility::Hidden,
                 ..default()
             },
         )

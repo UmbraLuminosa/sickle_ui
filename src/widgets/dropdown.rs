@@ -1,12 +1,13 @@
 use std::collections::VecDeque;
 
-use bevy::{prelude::*, ui::FocusPolicy};
-use sickle_math::ease::Ease;
+use bevy::{
+    prelude::*,
+    render::camera::{ManualTextureViews, RenderTarget},
+    ui::FocusPolicy,
+    window::{PrimaryWindow, WindowResolution},
+};
 
 use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
-    interactions::InteractiveBackground,
-    scroll_interaction::ScrollAxis,
     theme::{
         pseudo_state::{PseudoState, PseudoStates},
         theme_colors::{Accent, Container, On},
@@ -24,7 +25,10 @@ use crate::{
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
-use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiScrollViewExt};
+use super::{
+    prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiScrollViewExt},
+    scroll_view::{ScrollView, ScrollViewLayoutUpdate},
+};
 
 const DROPDOWN_LABEL: &'static str = "Label";
 const DROPDOWN_ICON: &'static str = "Icon";
@@ -37,18 +41,21 @@ pub struct DropdownPlugin;
 
 impl Plugin for DropdownPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ComponentThemePlugin::<Dropdown>::default())
-            .add_systems(
-                Update,
-                (
-                    handle_option_press,
-                    update_dropdown_label,
-                    handle_click_or_touch.after(FluxInteractionUpdate),
-                    update_drowdown_pseudo_state,
-                    update_dropdown_panel_visibility,
-                )
-                    .chain(),
-            );
+        app.add_plugins((
+            ComponentThemePlugin::<Dropdown>::default(),
+            ComponentThemePlugin::<DropdownOption>::default(),
+        ))
+        .add_systems(
+            Update,
+            (
+                handle_option_press,
+                update_dropdown_label,
+                handle_click_or_touch.after(FluxInteractionUpdate),
+                update_drowdown_pseudo_state,
+                update_dropdown_panel_visibility.before(ScrollViewLayoutUpdate),
+            )
+                .chain(),
+        );
     }
 }
 
@@ -145,6 +152,7 @@ fn update_drowdown_pseudo_state(
 
 fn update_dropdown_panel_visibility(
     q_dropdowns: Query<&Dropdown, Changed<Dropdown>>,
+    mut q_scroll_view: Query<&mut ScrollView>,
     mut commands: Commands,
 ) {
     for dropdown in &q_dropdowns {
@@ -154,6 +162,12 @@ fn update_dropdown_panel_visibility(
                 .display(Display::Flex)
                 .visibility(Visibility::Inherited)
                 .height(Val::Px(0.));
+
+            let Ok(mut scroll_view) = q_scroll_view.get_mut(dropdown.scroll_view) else {
+                continue;
+            };
+
+            scroll_view.disabled = true;
         } else {
             commands
                 .style_unchecked(dropdown.panel)
@@ -163,7 +177,27 @@ fn update_dropdown_panel_visibility(
     }
 }
 
-#[derive(Component, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum DropdownPanelAnchor {
+    TopLeft,
+    TopRight,
+    #[default]
+    BottomLeft,
+    BottomRight,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct DropdownPanelPlacement {
+    pub anchor: DropdownPanelAnchor,
+    pub top: Val,
+    pub right: Val,
+    pub bottom: Val,
+    pub left: Val,
+    pub width: Val,
+    pub height: Val,
+}
+
+#[derive(Component, Clone, Debug, Default, Reflect)]
 #[reflect(Component)]
 pub struct DropdownOptions(Vec<String>);
 
@@ -202,6 +236,52 @@ impl UiContext for DropdownOption {
     }
 }
 
+impl DefaultTheme for DropdownOption {
+    fn default_theme() -> Option<Theme<DropdownOption>> {
+        DropdownOption::theme().into()
+    }
+}
+
+impl DropdownOption {
+    pub fn theme() -> Theme<DropdownOption> {
+        let base_theme = PseudoTheme::deferred(None, DropdownOption::primary_style);
+
+        Theme::<DropdownOption>::new(vec![base_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+        let font = theme_data
+            .text
+            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+
+        // TODO: Lock align self and flex shrink
+        style_builder
+            .align_self(AlignSelf::Start)
+            .align_items(AlignItems::Center)
+            .flex_shrink(0.)
+            .min_width(Val::Percent(100.))
+            .padding(UiRect::axes(
+                Val::Px(theme_spacing.gaps.medium),
+                Val::Px(theme_spacing.gaps.medium),
+            ))
+            .margin(UiRect::bottom(Val::Px(theme_spacing.gaps.tiny)))
+            .animated()
+            .background_color(AnimatedVals {
+                idle: Color::NONE,
+                hover: colors.container(Container::SurfaceHighest).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_context(DROPDOWN_OPTION_LABEL)
+            .sized_font(font)
+            .font_color(colors.on(On::Surface));
+    }
+}
+
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct DropdownPanel {
@@ -224,7 +304,7 @@ pub struct Dropdown {
     icon: Entity,
     panel: Entity,
     scroll_view: Entity,
-    scroll_viewport: Entity,
+    scroll_view_content: Entity,
     is_open: bool,
 }
 
@@ -236,7 +316,7 @@ impl Default for Dropdown {
             icon: Entity::PLACEHOLDER,
             panel: Entity::PLACEHOLDER,
             scroll_view: Entity::PLACEHOLDER,
-            scroll_viewport: Entity::PLACEHOLDER,
+            scroll_view_content: Entity::PLACEHOLDER,
             is_open: false,
         }
     }
@@ -298,7 +378,6 @@ impl Dropdown {
             .justify_content(JustifyContent::SpaceBetween)
             .background_color(colors.container(Container::Primary))
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
-            .min_width(Val::Px(150.))
             .min_height(Val::Px(theme_spacing.areas.medium))
             .padding(UiRect::axes(
                 Val::Px(theme_spacing.gaps.medium),
@@ -346,35 +425,67 @@ impl Dropdown {
             .switch_context(DROPDOWN_PANEL)
             .position_type(PositionType::Absolute)
             .z_index(ZIndex::Global(DROPDOWN_PANEL_Z_INDEX as i32))
-            .background_color(colors.container(Container::SurfaceHigh))
+            .border(UiRect::all(Val::Px(theme_spacing.gaps.tiny)))
+            .border_color(colors.accent(Accent::Shadow))
+            .background_color(colors.container(Container::SurfaceMid))
             .top(Val::Px(theme_spacing.areas.medium))
-            .right(Val::Px(0.))
+            .min_width(Val::Percent(100.))
             .max_height(Val::Px(theme_spacing.areas.extra_large));
     }
 
     fn open_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let Some(dropdown) = world.get::<Dropdown>(entity) else {
-            return;
+        let placement = match Dropdown::panel_placement_for(entity, world) {
+            Ok(placement) => placement,
+            Err(msg) => {
+                error!("Error placing Dropdown panel: {}", msg);
+                return;
+            }
         };
 
-        let Some(option_list) = world.get::<Node>(dropdown.scroll_viewport) else {
-            return;
-        };
-
-        let idle_height = option_list.size().y.clamp(0., 150.);
         let enter_animation = world.resource::<ThemeData>().enter_animation.clone();
 
-        // TODO: Position panel based on window-relative location
-        // TODO: Clamp to available window space, set width
-        style_builder
-            .switch_context(DROPDOWN_PANEL)
-            .animated()
-            .height(AnimatedVals {
-                idle: Val::Px(idle_height),
-                enter_from: Val::Px(0.).into(),
-                ..default()
-            })
-            .copy_from(enter_animation);
+        if placement.anchor == DropdownPanelAnchor::BottomLeft
+            || placement.anchor == DropdownPanelAnchor::BottomRight
+        {
+            style_builder
+                .switch_context(DROPDOWN_PANEL)
+                .top(placement.top)
+                .right(placement.right)
+                .bottom(placement.bottom)
+                .left(placement.left)
+                .width(placement.width)
+                .animated()
+                .height(AnimatedVals {
+                    idle: placement.height,
+                    enter_from: Val::Px(0.).into(),
+                    ..default()
+                })
+                .copy_from(enter_animation);
+        } else {
+            style_builder
+                .switch_context(DROPDOWN_PANEL)
+                .right(placement.right)
+                .bottom(placement.bottom)
+                .left(placement.left)
+                .width(placement.width)
+                .animated()
+                .height(AnimatedVals {
+                    idle: placement.height,
+                    enter_from: Val::Px(0.).into(),
+                    ..default()
+                })
+                .copy_from(enter_animation);
+
+            style_builder
+                .switch_context(DROPDOWN_PANEL)
+                .animated()
+                .top(AnimatedVals {
+                    idle: placement.top,
+                    enter_from: Val::Px(0.).into(),
+                    ..default()
+                })
+                .copy_from(enter_animation);
+        }
 
         style_builder
             .switch_context(DROPDOWN_SCROLL_VIEW)
@@ -383,12 +494,317 @@ impl Dropdown {
             .copy_from(enter_animation);
     }
 
-    fn base_tween() -> AnimationConfig {
-        AnimationConfig {
-            duration: 0.1,
-            easing: Ease::OutExpo,
-            ..default()
+    pub fn panel_placement_for(
+        entity: Entity,
+        world: &mut World,
+    ) -> Result<DropdownPanelPlacement, String> {
+        let Some(dropdown) = world.get::<Dropdown>(entity) else {
+            return Err("Entity has no Dropdown component".into());
+        };
+        let dropdown_panel = dropdown.panel;
+        let scroll_view_content = dropdown.scroll_view_content;
+
+        // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
+        let dropdown_node = world.get::<Node>(entity).unwrap();
+        let dropdown_size = dropdown_node.unrounded_size();
+        // TODO: bevy 0.14(?) add calculated border size from component rather than calculate it here
+        let dropdown_borders = Dropdown::get_node_border_sizes(entity, world);
+        let panel_borders = Dropdown::get_node_border_sizes(dropdown_panel, world);
+
+        let (container_size, dropdown_position) =
+            Dropdown::get_container_size_and_offset(entity, world);
+        let tl_corner = dropdown_position - dropdown_size / 2.;
+        let total_available_space = container_size - dropdown_size;
+        let halfway_point = total_available_space / 2.;
+        let anchor = if tl_corner.x > halfway_point.x {
+            if tl_corner.y > halfway_point.y {
+                DropdownPanelAnchor::TopRight
+            } else {
+                DropdownPanelAnchor::BottomRight
+            }
+        } else {
+            if tl_corner.y > halfway_point.y {
+                DropdownPanelAnchor::TopLeft
+            } else {
+                DropdownPanelAnchor::BottomLeft
+            }
+        };
+
+        let panel_size_limit = match anchor {
+            DropdownPanelAnchor::TopLeft => {
+                Vec2::new(total_available_space.x - tl_corner.x, tl_corner.y)
+            }
+            DropdownPanelAnchor::TopRight => Vec2::new(tl_corner.x + dropdown_size.x, tl_corner.y),
+            DropdownPanelAnchor::BottomLeft => Vec2::new(
+                total_available_space.x - tl_corner.x,
+                total_available_space.y - (tl_corner.y + dropdown_size.y),
+            ),
+            DropdownPanelAnchor::BottomRight => Vec2::new(
+                tl_corner.x + dropdown_size.x,
+                total_available_space.y - (tl_corner.y + dropdown_size.y),
+            ),
         }
+        .max(Vec2::ZERO);
+
+        let Some(option_list) = world.get::<Children>(scroll_view_content) else {
+            return Err("Dropdown has no options".into());
+        };
+
+        let option_list: Vec<Entity> = option_list.iter().map(|child| *child).collect();
+        let mut five_children_height = panel_borders.x + panel_borders.z;
+        let mut counted = 0;
+        for child in option_list {
+            let Some(option_node) = world.get::<Node>(child) else {
+                continue;
+            };
+
+            if counted < 5 {
+                five_children_height += option_node.unrounded_size().y;
+
+                let margin_sizes = Dropdown::get_node_margin_sizes(child, world);
+                five_children_height += margin_sizes.x + margin_sizes.z;
+                counted += 1;
+            }
+        }
+
+        // Unsafe unwrap: If a ScrollView's content doesn't have a Node, we should panic!
+        let panel_width = world
+            .get::<Node>(scroll_view_content)
+            .unwrap()
+            .unrounded_size()
+            .x
+            .ceil()
+            .clamp(0., panel_size_limit.x);
+        let idle_height = five_children_height.ceil().clamp(0., panel_size_limit.y);
+
+        let (top, right, bottom, left) = match anchor {
+            DropdownPanelAnchor::TopLeft => (
+                -Val::Px(idle_height + panel_borders.z),
+                Val::Auto,
+                Val::Auto,
+                Val::Px(-dropdown_borders.w),
+            ),
+            DropdownPanelAnchor::TopRight => (
+                -Val::Px(idle_height + panel_borders.z),
+                Val::Px(-dropdown_borders.y),
+                Val::Auto,
+                Val::Auto,
+            ),
+            DropdownPanelAnchor::BottomLeft => (
+                Val::Px(dropdown_size.y),
+                Val::Auto,
+                Val::Auto,
+                Val::Px(-dropdown_borders.w),
+            ),
+            DropdownPanelAnchor::BottomRight => (
+                Val::Px(dropdown_size.y),
+                Val::Px(-dropdown_borders.y),
+                Val::Auto,
+                Val::Auto,
+            ),
+        };
+
+        Ok(DropdownPanelPlacement {
+            anchor,
+            top,
+            right,
+            bottom,
+            left,
+            width: Val::Px(panel_width),
+            height: Val::Px(idle_height),
+        })
+    }
+
+    fn get_node_border_sizes(entity: Entity, world: &mut World) -> Vec4 {
+        // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
+        let style = world.get::<Style>(entity).unwrap();
+
+        // TODO: bevy 0.14(?) add calculated border size from component rather than calculate it here
+        let border = style.border;
+
+        let viewport_size = if let Some(render_target) = Dropdown::find_render_target(entity, world)
+        {
+            Dropdown::get_render_target_size(render_target, world)
+        } else {
+            Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
+        };
+
+        let parent_size = if let Some(parent) = world.get::<Parent>(entity) {
+            let parent_id = parent.get();
+            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
+            world.get::<Node>(parent_id).unwrap().unrounded_size()
+        } else {
+            viewport_size
+        };
+
+        Vec4::new(
+            Dropdown::val_to_px(border.top, parent_size.y, viewport_size),
+            Dropdown::val_to_px(border.right, parent_size.x, viewport_size),
+            Dropdown::val_to_px(border.bottom, parent_size.y, viewport_size),
+            Dropdown::val_to_px(border.left, parent_size.x, viewport_size),
+        )
+    }
+
+    // Extract these methods, these should be useful in any case
+    fn get_node_margin_sizes(entity: Entity, world: &mut World) -> Vec4 {
+        // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
+        let style = world.get::<Style>(entity).unwrap();
+        let margin = style.margin;
+
+        let viewport_size = if let Some(render_target) = Dropdown::find_render_target(entity, world)
+        {
+            Dropdown::get_render_target_size(render_target, world)
+        } else {
+            Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
+        };
+
+        let parent_size = if let Some(parent) = world.get::<Parent>(entity) {
+            let parent_id = parent.get();
+            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
+            world.get::<Node>(parent_id).unwrap().unrounded_size()
+        } else {
+            viewport_size
+        };
+
+        Vec4::new(
+            Dropdown::val_to_px(margin.top, parent_size.y, viewport_size),
+            Dropdown::val_to_px(margin.right, parent_size.x, viewport_size),
+            Dropdown::val_to_px(margin.bottom, parent_size.y, viewport_size),
+            Dropdown::val_to_px(margin.left, parent_size.x, viewport_size),
+        )
+    }
+
+    // TODO: taken from https://github.com/bevyengine/bevy/pull/9788 and should be removed once this is merged
+    fn val_to_px(value: Val, parent: f32, viewport_size: Vec2) -> f32 {
+        match value {
+            Val::Auto => 0.,
+            Val::Px(px) => px.max(0.),
+            Val::Percent(percent) => (parent * percent / 100.).max(0.),
+            Val::Vw(percent) => (viewport_size.x * percent / 100.).max(0.),
+            Val::Vh(percent) => (viewport_size.y * percent / 100.).max(0.),
+            Val::VMin(percent) => (viewport_size.min_element() * percent / 100.).max(0.),
+            Val::VMax(percent) => (viewport_size.max_element() * percent / 100.).max(0.),
+        }
+    }
+
+    fn get_container_size_and_offset(entity: Entity, world: &mut World) -> (Vec2, Vec2) {
+        let mut container_size = Vec2::ZERO;
+
+        // Unsafe unwarp: If a dropdown doesn't have a GT, we should panic!
+        let mut offset = world
+            .get::<GlobalTransform>(entity)
+            .unwrap()
+            .translation()
+            .truncate();
+
+        let mut current_ancestor = entity;
+        while let Some(parent) = world.get::<Parent>(current_ancestor) {
+            current_ancestor = parent.get();
+
+            // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
+            let style = world.get::<Style>(current_ancestor).unwrap();
+            if style.overflow.x == OverflowAxis::Visible
+                && style.overflow.y == OverflowAxis::Visible
+            {
+                continue;
+            }
+
+            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
+            let node = world.get::<Node>(current_ancestor).unwrap();
+            let node_size = node.unrounded_size();
+            // Unsafe unwrap: If a UI element doesn't have a GT, we should panic!
+            let current_pos = world
+                .get::<GlobalTransform>(current_ancestor)
+                .unwrap()
+                .translation()
+                .truncate();
+
+            if container_size.x == 0. && style.overflow.x == OverflowAxis::Clip {
+                container_size.x = node_size.x;
+                offset.x -= current_pos.x - (node_size.x / 2.);
+            }
+
+            if container_size.y == 0. && style.overflow.y == OverflowAxis::Clip {
+                container_size.y = node_size.y;
+                offset.y -= current_pos.y - (node_size.y / 2.);
+            }
+
+            if container_size.x > 0. && container_size.y > 0. {
+                return (container_size, offset);
+            }
+        }
+
+        if let Some(render_target) = Dropdown::find_render_target(entity, world) {
+            container_size = Dropdown::get_render_target_size(render_target, world);
+        } else {
+            container_size =
+                Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution);
+        }
+
+        (container_size, offset)
+    }
+
+    fn find_render_target(entity: Entity, world: &mut World) -> Option<RenderTarget> {
+        let mut current_ancestor = entity;
+        while let Some(parent) = world.get::<Parent>(current_ancestor) {
+            current_ancestor = parent.get();
+            if let Some(target_camera) = world.get::<TargetCamera>(current_ancestor) {
+                let camera_entity = target_camera.0;
+                if let Some(camera) = world.get::<Camera>(camera_entity) {
+                    return camera.target.clone().into();
+                };
+            }
+        }
+
+        None
+    }
+
+    fn get_render_target_size(render_target: RenderTarget, world: &mut World) -> Vec2 {
+        match render_target {
+            RenderTarget::Window(window) => match window {
+                bevy::window::WindowRef::Primary => {
+                    Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
+                }
+                bevy::window::WindowRef::Entity(window) => {
+                    let Some(window) = world.get::<Window>(window) else {
+                        return Dropdown::resolution_to_vec2(
+                            &Dropdown::get_primary_window(world).resolution,
+                        );
+                    };
+
+                    Dropdown::resolution_to_vec2(&window.resolution)
+                }
+            },
+            RenderTarget::Image(handle) => {
+                let Some(image) = world.resource::<Assets<Image>>().get(handle) else {
+                    return Dropdown::resolution_to_vec2(
+                        &Dropdown::get_primary_window(world).resolution,
+                    );
+                };
+
+                image.size_f32()
+            }
+            RenderTarget::TextureView(tw_handle) => {
+                let Some(texture_view) = world.resource::<ManualTextureViews>().get(&tw_handle)
+                else {
+                    return Dropdown::resolution_to_vec2(
+                        &Dropdown::get_primary_window(world).resolution,
+                    );
+                };
+
+                Vec2::new(texture_view.size.x as f32, texture_view.size.y as f32)
+            }
+        }
+    }
+
+    fn get_primary_window(world: &mut World) -> &Window {
+        world
+            .query_filtered::<&Window, With<PrimaryWindow>>()
+            .single(world)
+    }
+
+    fn resolution_to_vec2(resolution: &WindowResolution) -> Vec2 {
+        Vec2::new(resolution.width(), resolution.height())
     }
 
     fn button(options: Vec<String>) -> impl Bundle {
@@ -423,25 +839,11 @@ impl Dropdown {
         (
             Name::new(format!("Option {}", option)),
             ButtonBundle {
-                style: Style {
-                    height: Val::Px(26.),
-                    justify_content: JustifyContent::Start,
-                    align_content: AlignContent::Center,
-                    ..default()
-                },
                 focus_policy: FocusPolicy::Pass,
-                background_color: Color::NONE.into(),
                 ..default()
             },
             TrackedInteraction::default(),
-            InteractiveBackground {
-                highlight: Color::rgba(0., 1., 1., 0.3).into(),
-                ..default()
-            },
-            AnimatedInteraction::<InteractiveBackground> {
-                tween: Dropdown::base_tween(),
-                ..default()
-            },
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 }
@@ -460,7 +862,7 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let mut icon_id = Entity::PLACEHOLDER;
         let mut panel_id = Entity::PLACEHOLDER;
         let mut scroll_view_id = Entity::PLACEHOLDER;
-        let mut scroll_viewport_id = Entity::PLACEHOLDER;
+        let mut scroll_view_content_id = Entity::PLACEHOLDER;
 
         let option_count = options.len();
         let mut string_options: Vec<String> = Vec::with_capacity(option_count);
@@ -477,8 +879,8 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             panel_id = builder
                 .panel("Dropdown Options".into(), |container| {
                     scroll_view_id = container
-                        .scroll_view(ScrollAxis::Vertical, |scroll_view| {
-                            scroll_viewport_id = scroll_view.id();
+                        .scroll_view(None, |scroll_view| {
+                            scroll_view_content_id = scroll_view.id();
 
                             for (index, label) in string_options.iter().enumerate() {
                                 let mut label_id = Entity::PLACEHOLDER;
@@ -486,8 +888,6 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                     label_id = option
                                         .label(LabelConfig {
                                             label: label.clone(),
-                                            margin: UiRect::horizontal(Val::Px(10.)),
-                                            color: Color::WHITE,
                                             ..default()
                                         })
                                         .id();
@@ -524,7 +924,7 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             icon: icon_id,
             panel: panel_id,
             scroll_view: scroll_view_id,
-            scroll_viewport: scroll_viewport_id,
+            scroll_view_content: scroll_view_content_id,
             ..default()
         });
 
