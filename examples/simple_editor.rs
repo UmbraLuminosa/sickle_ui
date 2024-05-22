@@ -243,7 +243,9 @@ fn setup(
                 ),
                 |row| {
                     row.radio_group(vec!["Light", "Dark"], false);
-                    row.dropdown(vec!["Standard", "Medium Contrast", "High Contrast"]);
+                    row.dropdown(vec!["Standard", "Medium Contrast", "High Contrast"], 0)
+                        .style()
+                        .width(Val::Px(150.));
                 },
             );
         });
@@ -432,17 +434,23 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                                 placeholder.radio_group(vec!["Light", "Dark"], false);
                                 placeholder.row(|row| {
                                     row.style().justify_content(JustifyContent::SpaceBetween);
-                                    row.dropdown(vec![
-                                        "Standard",
-                                        "Medium Contrast",
-                                        "High Contrast - High Contrast",
-                                    ]);
+                                    row.dropdown(
+                                        vec![
+                                            "Standard",
+                                            "Medium Contrast",
+                                            "High Contrast - High Contrast",
+                                        ],
+                                        None,
+                                    );
 
-                                    row.dropdown(vec![
-                                        "Standard",
-                                        "Medium Contrast",
-                                        "High Contrast - High Contrast",
-                                    ]);
+                                    row.dropdown(
+                                        vec![
+                                            "Standard",
+                                            "Medium Contrast",
+                                            "High Contrast - High Contrast",
+                                        ],
+                                        None,
+                                    );
                                 });
 
                                 placeholder.scroll_view(None, |scroll_view| {
@@ -476,17 +484,23 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
 
                                 placeholder.row(|row| {
                                     row.style().justify_content(JustifyContent::SpaceBetween);
-                                    row.dropdown(vec![
-                                        "Standard",
-                                        "Medium Contrast",
-                                        "High Contrast - High Contrast",
-                                    ]);
+                                    row.dropdown(
+                                        vec![
+                                            "Standard",
+                                            "Medium Contrast",
+                                            "High Contrast - High Contrast",
+                                        ],
+                                        None,
+                                    );
 
-                                    row.dropdown(vec![
-                                        "Standard",
-                                        "Medium Contrast",
-                                        "High Contrast - High Contrast",
-                                    ]);
+                                    row.dropdown(
+                                        vec![
+                                            "Standard",
+                                            "Medium Contrast",
+                                            "High Contrast - High Contrast",
+                                        ],
+                                        None,
+                                    );
                                 });
                             });
                         },

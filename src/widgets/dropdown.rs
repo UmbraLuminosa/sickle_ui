@@ -83,6 +83,7 @@ fn update_dropdown_label(
         if label.sections.len() > 0 {
             label.sections[0].value = text;
         } else {
+            // TODO: Set text in a way the theming applies the font
             label.sections = vec![TextSection::new(text, TextStyle::default())];
         }
     }
@@ -256,11 +257,8 @@ impl DropdownOption {
             .text
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
-        // TODO: Lock align self and flex shrink
         style_builder
-            .align_self(AlignSelf::Start)
             .align_items(AlignItems::Center)
-            .flex_shrink(0.)
             .min_width(Val::Percent(100.))
             .padding(UiRect::axes(
                 Val::Px(theme_spacing.gaps.medium),
@@ -568,36 +566,37 @@ impl Dropdown {
         }
 
         // Unsafe unwrap: If a ScrollView's content doesn't have a Node, we should panic!
-        let panel_width = world
+        let panel_width = (world
             .get::<Node>(scroll_view_content)
             .unwrap()
             .unrounded_size()
             .x
-            .ceil()
-            .clamp(0., panel_size_limit.x);
-        let idle_height = five_children_height.ceil().clamp(0., panel_size_limit.y);
+            + panel_borders.y
+            + panel_borders.w)
+            .clamp(0., panel_size_limit.x.max(0.));
+        let idle_height = five_children_height.clamp(0., panel_size_limit.y.max(0.));
 
         let (top, right, bottom, left) = match anchor {
             DropdownPanelAnchor::TopLeft => (
-                -Val::Px(idle_height + panel_borders.z),
+                -Val::Px(idle_height + dropdown_borders.x),
                 Val::Auto,
                 Val::Auto,
                 Val::Px(-dropdown_borders.w),
             ),
             DropdownPanelAnchor::TopRight => (
-                -Val::Px(idle_height + panel_borders.z),
+                -Val::Px(idle_height + dropdown_borders.x),
                 Val::Px(-dropdown_borders.y),
                 Val::Auto,
                 Val::Auto,
             ),
             DropdownPanelAnchor::BottomLeft => (
-                Val::Px(dropdown_size.y),
+                Val::Px(dropdown_size.y - dropdown_borders.x),
                 Val::Auto,
                 Val::Auto,
                 Val::Px(-dropdown_borders.w),
             ),
             DropdownPanelAnchor::BottomRight => (
-                Val::Px(dropdown_size.y),
+                Val::Px(dropdown_size.y - dropdown_borders.x),
                 Val::Px(-dropdown_borders.y),
                 Val::Auto,
                 Val::Auto,
@@ -618,8 +617,6 @@ impl Dropdown {
     fn get_node_border_sizes(entity: Entity, world: &mut World) -> Vec4 {
         // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
         let style = world.get::<Style>(entity).unwrap();
-
-        // TODO: bevy 0.14(?) add calculated border size from component rather than calculate it here
         let border = style.border;
 
         let viewport_size = if let Some(render_target) = Dropdown::find_render_target(entity, world)
@@ -674,7 +671,6 @@ impl Dropdown {
         )
     }
 
-    // TODO: taken from https://github.com/bevyengine/bevy/pull/9788 and should be removed once this is merged
     fn val_to_px(value: Val, parent: f32, viewport_size: Vec2) -> f32 {
         match value {
             Val::Auto => 0.,
@@ -849,14 +845,18 @@ impl Dropdown {
 }
 
 pub trait UiDropdownExt<'w, 's> {
-    fn dropdown<'a>(&'a mut self, options: Vec<impl Into<String>>)
-        -> UiBuilder<'w, 's, 'a, Entity>;
+    fn dropdown<'a>(
+        &'a mut self,
+        options: Vec<impl Into<String>>,
+        value: impl Into<Option<usize>>,
+    ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
 impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn dropdown<'a>(
         &'a mut self,
         options: Vec<impl Into<String>>,
+        value: impl Into<Option<usize>>,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut label_id = Entity::PLACEHOLDER;
         let mut icon_id = Entity::PLACEHOLDER;
@@ -920,6 +920,7 @@ impl<'w, 's> UiDropdownExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         });
 
         dropdown.insert(Dropdown {
+            value: value.into(),
             label: label_id,
             icon: icon_id,
             panel: panel_id,
