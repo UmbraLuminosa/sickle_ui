@@ -135,7 +135,7 @@ impl PseudoTheme {
 
 pub trait UiContext {
     fn get(&self, target: &str) -> Result<Entity, String>;
-    fn contexts() -> Vec<&'static str>;
+    fn contexts(&self) -> Vec<&'static str>;
 }
 
 pub trait DefaultTheme: Clone + Component + UiContext {

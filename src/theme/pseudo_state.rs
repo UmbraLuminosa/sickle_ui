@@ -55,7 +55,6 @@ pub enum PseudoState {
     OverflowX,
     OverflowY,
     Folded,
-    Unfolded,
     Open,
     Closed,
     Error,

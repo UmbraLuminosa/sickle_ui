@@ -97,12 +97,12 @@ impl UiContext for Checkbox {
             _ => Err(format!(
                 "{} doesn't exists for Checkbox. Possible contexts: {:?}",
                 target,
-                Checkbox::contexts()
+                self.contexts()
             )),
         }
     }
 
-    fn contexts() -> Vec<&'static str> {
+    fn contexts(&self) -> Vec<&'static str> {
         vec![CHECKMARK_BACKGROUND, CHECKMARK, LABEL]
     }
 }
@@ -136,12 +136,11 @@ impl Checkbox {
             .background_color(Color::NONE);
 
         style_builder
-            .switch_context(CHECKMARK_BACKGROUND)
+            .switch_target(CHECKMARK_BACKGROUND)
             .justify_content(JustifyContent::Center)
             .align_items(AlignItems::Center)
             .align_content(AlignContent::Center)
-            .width(Val::Px(theme_spacing.inputs.checkbox.checkbox_size()))
-            .height(Val::Px(theme_spacing.inputs.checkbox.checkbox_size()))
+            .size(Val::Px(theme_spacing.inputs.checkbox.checkbox_size()))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .border(UiRect::all(Val::Px(
                 theme_spacing.inputs.checkbox.border_size,
@@ -156,9 +155,8 @@ impl Checkbox {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(CHECKMARK)
-            .width(Val::Px(theme_spacing.inputs.checkbox.checkmark_size))
-            .height(Val::Px(theme_spacing.inputs.checkbox.checkmark_size))
+            .switch_target(CHECKMARK)
+            .size(Val::Px(theme_spacing.inputs.checkbox.checkmark_size))
             .icon(theme_data.icons.checkmark.with(
                 colors.on(On::Surface),
                 theme_spacing.inputs.checkbox.checkmark_size,
@@ -168,7 +166,7 @@ impl Checkbox {
             .text
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
         style_builder
-            .switch_context(LABEL)
+            .switch_target(LABEL)
             .margin(UiRect::px(
                 theme_spacing.gaps.small,
                 theme_spacing.gaps.medium,
@@ -190,7 +188,7 @@ impl Checkbox {
         let colors = theme_data.colors();
 
         style_builder
-            .switch_context(CHECKMARK_BACKGROUND)
+            .switch_target(CHECKMARK_BACKGROUND)
             .animated()
             .border(AnimatedVals {
                 idle: UiRect::all(Val::Px(0.)),
@@ -200,7 +198,7 @@ impl Checkbox {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(CHECKMARK_BACKGROUND)
+            .switch_target(CHECKMARK_BACKGROUND)
             .animated()
             .background_color(AnimatedVals {
                 idle: colors.container(Container::Primary),
@@ -210,7 +208,7 @@ impl Checkbox {
             .copy_from(theme_data.enter_animation);
 
         style_builder
-            .switch_context(CHECKMARK)
+            .switch_target(CHECKMARK)
             .animated()
             .margin(AnimatedVals {
                 idle: UiRect::all(Val::Px(theme_spacing.inputs.checkbox.border_size)),
@@ -220,7 +218,7 @@ impl Checkbox {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(CHECKMARK)
+            .switch_target(CHECKMARK)
             .animated()
             .scale(AnimatedVals {
                 idle: 1.,

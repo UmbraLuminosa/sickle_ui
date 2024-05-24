@@ -10,11 +10,17 @@ use crate::animated_interaction::{AnimatedInteraction, AnimationConfig};
 use crate::drop_interaction::{Droppable, DroppableUpdate};
 use crate::interactions::InteractiveBackground;
 use crate::resize_interaction::ResizeHandle;
+use crate::theme::pseudo_state::PseudoState;
+use crate::theme::theme_colors::{Accent, Container, On, Surface};
+use crate::theme::theme_data::ThemeData;
+use crate::theme::typography::{FontScale, FontStyle, FontType};
+use crate::theme::{ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext};
 use crate::ui_builder::UiBuilderExt;
+use crate::ui_commands::ManagePseudoStateExt;
 use crate::ui_style::{
-    ImageSource, SetAbsolutePositionExt, SetBackgroundColorExt, SetFlexGrowExt,
-    SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetImageExt, SetMarginExt,
-    SetNodeShowHideExt, SetVisibilityExt, SetWidthExt, SetZIndexExt, UiStyleExt,
+    AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt,
+    SetBackgroundColorExt, SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetMarginExt,
+    SetNodeShowHideExt, SetWidthExt, SetZIndexExt, StyleBuilder, UiStyleExt,
 };
 use crate::FluxInteraction;
 use crate::{
@@ -35,6 +41,7 @@ pub struct FloatingPanelPlugin;
 impl Plugin for FloatingPanelPlugin {
     fn build(&self, app: &mut App) {
         app.configure_sets(Update, FloatingPanelUpdate.after(DroppableUpdate))
+            .add_plugins(ComponentThemePlugin::<FloatingPanel>::default())
             .add_systems(PreUpdate, update_floating_panel_panel_id)
             .add_systems(
                 Update,
@@ -359,12 +366,15 @@ fn update_panel_layout(
             }
 
             commands.style(panel.content_view).render(!config.folded);
-            commands
-                .style(panel.fold_button)
-                .image(ImageSource::Path(match config.folded {
-                    true => "embedded://sickle_ui/icons/chevron_right.png".into(),
-                    false => "embedded://sickle_ui/icons/chevron_down.png".into(),
-                }));
+            if config.folded {
+                commands
+                    .entity(entity)
+                    .add_pseudo_state(PseudoState::Folded);
+            } else {
+                commands
+                    .entity(entity)
+                    .remove_pseudo_state(PseudoState::Folded);
+            }
         }
 
         let render_resize_handles = !config.folded && config.resizable && !panel.moving;
@@ -532,7 +542,6 @@ pub struct FloatingPanel {
     size: Vec2,
     position: Vec2,
     z_index: Option<usize>,
-    own_id: Entity,
     drag_handle: Entity,
     fold_button: Entity,
     title_container: Entity,
@@ -553,7 +562,6 @@ impl Default for FloatingPanel {
             size: Default::default(),
             position: Default::default(),
             z_index: Default::default(),
-            own_id: Entity::PLACEHOLDER,
             drag_handle: Entity::PLACEHOLDER,
             fold_button: Entity::PLACEHOLDER,
             title_container: Entity::PLACEHOLDER,
@@ -570,7 +578,108 @@ impl Default for FloatingPanel {
     }
 }
 
+const TITLE_CONTAINER: &'static str = "TitleContainer";
+const TITLE: &'static str = "Title";
+const FOLD_BUTTON: &'static str = "FoldButton";
+
+impl UiContext for FloatingPanel {
+    fn get(&self, target: &str) -> Result<Entity, String> {
+        match target {
+            TITLE_CONTAINER => Ok(self.title_container),
+            TITLE => Ok(self.title),
+            FOLD_BUTTON => Ok(self.fold_button),
+            _ => Err(format!(
+                "{} doesn't exists for FloatingPanel. Possible contexts: {:?}",
+                target,
+                self.contexts()
+            )),
+        }
+    }
+
+    fn contexts(&self) -> Vec<&'static str> {
+        vec![TITLE_CONTAINER, TITLE, FOLD_BUTTON]
+    }
+}
+
+impl DefaultTheme for FloatingPanel {
+    fn default_theme() -> Option<Theme<FloatingPanel>> {
+        FloatingPanel::theme().into()
+    }
+}
+
 impl FloatingPanel {
+    pub fn theme() -> Theme<FloatingPanel> {
+        let base_theme = PseudoTheme::deferred(None, FloatingPanel::primary_style);
+        let folded_theme =
+            PseudoTheme::deferred(vec![PseudoState::Folded], FloatingPanel::folded_style);
+        Theme::<FloatingPanel>::new(vec![base_theme, folded_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder
+            .border(UiRect::all(Val::Px(theme_spacing.borders.small)))
+            .border_color(colors.accent(Accent::Shadow))
+            .background_color(colors.surface(Surface::Surface));
+
+        style_builder
+            .switch_target(TITLE_CONTAINER)
+            .width(Val::Percent(100.))
+            .align_items(AlignItems::Center)
+            .justify_content(JustifyContent::Start)
+            .background_color(colors.container(Container::SurfaceMid));
+
+        style_builder
+            .switch_target(TITLE)
+            .flex_grow(1.)
+            .margin(UiRect::px(
+                theme_spacing.gaps.small,
+                theme_spacing.gaps.extra_large,
+                theme_spacing.gaps.small,
+                theme_spacing.gaps.extra_small,
+            ))
+            .sized_font(
+                theme_data
+                    .text
+                    .get(FontStyle::Body, FontScale::Large, FontType::Regular),
+            )
+            .font_color(colors.on(On::Surface));
+
+        style_builder
+            .reset_target()
+            .switch_placement(FOLD_BUTTON)
+            .size(Val::Px(theme_spacing.icons.small))
+            .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
+            .background_color(Color::WHITE)
+            .icon(
+                theme_data
+                    .icons
+                    .chevron_down
+                    .with(colors.on(On::Surface), theme_spacing.icons.small),
+            )
+            .animated()
+            .font_color(AnimatedVals {
+                idle: colors.on(On::PrimaryContainer),
+                hover: colors.on(On::Surface).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+    }
+
+    fn folded_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder.switch_target(FOLD_BUTTON).icon(
+            theme_data
+                .icons
+                .chevron_right
+                .with(colors.on(On::Surface), theme_spacing.icons.small),
+        );
+    }
+
     pub fn content_panel_container(&self) -> Entity {
         self.content_panel_container
     }
@@ -592,35 +701,45 @@ impl FloatingPanel {
     }
 
     fn frame() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                border: UiRect::all(Val::Px(2.)),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Start,
-                overflow: Overflow::clip(),
-                ..default()
-            },
-            border_color: Color::BLACK.into(),
-            background_color: Color::rgb(0.15, 0.155, 0.16).into(),
-            focus_policy: bevy::ui::FocusPolicy::Block,
-            ..default()
-        }
-    }
-
-    fn title_container() -> impl Bundle {
         (
-            Name::new("Title Container"),
-            ButtonBundle {
+            Name::new("Frame"),
+            NodeBundle {
                 style: Style {
-                    width: Val::Percent(100.),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Start,
+                    position_type: PositionType::Absolute,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Start,
+                    overflow: Overflow::clip(),
                     ..default()
                 },
-                background_color: Color::DARK_GRAY.into(),
+                focus_policy: bevy::ui::FocusPolicy::Block,
                 ..default()
             },
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::PositionType,
+                LockableStyleAttribute::FlexDirection,
+                LockableStyleAttribute::AlignItems,
+                LockableStyleAttribute::Overflow,
+            ]),
+        )
+    }
+
+    fn title_container(panel: Entity) -> impl Bundle {
+        (
+            Name::new("Title Container"),
+            ButtonBundle::default(),
+            FloatingPanelTitle { panel },
+            TrackedInteraction::default(),
+            Draggable::default(),
+            RelativeCursorPosition::default(),
+        )
+    }
+
+    fn fold_button(panel: Entity) -> impl Bundle {
+        (
+            Name::new("Fold Button"),
+            ButtonBundle::default(),
+            TrackedInteraction::default(),
+            FloatingPanelFoldButton { panel },
         )
     }
 
@@ -667,7 +786,6 @@ impl FloatingPanel {
 pub struct FloatingPanelLayout {
     pub size: Vec2,
     pub position: Option<Vec2>,
-    pub hidden: bool,
     pub droppable: bool,
 }
 
@@ -676,7 +794,6 @@ impl Default for FloatingPanelLayout {
         Self {
             size: Vec2 { x: 300., y: 500. },
             position: Default::default(),
-            hidden: Default::default(),
             droppable: false,
         }
     }
@@ -695,16 +812,6 @@ impl FloatingPanelLayout {
 #[component(storage = "SparseSet")]
 pub struct UpdateFloatingPanelPanelId {
     pub panel_id: Entity,
-}
-
-pub trait UiFloatingPanelSubExt<'w, 's> {
-    fn id(&self) -> Entity;
-}
-
-impl<'w, 's> UiFloatingPanelSubExt<'w, 's> for UiBuilder<'w, 's, '_, FloatingPanel> {
-    fn id(&self) -> Entity {
-        self.context().own_id
-    }
 }
 
 pub trait UiFloatingPanelExt<'w, 's> {
@@ -829,49 +936,42 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 .render(config.resizable)
                 .id();
 
-            let mut title_builder = container.container(
-                (
-                    FloatingPanel::title_container(),
-                    FloatingPanelTitle { panel },
-                    TrackedInteraction::default(),
-                    Draggable::default(),
-                    RelativeCursorPosition::default(),
-                ),
-                |container| {
+            let mut title_builder =
+                container.container(FloatingPanel::title_container(panel), |container| {
                     fold_button = container
-                        .icon(match config.folded {
-                            true => "embedded://sickle_ui/icons/chevron_right.png",
-                            false => "embedded://sickle_ui/icons/chevron_down.png",
-                        })
-                        .insert((
-                            Name::new("Fold Button"),
-                            Interaction::default(),
-                            TrackedInteraction::default(),
-                            InteractiveBackground {
-                                highlight: Color::rgba(0., 1., 1., 1.).into(),
-                                ..default()
-                            },
-                            AnimatedInteraction::<InteractiveBackground> {
-                                tween: FloatingPanel::base_tween(),
-                                ..default()
-                            },
-                            FloatingPanelFoldButton { panel },
-                        ))
+                        .spawn(FloatingPanel::fold_button(panel))
                         .style()
-                        .margin(UiRect::px(3., 0., 3., 3.))
-                        .background_color(Color::GRAY)
                         .render(config.foldable)
                         .id();
+                    // .icon(match config.folded {
+                    //     true => "embedded://sickle_ui/icons/chevron_right.png",
+                    //     false => "embedded://sickle_ui/icons/chevron_down.png",
+                    // })
+                    // .insert((
+                    //     Name::new("Fold Button"),
+                    //     Interaction::default(),
+                    //     TrackedInteraction::default(),
+                    //     InteractiveBackground {
+                    //         highlight: Color::rgba(0., 1., 1., 1.).into(),
+                    //         ..default()
+                    //     },
+                    //     AnimatedInteraction::<InteractiveBackground> {
+                    //         tween: FloatingPanel::base_tween(),
+                    //         ..default()
+                    //     },
+                    //     FloatingPanelFoldButton { panel },
+                    // ))
+                    // .style()
+                    // .margin(UiRect::px(3., 0., 3., 3.))
+                    // .background_color(Color::GRAY)
+                    // .render(config.foldable)
+                    // .id();
 
                     title = container
                         .label(LabelConfig {
                             label: title_text.clone(),
-                            margin: UiRect::px(5., 29., 5., 2.),
-                            color: Color::ANTIQUE_WHITE,
                             ..default()
                         })
-                        .style()
-                        .flex_grow(1.)
                         .id();
 
                     container.container(
@@ -900,8 +1000,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                 .id();
                         },
                     );
-                },
-            );
+                });
             title_builder.style().render(config.title.is_some());
 
             if layout.droppable {
@@ -932,16 +1031,11 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 .id();
         });
 
-        if layout.hidden {
-            frame.style().visibility(Visibility::Hidden);
-        }
-
         let own_id = frame.id();
         let floating_panel = FloatingPanel {
             size: layout.size.max(MIN_PANEL_SIZE),
             position: layout.position.unwrap_or_default(),
             z_index: None,
-            own_id,
             drag_handle,
             fold_button,
             title_container,
@@ -955,6 +1049,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             ..default()
         };
 
+        // TODO: Add folded pseudo state
         frame.insert((config, floating_panel));
 
         self.commands().ui_builder(own_id)

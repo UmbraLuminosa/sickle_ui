@@ -429,12 +429,6 @@ pub struct SetAbsolutePosition {
 impl EntityCommand for SetAbsolutePosition {
     fn apply(self, entity: Entity, world: &mut World) {
         if self.check_lock {
-            check_lock!(
-                world,
-                entity,
-                "position_type",
-                LockableStyleAttribute::PositionType
-            );
             check_lock!(world, entity, "position: top", LockableStyleAttribute::Top);
             check_lock!(
                 world,
@@ -475,7 +469,6 @@ impl EntityCommand for SetAbsolutePosition {
             return;
         };
 
-        style.position_type = PositionType::Absolute;
         style.top = Val::Px(self.absolute_position.y - offset.y);
         style.left = Val::Px(self.absolute_position.x - offset.x);
     }
@@ -511,14 +504,13 @@ impl<'a> SetAbsolutePositionUncheckedExt<'a> for UiStyleUnchecked<'a> {
 
 impl EntityCommand for SetIcon {
     fn apply(self, entity: Entity, world: &mut World) {
-        if self.check_lock {
-            check_lock!(world, entity, "icon", LockableStyleAttribute::Image);
-            // TODO: Check lock on text / font once it is available
-        }
-
         // TODO: Rework once text/font is in better shape
         match self.icon {
             IconData::None => {
+                if self.check_lock {
+                    check_lock!(world, entity, "icon", LockableStyleAttribute::Image);
+                    // TODO: Check lock on text / font once it is available
+                }
                 world.entity_mut(entity).remove::<Text>();
                 world.entity_mut(entity).remove::<UiImage>();
             }
@@ -535,6 +527,8 @@ impl EntityCommand for SetIcon {
                 .apply(entity, world);
             }
             IconData::FontCodepoint(font, codepoint, color, font_size) => {
+                // TODO: Check lock on text / font once it is available
+
                 SetImageTint {
                     image_tint: Color::NONE,
                     check_lock: self.check_lock,
@@ -740,6 +734,36 @@ impl EntityCommand for SetScale {
         let new_scale = Vec3::ONE * self.scale;
         if transform.scale != new_scale {
             transform.scale = new_scale;
+        }
+    }
+}
+
+impl EntityCommand for SetSize {
+    fn apply(self, entity: Entity, world: &mut World) {
+        if self.check_lock {
+            check_lock!(world, entity, "size: width", LockableStyleAttribute::Width);
+            check_lock!(
+                world,
+                entity,
+                "size: height",
+                LockableStyleAttribute::Height
+            );
+        }
+
+        let Some(mut style) = world.get_mut::<Style>(entity) else {
+            warn!(
+                "Failed to set size on entity {:?}: No Style component found!",
+                entity
+            );
+            return;
+        };
+
+        if style.width != self.size {
+            style.width = self.size;
+        }
+
+        if style.height != self.size {
+            style.height = self.size;
         }
     }
 }

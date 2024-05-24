@@ -9,7 +9,7 @@ use crate::{
         ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
-    ui_style::{SetAbsolutePositionExt, StyleBuilder, UiStyleExt},
+    ui_style::{SetAbsolutePositionExt, SetPositionTypeExt, StyleBuilder, UiStyleExt},
     FluxInteractionUpdate,
 };
 
@@ -254,7 +254,10 @@ fn position_added_context_menu(
     };
 
     for entity in &q_context_menus {
-        commands.style(entity).absolute_position(position);
+        commands
+            .style(entity)
+            .position_type(PositionType::Absolute)
+            .absolute_position(position);
     }
 }
 
@@ -372,6 +375,7 @@ impl ContextMenu {
     }
 
     fn frame() -> impl Bundle {
+        // TODO: Create theme for ContextMenu
         let style: DynamicStyle = ThemeData::with_default(ContextMenu::container).into();
         (NodeBundle::default(), Interaction::default(), style)
     }

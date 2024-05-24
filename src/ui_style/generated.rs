@@ -226,4 +226,10 @@ enum _StyleAttributes {
     TrackedStyleState {
         tracked_style_state: TrackedStyleState,
     },
+    #[skip_lockable_enum]
+    #[skip_enity_command]
+    #[animatable]
+    Size {
+        size: Val,
+    },
 }

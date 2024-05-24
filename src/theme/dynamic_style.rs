@@ -65,7 +65,7 @@ fn update_dynamic_style_static_attributes(
                 continue;
             };
 
-            let target = match context_attribute.context {
+            let target = match context_attribute.target {
                 Some(context) => context,
                 None => entity,
             };
@@ -109,7 +109,7 @@ fn update_dynamic_style_on_flux_change(
         for context_attribute in &style.attributes {
             match &context_attribute.attribute {
                 DynamicStyleAttribute::Interactive(style) => {
-                    let target = match context_attribute.context {
+                    let target = match context_attribute.target {
                         Some(context) => context,
                         None => entity,
                     };
@@ -192,7 +192,7 @@ fn update_dynamic_style_on_stopwatch_change(
                 }
 
                 if style_changed || controller.dirty() {
-                    let target = match context_attribute.context {
+                    let target = match context_attribute.target {
                         Some(context) => context,
                         None => entity,
                     };
@@ -236,20 +236,20 @@ impl DynamicStyleEnterState {
 
 #[derive(Clone, Debug)]
 pub struct ContextStyleAttribute {
-    context: Option<Entity>,
+    target: Option<Entity>,
     attribute: DynamicStyleAttribute,
 }
 
 impl LogicalEq for ContextStyleAttribute {
     fn logical_eq(&self, other: &Self) -> bool {
-        self.context == other.context && self.attribute.logical_eq(&other.attribute)
+        self.target == other.target && self.attribute.logical_eq(&other.attribute)
     }
 }
 
 impl ContextStyleAttribute {
     pub fn new(context: impl Into<Option<Entity>>, attribute: DynamicStyleAttribute) -> Self {
         Self {
-            context: context.into(),
+            target: context.into(),
             attribute,
         }
     }
@@ -267,7 +267,7 @@ impl DynamicStyle {
             attributes: attributes
                 .iter()
                 .map(|attribute| ContextStyleAttribute {
-                    context: None,
+                    target: None,
                     attribute: attribute.clone(),
                 })
                 .collect(),

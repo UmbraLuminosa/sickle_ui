@@ -73,7 +73,7 @@ impl UiContext for ThemeTestBox {
         }
     }
 
-    fn contexts() -> Vec<&'static str> {
+    fn contexts(&self) -> Vec<&'static str> {
         vec![TEST_CONTEXT]
     }
 }
@@ -101,7 +101,7 @@ impl ThemeTestBox {
                 .border_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
 
             base_style
-                .switch_context(TEST_CONTEXT)
+                .switch_target(TEST_CONTEXT)
                 .background_color(Color::BLACK);
         });
 
@@ -186,7 +186,7 @@ impl ThemeTestBox {
             .copy_from(style_animation);
 
         builder
-            .switch_context(TEST_CONTEXT)
+            .switch_target(TEST_CONTEXT)
             .interactive()
             .background_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
     }

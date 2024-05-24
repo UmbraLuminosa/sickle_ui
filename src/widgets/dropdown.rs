@@ -227,12 +227,12 @@ impl UiContext for DropdownOption {
             _ => Err(format!(
                 "{} doesn't exists for DropdownOption. Possible contexts: {:?}",
                 target,
-                DropdownOption::contexts()
+                self.contexts()
             )),
         }
     }
 
-    fn contexts() -> Vec<&'static str> {
+    fn contexts(&self) -> Vec<&'static str> {
         vec![DROPDOWN_OPTION_LABEL]
     }
 }
@@ -274,7 +274,7 @@ impl DropdownOption {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(DROPDOWN_OPTION_LABEL)
+            .switch_target(DROPDOWN_OPTION_LABEL)
             .sized_font(font)
             .font_color(colors.on(On::Surface));
     }
@@ -330,12 +330,12 @@ impl UiContext for Dropdown {
             _ => Err(format!(
                 "{} doesn't exists for Dropdown. Possible contexts: {:?}",
                 target,
-                Dropdown::contexts()
+                self.contexts()
             )),
         }
     }
 
-    fn contexts() -> Vec<&'static str> {
+    fn contexts(&self) -> Vec<&'static str> {
         vec![
             DROPDOWN_LABEL,
             DROPDOWN_ICON,
@@ -390,7 +390,7 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(DROPDOWN_LABEL)
+            .switch_target(DROPDOWN_LABEL)
             .sized_font(font)
             .animated()
             .font_color(AnimatedVals {
@@ -401,9 +401,8 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(DROPDOWN_ICON)
-            .width(Val::Px(theme_spacing.icons.small))
-            .height(Val::Px(theme_spacing.icons.small))
+            .switch_target(DROPDOWN_ICON)
+            .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::left(Val::Px(theme_spacing.gaps.large)))
             .icon(
                 theme_data
@@ -420,7 +419,7 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(DROPDOWN_PANEL)
+            .switch_target(DROPDOWN_PANEL)
             .position_type(PositionType::Absolute)
             .z_index(ZIndex::Global(DROPDOWN_PANEL_Z_INDEX as i32))
             .border(UiRect::all(Val::Px(theme_spacing.gaps.tiny)))
@@ -446,7 +445,7 @@ impl Dropdown {
             || placement.anchor == DropdownPanelAnchor::BottomRight
         {
             style_builder
-                .switch_context(DROPDOWN_PANEL)
+                .switch_target(DROPDOWN_PANEL)
                 .top(placement.top)
                 .right(placement.right)
                 .bottom(placement.bottom)
@@ -461,7 +460,7 @@ impl Dropdown {
                 .copy_from(enter_animation);
         } else {
             style_builder
-                .switch_context(DROPDOWN_PANEL)
+                .switch_target(DROPDOWN_PANEL)
                 .right(placement.right)
                 .bottom(placement.bottom)
                 .left(placement.left)
@@ -475,7 +474,7 @@ impl Dropdown {
                 .copy_from(enter_animation);
 
             style_builder
-                .switch_context(DROPDOWN_PANEL)
+                .switch_target(DROPDOWN_PANEL)
                 .animated()
                 .top(AnimatedVals {
                     idle: placement.top,
@@ -486,7 +485,7 @@ impl Dropdown {
         }
 
         style_builder
-            .switch_context(DROPDOWN_SCROLL_VIEW)
+            .switch_target(DROPDOWN_SCROLL_VIEW)
             .animated()
             .tracked_style_state(TrackedStyleState::default_vals())
             .copy_from(enter_animation);

@@ -862,6 +862,7 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             }
             tab_container = new_tab_container.id();
 
+            // TODO: remove initial style and rely on default theme instead
             let zone_style: DynamicStyle =
                 ThemeData::with_default(DockingZoneHighlight::primary_style).into();
             zone_highlight = zone

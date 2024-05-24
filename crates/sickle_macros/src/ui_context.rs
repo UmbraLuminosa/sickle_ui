@@ -10,7 +10,7 @@ pub(crate) fn derive_ui_context_macro(ast: &syn::DeriveInput) -> TokenStream {
                 Err(format!("{} has no UI contexts", #ident_name))
             }
 
-            fn contexts() -> Vec<&'static str> {
+            fn contexts(&self) -> Vec<&'static str> {
                 vec![]
             }
         }

@@ -405,13 +405,13 @@ where
         }
 
         // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
-        let style: Option<DynamicStyle> = pseudo_themes
+        let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
             .map(|pseudo_theme| pseudo_theme.builder().clone())
             .collect::<Vec<DynamicStyleBuilder>>()
             .iter()
             .map(|builder| match builder {
-                DynamicStyleBuilder::Static(style) => style.clone(),
+                DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
                 DynamicStyleBuilder::StyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
                     builder(&mut style_builder, &theme_data);
@@ -425,31 +425,73 @@ where
                     style_builder.convert_with(&context)
                 }
             })
-            .fold(None, |acc, dynamic_style| match acc {
-                Some(prev_style) => prev_style.merge(dynamic_style).into(),
-                None => dynamic_style.into(),
-            });
+            .filter(|e_to_dys| e_to_dys.len() > 0)
+            .fold(
+                Vec::with_capacity(context.contexts().len() + 1),
+                |mut acc, context_styles| {
+                    for context_style in context_styles {
+                        let index = acc.iter().position(|entry| entry.0 == context_style.0);
+                        match index {
+                            Some(index) => {
+                                let (_, prev_entry) = acc[index].clone();
+                                acc[index].1 = prev_entry.merge(context_style.1);
+                            }
+                            None => acc.push(context_style),
+                        }
+                    }
 
-        if let Some(mut style) = style {
-            if let Some(current_style) = world.get::<DynamicStyle>(entity) {
+                    acc
+                },
+            );
+
+        let mut cleanup_main_style = true;
+        let mut unstyled_entities: Vec<Entity> = context
+            .contexts()
+            .iter()
+            .map(|ctx_name| {
+                // Unsafe unwrap: ctx_name comes from the context itslef, we should panic if it doesn't resolve!
+                context.get(&ctx_name).unwrap()
+            })
+            .collect();
+
+        for (placement, mut style) in styles {
+            let placement_entity = match placement {
+                Some(placement_entity) => placement_entity,
+                None => {
+                    cleanup_main_style = false;
+                    entity
+                }
+            };
+
+            unstyled_entities.retain(|e| *e != placement_entity);
+
+            if let Some(current_style) = world.get::<DynamicStyle>(placement_entity) {
                 style.copy_controllers(current_style);
             }
 
             if style.is_interactive() || style.is_animated() {
-                world.entity_mut(entity).insert(style);
-                if world.get::<Interaction>(entity).is_none() {
-                    world.entity_mut(entity).insert(Interaction::default());
+                world.entity_mut(placement_entity).insert(style);
+                if world.get::<Interaction>(placement_entity).is_none() {
+                    world
+                        .entity_mut(placement_entity)
+                        .insert(Interaction::default());
                 }
 
-                if world.get_mut::<FluxInteraction>(entity).is_none() {
+                if world.get_mut::<FluxInteraction>(placement_entity).is_none() {
                     world
-                        .entity_mut(entity)
+                        .entity_mut(placement_entity)
                         .insert(TrackedInteraction::default());
                 }
             } else {
-                world.entity_mut(entity).insert(style);
+                world.entity_mut(placement_entity).insert(style);
             }
-        } else {
+        }
+
+        for unstyled_context in unstyled_entities {
+            world.entity_mut(unstyled_context).remove::<DynamicStyle>();
+        }
+
+        if cleanup_main_style {
             world.entity_mut(entity).remove::<DynamicStyle>();
         }
     }
