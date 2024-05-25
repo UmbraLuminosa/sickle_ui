@@ -4,7 +4,7 @@ use bevy::{
     prelude::*,
     render::camera::{ManualTextureViews, RenderTarget},
     ui::FocusPolicy,
-    window::{PrimaryWindow, WindowResolution},
+    window::{PrimaryWindow, WindowRef, WindowResolution},
 };
 
 use crate::{
@@ -354,6 +354,13 @@ impl DefaultTheme for Dropdown {
 impl Dropdown {
     pub fn value(&self) -> Option<usize> {
         self.value
+    }
+
+    pub fn set_value(&mut self, value: impl Into<Option<usize>>) {
+        let value = value.into();
+        if self.value != value {
+            self.value = value;
+        }
     }
 
     pub fn theme() -> Theme<Dropdown> {
@@ -757,10 +764,10 @@ impl Dropdown {
     fn get_render_target_size(render_target: RenderTarget, world: &mut World) -> Vec2 {
         match render_target {
             RenderTarget::Window(window) => match window {
-                bevy::window::WindowRef::Primary => {
+                WindowRef::Primary => {
                     Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
                 }
-                bevy::window::WindowRef::Entity(window) => {
+                WindowRef::Entity(window) => {
                     let Some(window) = world.get::<Window>(window) else {
                         return Dropdown::resolution_to_vec2(
                             &Dropdown::get_primary_window(world).resolution,

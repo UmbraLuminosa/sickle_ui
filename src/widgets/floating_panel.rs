@@ -1,16 +1,12 @@
 use bevy::ui::{ContentSize, FocusPolicy, RelativeCursorPosition};
 use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, window::WindowResized};
-use sickle_math::ease::Ease;
 
-use super::icon::UiIconExt;
 use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt};
 use super::prelude::{SetLabelTextExt, UiScrollViewExt};
-use crate::animated_interaction::{AnimatedInteraction, AnimationConfig};
 use crate::drop_interaction::{Droppable, DroppableUpdate};
-use crate::interactions::InteractiveBackground;
 use crate::resize_interaction::ResizeHandle;
-use crate::theme::pseudo_state::PseudoState;
+use crate::theme::pseudo_state::{PseudoState, PseudoStates};
 use crate::theme::theme_colors::{Accent, Container, On, Surface};
 use crate::theme::theme_data::ThemeData;
 use crate::theme::typography::{FontScale, FontStyle, FontType};
@@ -19,8 +15,8 @@ use crate::ui_builder::UiBuilderExt;
 use crate::ui_commands::ManagePseudoStateExt;
 use crate::ui_style::{
     AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt,
-    SetBackgroundColorExt, SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetMarginExt,
-    SetNodeShowHideExt, SetWidthExt, SetZIndexExt, StyleBuilder, UiStyleExt,
+    SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetNodeShowHideExt, SetWidthExt,
+    SetZIndexExt, StyleBuilder, UiStyleExt,
 };
 use crate::FluxInteraction;
 use crate::{
@@ -546,6 +542,7 @@ pub struct FloatingPanel {
     fold_button: Entity,
     title_container: Entity,
     title: Entity,
+    close_button_container: Entity,
     close_button: Entity,
     content_view: Entity,
     content_panel_container: Entity,
@@ -566,6 +563,7 @@ impl Default for FloatingPanel {
             fold_button: Entity::PLACEHOLDER,
             title_container: Entity::PLACEHOLDER,
             title: Entity::PLACEHOLDER,
+            close_button_container: Entity::PLACEHOLDER,
             close_button: Entity::PLACEHOLDER,
             content_view: Entity::PLACEHOLDER,
             content_panel_container: Entity::PLACEHOLDER,
@@ -581,6 +579,9 @@ impl Default for FloatingPanel {
 const TITLE_CONTAINER: &'static str = "TitleContainer";
 const TITLE: &'static str = "Title";
 const FOLD_BUTTON: &'static str = "FoldButton";
+const CLOSE_BUTTON_CONTAINER: &'static str = "CloseButtonContainer";
+const CLOSE_BUTTON: &'static str = "CloseButton";
+const CONTENT_VIEW: &'static str = "ContentView";
 
 impl UiContext for FloatingPanel {
     fn get(&self, target: &str) -> Result<Entity, String> {
@@ -588,6 +589,9 @@ impl UiContext for FloatingPanel {
             TITLE_CONTAINER => Ok(self.title_container),
             TITLE => Ok(self.title),
             FOLD_BUTTON => Ok(self.fold_button),
+            CLOSE_BUTTON_CONTAINER => Ok(self.close_button_container),
+            CLOSE_BUTTON => Ok(self.close_button),
+            CONTENT_VIEW => Ok(self.content_view),
             _ => Err(format!(
                 "{} doesn't exists for FloatingPanel. Possible contexts: {:?}",
                 target,
@@ -597,7 +601,14 @@ impl UiContext for FloatingPanel {
     }
 
     fn contexts(&self) -> Vec<&'static str> {
-        vec![TITLE_CONTAINER, TITLE, FOLD_BUTTON]
+        vec![
+            TITLE_CONTAINER,
+            TITLE,
+            FOLD_BUTTON,
+            CLOSE_BUTTON_CONTAINER,
+            CLOSE_BUTTON,
+            CONTENT_VIEW,
+        ]
     }
 }
 
@@ -648,10 +659,14 @@ impl FloatingPanel {
             .font_color(colors.on(On::Surface));
 
         style_builder
+            .switch_target(CLOSE_BUTTON_CONTAINER)
+            .right(Val::Px(0.))
+            .background_color(colors.container(Container::SurfaceMid));
+
+        style_builder
             .switch_context(FOLD_BUTTON.to_string(), None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
-            .background_color(Color::WHITE)
             .icon(
                 theme_data
                     .icons
@@ -660,7 +675,25 @@ impl FloatingPanel {
             )
             .animated()
             .font_color(AnimatedVals {
-                idle: colors.on(On::PrimaryContainer),
+                idle: colors.on(On::SurfaceVariant),
+                hover: colors.on(On::Surface).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_context(CLOSE_BUTTON.to_string(), None)
+            .size(Val::Px(theme_spacing.icons.small))
+            .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
+            .icon(
+                theme_data
+                    .icons
+                    .close
+                    .with(colors.on(On::Surface), theme_spacing.icons.small),
+            )
+            .animated()
+            .font_color(AnimatedVals {
+                idle: colors.on(On::SurfaceVariant),
                 hover: colors.on(On::Surface).into(),
                 ..default()
             })
@@ -689,14 +722,6 @@ impl FloatingPanel {
 
     pub fn title_container_id(&self) -> Entity {
         self.title_container
-    }
-
-    fn base_tween() -> AnimationConfig {
-        AnimationConfig {
-            duration: 0.1,
-            easing: Ease::OutExpo,
-            ..default()
-        }
     }
 
     fn frame(title: String) -> impl Bundle {
@@ -769,15 +794,25 @@ impl FloatingPanel {
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
-                    right: Val::Px(0.),
-                    border: UiRect::left(Val::Px(2.)),
                     ..default()
                 },
-                border_color: Color::BLACK.into(),
-                background_color: Color::GRAY.into(),
                 focus_policy: bevy::ui::FocusPolicy::Block,
                 ..default()
             },
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::PositionType,
+                LockableStyleAttribute::FocusPolicy,
+            ]),
+        )
+    }
+
+    fn close_button(panel: Entity) -> impl Bundle {
+        (
+            Name::new("Close Button"),
+            ButtonBundle::default(),
+            ContentSize::default(),
+            TrackedInteraction::default(),
+            FloatingPanelFoldButton { panel },
         )
     }
 }
@@ -842,6 +877,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let mut title_container = Entity::PLACEHOLDER;
         let mut title = Entity::PLACEHOLDER;
         let mut fold_button = Entity::PLACEHOLDER;
+        let mut close_button_container = Entity::PLACEHOLDER;
         let mut close_button = Entity::PLACEHOLDER;
         let mut drag_handle = Entity::PLACEHOLDER;
         let mut content_view = Entity::PLACEHOLDER;
@@ -948,32 +984,18 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                         })
                         .id();
 
-                    container.container(
-                        FloatingPanel::close_button_container(),
-                        |close_button_container| {
-                            close_button = close_button_container
-                                .icon("embedded://sickle_ui/icons/close.png")
-                                .insert((
-                                    Name::new("Close Button"),
-                                    Interaction::default(),
-                                    TrackedInteraction::default(),
-                                    InteractiveBackground {
-                                        highlight: Color::rgba(0., 1., 1., 1.).into(),
-                                        ..default()
-                                    },
-                                    AnimatedInteraction::<InteractiveBackground> {
-                                        tween: FloatingPanel::base_tween(),
-                                        ..default()
-                                    },
-                                    FloatingPanelCloseButton { panel },
-                                ))
-                                .style()
-                                .margin(UiRect::px(3., 2., 2., 3.))
-                                .background_color(Color::rgb(0.1, 0.1, 0.1))
-                                .render(config.closable)
-                                .id();
-                        },
-                    );
+                    close_button_container = container
+                        .container(
+                            FloatingPanel::close_button_container(),
+                            |close_button_container| {
+                                close_button = close_button_container
+                                    .spawn(FloatingPanel::close_button(panel))
+                                    .style()
+                                    .render(config.closable)
+                                    .id();
+                            },
+                        )
+                        .id();
                 });
             title_builder.style().render(config.title.is_some());
 
@@ -1002,6 +1024,8 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                         )
                         .id();
                 })
+                .style()
+                .render(config.folded)
                 .id();
         });
 
@@ -1014,6 +1038,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             fold_button,
             title_container,
             title,
+            close_button_container,
             close_button,
             content_view,
             content_panel_container,
@@ -1022,6 +1047,10 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             priority: false,
             ..default()
         };
+
+        if config.folded {
+            frame.insert(PseudoStates::from(vec![PseudoState::Folded]));
+        }
 
         frame.insert((config, floating_panel));
 

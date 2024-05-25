@@ -11,7 +11,7 @@ use super::{
     AnimationSettings,
 };
 
-#[derive(Clone, Copy, Debug, Default, Reflect)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Reflect)]
 pub enum Contrast {
     #[default]
     Standard,
@@ -19,7 +19,7 @@ pub enum Contrast {
     High,
 }
 
-#[derive(Clone, Copy, Debug, Reflect)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
 pub enum Scheme {
     Light(Contrast),
     Dark(Contrast),

@@ -102,7 +102,12 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
-            close: IconData::Image("".into(), Color::WHITE),
+            close: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E5CD}',
+                Color::WHITE,
+                12.,
+            ),
             exit: IconData::Image("".into(), Color::WHITE),
             popout: IconData::Image("".into(), Color::WHITE),
             redo: IconData::Image("".into(), Color::WHITE),

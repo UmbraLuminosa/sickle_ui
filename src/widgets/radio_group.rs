@@ -127,6 +127,19 @@ impl Default for RadioGroup {
     }
 }
 
+impl RadioGroup {
+    pub fn selected(&self) -> Option<usize> {
+        self.selected
+    }
+
+    pub fn select(&mut self, value: impl Into<Option<usize>>) {
+        let selected = value.into();
+        if self.selected != selected {
+            self.selected = selected;
+        }
+    }
+}
+
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct RadioButton {
