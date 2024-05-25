@@ -407,7 +407,7 @@ impl Dropdown {
             .icon(
                 theme_data
                     .icons
-                    .chevron_down
+                    .expand_more
                     .with(colors.on(On::PrimaryContainer), theme_spacing.icons.small),
             )
             .animated()

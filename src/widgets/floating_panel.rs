@@ -1,4 +1,4 @@
-use bevy::ui::{FocusPolicy, RelativeCursorPosition};
+use bevy::ui::{ContentSize, FocusPolicy, RelativeCursorPosition};
 use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, window::WindowResized};
 use sickle_math::ease::Ease;
@@ -648,15 +648,14 @@ impl FloatingPanel {
             .font_color(colors.on(On::Surface));
 
         style_builder
-            .reset_target()
-            .switch_placement(FOLD_BUTTON)
+            .switch_context(FOLD_BUTTON.to_string(), None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .background_color(Color::WHITE)
             .icon(
                 theme_data
                     .icons
-                    .chevron_down
+                    .expand_more
                     .with(colors.on(On::Surface), theme_spacing.icons.small),
             )
             .animated()
@@ -700,9 +699,9 @@ impl FloatingPanel {
         }
     }
 
-    fn frame() -> impl Bundle {
+    fn frame(title: String) -> impl Bundle {
         (
-            Name::new("Frame"),
+            Name::new(format!("Floating Panel [{}]", title)),
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
@@ -738,6 +737,7 @@ impl FloatingPanel {
         (
             Name::new("Fold Button"),
             ButtonBundle::default(),
+            ContentSize::default(),
             TrackedInteraction::default(),
             FloatingPanelFoldButton { panel },
         )
@@ -831,6 +831,11 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let restrict_to = config.restrict_scroll;
+        let title_text = if let Some(text) = config.title.clone() {
+            text
+        } else {
+            "Untitled".into()
+        };
 
         let mut vertical_resize_handles = Entity::PLACEHOLDER;
         let mut horizontal_resize_handles = Entity::PLACEHOLDER;
@@ -842,16 +847,8 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         let mut content_view = Entity::PLACEHOLDER;
         let mut content_panel_container = Entity::PLACEHOLDER;
         let mut content_panel = Entity::PLACEHOLDER;
-        let mut frame = self.container(FloatingPanel::frame(), |container| {
+        let mut frame = self.container(FloatingPanel::frame(title_text.clone()), |container| {
             let panel = container.id();
-
-            let title_text = if let Some(text) = config.title.clone() {
-                text
-            } else {
-                "Untitled".into()
-            };
-
-            container.insert(Name::new(format!("Floating Panel [{}]", title_text)));
 
             vertical_resize_handles = container
                 .container(
@@ -943,29 +940,6 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                         .style()
                         .render(config.foldable)
                         .id();
-                    // .icon(match config.folded {
-                    //     true => "embedded://sickle_ui/icons/chevron_right.png",
-                    //     false => "embedded://sickle_ui/icons/chevron_down.png",
-                    // })
-                    // .insert((
-                    //     Name::new("Fold Button"),
-                    //     Interaction::default(),
-                    //     TrackedInteraction::default(),
-                    //     InteractiveBackground {
-                    //         highlight: Color::rgba(0., 1., 1., 1.).into(),
-                    //         ..default()
-                    //     },
-                    //     AnimatedInteraction::<InteractiveBackground> {
-                    //         tween: FloatingPanel::base_tween(),
-                    //         ..default()
-                    //     },
-                    //     FloatingPanelFoldButton { panel },
-                    // ))
-                    // .style()
-                    // .margin(UiRect::px(3., 0., 3., 3.))
-                    // .background_color(Color::GRAY)
-                    // .render(config.foldable)
-                    // .id();
 
                     title = container
                         .label(LabelConfig {
@@ -1049,7 +1023,6 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             ..default()
         };
 
-        // TODO: Add folded pseudo state
         frame.insert((config, floating_panel));
 
         self.commands().ui_builder(own_id)
