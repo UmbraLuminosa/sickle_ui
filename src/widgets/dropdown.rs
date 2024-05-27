@@ -448,48 +448,20 @@ impl Dropdown {
 
         let enter_animation = world.resource::<ThemeData>().enter_animation.clone();
 
-        if placement.anchor == DropdownPanelAnchor::BottomLeft
-            || placement.anchor == DropdownPanelAnchor::BottomRight
-        {
-            style_builder
-                .switch_target(DROPDOWN_PANEL)
-                .top(placement.top)
-                .right(placement.right)
-                .bottom(placement.bottom)
-                .left(placement.left)
-                .width(placement.width)
-                .animated()
-                .height(AnimatedVals {
-                    idle: placement.height,
-                    enter_from: Val::Px(0.).into(),
-                    ..default()
-                })
-                .copy_from(enter_animation);
-        } else {
-            style_builder
-                .switch_target(DROPDOWN_PANEL)
-                .right(placement.right)
-                .bottom(placement.bottom)
-                .left(placement.left)
-                .width(placement.width)
-                .animated()
-                .height(AnimatedVals {
-                    idle: placement.height,
-                    enter_from: Val::Px(0.).into(),
-                    ..default()
-                })
-                .copy_from(enter_animation);
-
-            style_builder
-                .switch_target(DROPDOWN_PANEL)
-                .animated()
-                .top(AnimatedVals {
-                    idle: placement.top,
-                    enter_from: Val::Px(0.).into(),
-                    ..default()
-                })
-                .copy_from(enter_animation);
-        }
+        style_builder
+            .switch_target(DROPDOWN_PANEL)
+            .top(placement.top)
+            .right(placement.right)
+            .bottom(placement.bottom)
+            .left(placement.left)
+            .width(placement.width)
+            .animated()
+            .height(AnimatedVals {
+                idle: placement.height,
+                enter_from: Val::Px(0.).into(),
+                ..default()
+            })
+            .copy_from(enter_animation);
 
         style_builder
             .switch_target(DROPDOWN_SCROLL_VIEW)
@@ -584,15 +556,15 @@ impl Dropdown {
 
         let (top, right, bottom, left) = match anchor {
             DropdownPanelAnchor::TopLeft => (
-                -Val::Px(idle_height + dropdown_borders.x),
                 Val::Auto,
                 Val::Auto,
+                Val::Px(dropdown_size.y - dropdown_borders.z),
                 Val::Px(-dropdown_borders.w),
             ),
             DropdownPanelAnchor::TopRight => (
-                -Val::Px(idle_height + dropdown_borders.x),
-                Val::Px(-dropdown_borders.y),
                 Val::Auto,
+                Val::Px(-dropdown_borders.y),
+                Val::Px(dropdown_size.y - dropdown_borders.z),
                 Val::Auto,
             ),
             DropdownPanelAnchor::BottomLeft => (
