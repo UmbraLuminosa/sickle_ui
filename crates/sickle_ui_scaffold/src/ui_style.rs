@@ -14,17 +14,16 @@ use serde::{Deserialize, Serialize};
 
 use sickle_math::lerp::Lerp;
 
-use crate::{
-    theme::{
-        dynamic_style::{ContextStyleAttribute, DynamicStyle},
-        dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
-        icons::IconData,
-        style_animation::{AnimationSettings, AnimationState, InteractionStyle},
-        typography::SizedFont,
-        UiContext,
-    },
-    FluxInteraction,
+use crate::theme::{
+    dynamic_style::{ContextStyleAttribute, DynamicStyle},
+    dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
+    icons::IconData,
+    style_animation::{AnimationSettings, AnimationState, InteractionStyle},
+    typography::SizedFont,
+    UiContext, 
 };
+
+pub use crate::FluxInteraction;
 
 use std::{
     fmt::{Debug, Formatter, Result},

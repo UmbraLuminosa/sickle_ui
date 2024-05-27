@@ -1,5 +1,5 @@
 [package]
-name = "sickle_ui"
+name = "sickle_ui_scaffold"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,9 +9,8 @@ edition = "2021"
 dev = ["bevy/dynamic_linking"]
 
 [dependencies]
-sickle_math = { path = "crates/sickle_math" }
-sickle_macros = { path = "crates/sickle_macros" }
-sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold" }
+sickle_math = { path = "../sickle_math" }
+sickle_macros = { path = "../sickle_macros" }
 
 bevy = { version = "0.13" }
 bevy_reflect = { version = "0.13" }
