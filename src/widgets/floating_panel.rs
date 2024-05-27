@@ -576,6 +576,7 @@ impl Default for FloatingPanel {
     }
 }
 
+const DRAG_HANDLE: &'static str = "DragHandle";
 const TITLE_CONTAINER: &'static str = "TitleContainer";
 const TITLE: &'static str = "Title";
 const FOLD_BUTTON: &'static str = "FoldButton";
@@ -586,6 +587,7 @@ const CONTENT_VIEW: &'static str = "ContentView";
 impl UiContext for FloatingPanel {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
+            DRAG_HANDLE => Ok(self.drag_handle),
             TITLE_CONTAINER => Ok(self.title_container),
             TITLE => Ok(self.title),
             FOLD_BUTTON => Ok(self.fold_button),
@@ -602,6 +604,7 @@ impl UiContext for FloatingPanel {
 
     fn contexts(&self) -> Vec<&'static str> {
         vec![
+            DRAG_HANDLE,
             TITLE_CONTAINER,
             TITLE,
             FOLD_BUTTON,
@@ -662,6 +665,20 @@ impl FloatingPanel {
             .switch_target(CLOSE_BUTTON_CONTAINER)
             .right(Val::Px(0.))
             .background_color(colors.container(Container::SurfaceMid));
+
+        style_builder
+            .switch_context(DRAG_HANDLE.to_string(), None)
+            .width(Val::Percent(100.))
+            .height(Val::Px(theme_spacing.borders.small * 2.))
+            .border(UiRect::bottom(Val::Px(theme_spacing.borders.small)))
+            .border_color(colors.accent(Accent::Shadow))
+            .animated()
+            .background_color(AnimatedVals {
+                idle: colors.surface(Surface::Surface),
+                hover: colors.surface(Surface::SurfaceVariant).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
 
         style_builder
             .switch_context(FOLD_BUTTON.to_string(), None)
@@ -771,17 +788,7 @@ impl FloatingPanel {
     fn drag_handle() -> impl Bundle {
         (
             Name::new("Drag Handle"),
-            ButtonBundle {
-                style: Style {
-                    width: Val::Percent(100.),
-                    height: Val::Px(6.),
-                    border: UiRect::vertical(Val::Px(2.)),
-                    ..default()
-                },
-                border_color: Color::GRAY.into(),
-                background_color: Color::BLACK.into(),
-                ..default()
-            },
+            ButtonBundle::default(),
             TrackedInteraction::default(),
             Draggable::default(),
             RelativeCursorPosition::default(),
@@ -812,7 +819,7 @@ impl FloatingPanel {
             ButtonBundle::default(),
             ContentSize::default(),
             TrackedInteraction::default(),
-            FloatingPanelFoldButton { panel },
+            FloatingPanelCloseButton { panel },
         )
     }
 }
