@@ -1,6 +1,8 @@
 use bevy::{prelude::*, render::view::VisibilitySystems};
 use serde::{Deserialize, Serialize};
 
+use crate::CardinalDirection;
+
 use super::ThemeUpdate;
 
 pub struct AutoPseudoStatePlugin;
@@ -58,6 +60,7 @@ pub enum PseudoState {
     Open,
     Closed,
     Error,
+    Resizable(CardinalDirection),
     Custom(&'static str),
 }
 

@@ -2,13 +2,15 @@ use bevy::{prelude::*, ui::UiSystem};
 
 use crate::{
     drag_interaction::{DragState, Draggable},
-    resize_interaction::{ResizeDirection, ResizeHandle},
     ui_builder::*,
     ui_commands::LogHierarchyExt,
     ui_style::{SetLeftExt, SetTopExt, SetVisibilityExt, UiStyleExt},
 };
 
-use super::{docking_zone::DockingZoneUpdate, prelude::UiContainerExt};
+use super::{
+    docking_zone::DockingZoneUpdate,
+    prelude::{ResizeDirection, ResizeHandle, UiContainerExt},
+};
 
 const MIN_SIZED_ZONE_SIZE: f32 = 50.;
 

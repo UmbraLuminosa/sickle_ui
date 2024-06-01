@@ -57,6 +57,12 @@ pub struct InputSizes {
     pub checkbox: CheckboxSizes,
 }
 
+#[derive(Clone, Copy, Debug, Default, Reflect)]
+pub struct ResizeZone {
+    pub width: f32,
+    pub pullback: f32,
+}
+
 // TODO: bevy 0.14: Add shape / border radius
 #[derive(Clone, Copy, Debug, Reflect)]
 pub struct ThemeSpacing {
@@ -65,6 +71,7 @@ pub struct ThemeSpacing {
     pub areas: Spacing,
     pub icons: IconSizes,
     pub inputs: InputSizes,
+    pub resize_zone: ResizeZone,
 }
 
 impl Default for ThemeSpacing {
@@ -117,6 +124,10 @@ impl Default for ThemeSpacing {
                     checkbox_size: 14.,
                     checkmark_size: 14.,
                 },
+            },
+            resize_zone: ResizeZone {
+                width: 2.,
+                pullback: 4.,
             },
         }
     }

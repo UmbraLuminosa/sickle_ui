@@ -1,11 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::{
-    prelude::*,
-    render::camera::{ManualTextureViews, RenderTarget},
-    ui::FocusPolicy,
-    window::{PrimaryWindow, WindowRef, WindowResolution},
-};
+use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::{
     theme::{
@@ -22,7 +17,7 @@ use crate::{
         SetFocusPolicyUncheckedExt, SetHeightUncheckedExt, SetVisibilityUncheckedExt, StyleBuilder,
         TrackedStyleState, UiStyleUncheckedExt,
     },
-    FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
+    FluxInteraction, FluxInteractionUpdate, TrackedInteraction, UiUtils,
 };
 
 use super::{
@@ -483,12 +478,10 @@ impl Dropdown {
         // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
         let dropdown_node = world.get::<Node>(entity).unwrap();
         let dropdown_size = dropdown_node.unrounded_size();
-        // TODO: bevy 0.14(?) add calculated border size from component rather than calculate it here
-        let dropdown_borders = Dropdown::get_node_border_sizes(entity, world);
-        let panel_borders = Dropdown::get_node_border_sizes(dropdown_panel, world);
+        let dropdown_borders = UiUtils::border_as_px(entity, world);
+        let panel_borders = UiUtils::border_as_px(dropdown_panel, world);
 
-        let (container_size, dropdown_position) =
-            Dropdown::get_container_size_and_offset(entity, world);
+        let (container_size, dropdown_position) = UiUtils::container_size_and_offset(entity, world);
         let tl_corner = dropdown_position - dropdown_size / 2.;
         let total_available_space = container_size - dropdown_size;
         let halfway_point = total_available_space / 2.;
@@ -537,7 +530,7 @@ impl Dropdown {
             if counted < 5 {
                 five_children_height += option_node.unrounded_size().y;
 
-                let margin_sizes = Dropdown::get_node_margin_sizes(child, world);
+                let margin_sizes = UiUtils::margin_as_px(child, world);
                 five_children_height += margin_sizes.x + margin_sizes.z;
                 counted += 1;
             }
@@ -590,195 +583,6 @@ impl Dropdown {
             width: Val::Px(panel_width),
             height: Val::Px(idle_height),
         })
-    }
-
-    fn get_node_border_sizes(entity: Entity, world: &mut World) -> Vec4 {
-        // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
-        let style = world.get::<Style>(entity).unwrap();
-        let border = style.border;
-
-        let viewport_size = if let Some(render_target) = Dropdown::find_render_target(entity, world)
-        {
-            Dropdown::get_render_target_size(render_target, world)
-        } else {
-            Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
-        };
-
-        let parent_size = if let Some(parent) = world.get::<Parent>(entity) {
-            let parent_id = parent.get();
-            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
-            world.get::<Node>(parent_id).unwrap().unrounded_size()
-        } else {
-            viewport_size
-        };
-
-        Vec4::new(
-            Dropdown::val_to_px(border.top, parent_size.y, viewport_size),
-            Dropdown::val_to_px(border.right, parent_size.x, viewport_size),
-            Dropdown::val_to_px(border.bottom, parent_size.y, viewport_size),
-            Dropdown::val_to_px(border.left, parent_size.x, viewport_size),
-        )
-    }
-
-    // Extract these methods, these should be useful in any case
-    fn get_node_margin_sizes(entity: Entity, world: &mut World) -> Vec4 {
-        // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
-        let style = world.get::<Style>(entity).unwrap();
-        let margin = style.margin;
-
-        let viewport_size = if let Some(render_target) = Dropdown::find_render_target(entity, world)
-        {
-            Dropdown::get_render_target_size(render_target, world)
-        } else {
-            Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
-        };
-
-        let parent_size = if let Some(parent) = world.get::<Parent>(entity) {
-            let parent_id = parent.get();
-            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
-            world.get::<Node>(parent_id).unwrap().unrounded_size()
-        } else {
-            viewport_size
-        };
-
-        Vec4::new(
-            Dropdown::val_to_px(margin.top, parent_size.y, viewport_size),
-            Dropdown::val_to_px(margin.right, parent_size.x, viewport_size),
-            Dropdown::val_to_px(margin.bottom, parent_size.y, viewport_size),
-            Dropdown::val_to_px(margin.left, parent_size.x, viewport_size),
-        )
-    }
-
-    fn val_to_px(value: Val, parent: f32, viewport_size: Vec2) -> f32 {
-        match value {
-            Val::Auto => 0.,
-            Val::Px(px) => px.max(0.),
-            Val::Percent(percent) => (parent * percent / 100.).max(0.),
-            Val::Vw(percent) => (viewport_size.x * percent / 100.).max(0.),
-            Val::Vh(percent) => (viewport_size.y * percent / 100.).max(0.),
-            Val::VMin(percent) => (viewport_size.min_element() * percent / 100.).max(0.),
-            Val::VMax(percent) => (viewport_size.max_element() * percent / 100.).max(0.),
-        }
-    }
-
-    fn get_container_size_and_offset(entity: Entity, world: &mut World) -> (Vec2, Vec2) {
-        let mut container_size = Vec2::ZERO;
-
-        // Unsafe unwarp: If a dropdown doesn't have a GT, we should panic!
-        let mut offset = world
-            .get::<GlobalTransform>(entity)
-            .unwrap()
-            .translation()
-            .truncate();
-
-        let mut current_ancestor = entity;
-        while let Some(parent) = world.get::<Parent>(current_ancestor) {
-            current_ancestor = parent.get();
-
-            // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
-            let style = world.get::<Style>(current_ancestor).unwrap();
-            if style.overflow.x == OverflowAxis::Visible
-                && style.overflow.y == OverflowAxis::Visible
-            {
-                continue;
-            }
-
-            // Unsafe unwrap: If a UI element doesn't have a Node, we should panic!
-            let node = world.get::<Node>(current_ancestor).unwrap();
-            let node_size = node.unrounded_size();
-            // Unsafe unwrap: If a UI element doesn't have a GT, we should panic!
-            let current_pos = world
-                .get::<GlobalTransform>(current_ancestor)
-                .unwrap()
-                .translation()
-                .truncate();
-
-            if container_size.x == 0. && style.overflow.x == OverflowAxis::Clip {
-                container_size.x = node_size.x;
-                offset.x -= current_pos.x - (node_size.x / 2.);
-            }
-
-            if container_size.y == 0. && style.overflow.y == OverflowAxis::Clip {
-                container_size.y = node_size.y;
-                offset.y -= current_pos.y - (node_size.y / 2.);
-            }
-
-            if container_size.x > 0. && container_size.y > 0. {
-                return (container_size, offset);
-            }
-        }
-
-        if let Some(render_target) = Dropdown::find_render_target(entity, world) {
-            container_size = Dropdown::get_render_target_size(render_target, world);
-        } else {
-            container_size =
-                Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution);
-        }
-
-        (container_size, offset)
-    }
-
-    fn find_render_target(entity: Entity, world: &mut World) -> Option<RenderTarget> {
-        let mut current_ancestor = entity;
-        while let Some(parent) = world.get::<Parent>(current_ancestor) {
-            current_ancestor = parent.get();
-            if let Some(target_camera) = world.get::<TargetCamera>(current_ancestor) {
-                let camera_entity = target_camera.0;
-                if let Some(camera) = world.get::<Camera>(camera_entity) {
-                    return camera.target.clone().into();
-                };
-            }
-        }
-
-        None
-    }
-
-    fn get_render_target_size(render_target: RenderTarget, world: &mut World) -> Vec2 {
-        match render_target {
-            RenderTarget::Window(window) => match window {
-                WindowRef::Primary => {
-                    Dropdown::resolution_to_vec2(&Dropdown::get_primary_window(world).resolution)
-                }
-                WindowRef::Entity(window) => {
-                    let Some(window) = world.get::<Window>(window) else {
-                        return Dropdown::resolution_to_vec2(
-                            &Dropdown::get_primary_window(world).resolution,
-                        );
-                    };
-
-                    Dropdown::resolution_to_vec2(&window.resolution)
-                }
-            },
-            RenderTarget::Image(handle) => {
-                let Some(image) = world.resource::<Assets<Image>>().get(handle) else {
-                    return Dropdown::resolution_to_vec2(
-                        &Dropdown::get_primary_window(world).resolution,
-                    );
-                };
-
-                image.size_f32()
-            }
-            RenderTarget::TextureView(tw_handle) => {
-                let Some(texture_view) = world.resource::<ManualTextureViews>().get(&tw_handle)
-                else {
-                    return Dropdown::resolution_to_vec2(
-                        &Dropdown::get_primary_window(world).resolution,
-                    );
-                };
-
-                Vec2::new(texture_view.size.x as f32, texture_view.size.y as f32)
-            }
-        }
-    }
-
-    fn get_primary_window(world: &mut World) -> &Window {
-        world
-            .query_filtered::<&Window, With<PrimaryWindow>>()
-            .single(world)
-    }
-
-    fn resolution_to_vec2(resolution: &WindowResolution) -> Vec2 {
-        Vec2::new(resolution.width(), resolution.height())
     }
 
     fn button(options: Vec<String>) -> impl Bundle {

@@ -12,7 +12,6 @@ use drag_interaction::DragInteractionPlugin;
 use drop_interaction::DropInteractionPlugin;
 use hierarchy_delay::HierarchyDelayPlugin;
 use interactions::InteractionsPlugin;
-use resize_interaction::ResizeHandlePlugin;
 use scroll_interaction::ScrollInteractionPlugin;
 use theme::ThemePlugin;
 use widgets::WidgetsPlugin;
@@ -35,7 +34,6 @@ impl Plugin for SickleUiPlugin {
             HierarchyDelayPlugin,
             FluxInteractionPlugin,
             InteractionsPlugin,
-            ResizeHandlePlugin,
             ScrollInteractionPlugin,
             WidgetsPlugin,
             ThemePlugin,

@@ -56,6 +56,9 @@ fn main() {
         .run();
 }
 
+#[derive(Component, Clone)]
+pub struct TMP;
+
 #[derive(Component)]
 pub struct UiCamera;
 
@@ -399,6 +402,23 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                                             label: "Panel 2".into(),
                                             ..default()
                                         });
+
+                                        panel.container(
+                                            NodeBundle {
+                                                style: Style {
+                                                    margin: UiRect::all(Val::Px(20.)),
+                                                    border: UiRect::all(Val::Px(2.)),
+                                                    width: Val::Px(200.),
+                                                    height: Val::Px(200.),
+                                                    ..default()
+                                                },
+                                                border_color: Color::BLACK.into(),
+                                                ..default()
+                                            },
+                                            |container| {
+                                                container.resize_handles(TMP, |_| {});
+                                            },
+                                        );
                                     });
                                     tab_container.add_tab("Tab 3".into(), |panel| {
                                         panel.label(LabelConfig {

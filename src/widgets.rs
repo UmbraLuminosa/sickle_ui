@@ -12,6 +12,7 @@ pub mod menu;
 pub mod menu_item;
 pub mod panel;
 pub mod radio_group;
+pub mod resize_handles;
 pub mod row;
 pub mod scroll_view;
 pub mod sized_zone;
@@ -21,6 +22,7 @@ pub mod tab_container;
 pub mod toggle_menu_item;
 
 use bevy::prelude::*;
+use resize_handles::ResizeHandlePlugin;
 
 use self::{
     checkbox::CheckboxPlugin,
@@ -59,6 +61,7 @@ pub mod prelude {
         menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt},
         panel::UiPanelExt,
         radio_group::{RadioGroup, UiRadioGroupExt},
+        resize_handles::*,
         row::UiRowExt,
         scroll_view::UiScrollViewExt,
         sized_zone::{SizedZoneConfig, UiSizedZoneExt},
@@ -87,6 +90,7 @@ impl Plugin for WidgetsPlugin {
                 MenuPlugin,
                 MenuItemPlugin,
                 RadioGroupPlugin,
+                ResizeHandlePlugin,
                 SliderPlugin,
                 ScrollViewPlugin,
                 SubmenuPlugin,
