@@ -4,12 +4,12 @@ use bevy_reflect::Reflect;
 use sickle_math::ease::Ease;
 use sickle_ui_scaffold::{
     theme::{
-        theme_colors::Accent, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
-        PseudoTheme, Theme, UiContext,
+        pseudo_state::PseudoState, theme_colors::Accent, theme_data::ThemeData,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-    UiUtils,
+    ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
+    CardinalDirection, UiUtils,
 };
 
 use crate::{
@@ -347,12 +347,247 @@ impl DefaultTheme for ResizeHandles {
 impl ResizeHandles {
     pub fn theme() -> Theme<ResizeHandles> {
         let base_theme = PseudoTheme::deferred_world(None, ResizeHandles::primary_style);
-        Theme::<ResizeHandles>::new(vec![base_theme])
+        let theme_north = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::North)],
+            ResizeHandles::resizable_north,
+        );
+        let theme_north_north_east = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::North),
+                PseudoState::Resizable(CardinalDirection::NorthEast),
+            ],
+            ResizeHandles::resizable_north_north_east,
+        );
+        let theme_north_north_west = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::North),
+                PseudoState::Resizable(CardinalDirection::NorthWest),
+            ],
+            ResizeHandles::resizable_north_north_west,
+        );
+
+        let theme_north_east = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::NorthEast)],
+            ResizeHandles::resizable_north_east,
+        );
+
+        let theme_east = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::East)],
+            ResizeHandles::resizable_east,
+        );
+        let theme_east_north_east = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::East),
+                PseudoState::Resizable(CardinalDirection::NorthEast),
+            ],
+            ResizeHandles::resizable_east_north_east,
+        );
+        let theme_east_south_east = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::East),
+                PseudoState::Resizable(CardinalDirection::SouthEast),
+            ],
+            ResizeHandles::resizable_east_south_east,
+        );
+
+        let theme_south_east = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::SouthEast)],
+            ResizeHandles::resizable_south_east,
+        );
+
+        let theme_south = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::South)],
+            ResizeHandles::resizable_south,
+        );
+        let theme_south_south_east = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::South),
+                PseudoState::Resizable(CardinalDirection::SouthEast),
+            ],
+            ResizeHandles::resizable_south_south_east,
+        );
+        let theme_south_south_west = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::South),
+                PseudoState::Resizable(CardinalDirection::SouthWest),
+            ],
+            ResizeHandles::resizable_south_south_west,
+        );
+
+        let theme_south_west = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::SouthWest)],
+            ResizeHandles::resizable_south_west,
+        );
+
+        let theme_west = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::West)],
+            ResizeHandles::resizable_west,
+        );
+        let theme_west_south_west = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::West),
+                PseudoState::Resizable(CardinalDirection::SouthWest),
+            ],
+            ResizeHandles::resizable_west_south_west,
+        );
+        let theme_west_north_west = PseudoTheme::deferred(
+            vec![
+                PseudoState::Resizable(CardinalDirection::West),
+                PseudoState::Resizable(CardinalDirection::NorthWest),
+            ],
+            ResizeHandles::resizable_west_north_west,
+        );
+
+        let theme_north_west = PseudoTheme::deferred(
+            vec![PseudoState::Resizable(CardinalDirection::NorthWest)],
+            ResizeHandles::resizable_north_west,
+        );
+
+        Theme::<ResizeHandles>::new(vec![
+            base_theme,
+            theme_north,
+            theme_north_north_west,
+            theme_north_north_east,
+            theme_north_east,
+            theme_east,
+            theme_east_north_east,
+            theme_east_south_east,
+            theme_south_east,
+            theme_south,
+            theme_south_south_east,
+            theme_south_south_west,
+            theme_south_west,
+            theme_west,
+            theme_west_south_west,
+            theme_west_north_west,
+            theme_north_west,
+        ])
+    }
+
+    // North handle
+    fn resizable_north(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_NORTH)
+            .right(Val::Px(0.))
+            .left(Val::Px(0.))
+            .visibility(Visibility::Inherited);
+    }
+    fn resizable_north_north_west(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_NORTH)
+            .left(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+    fn resizable_north_north_east(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_NORTH)
+            .right(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+
+    // North-east corner
+    fn resizable_north_east(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_NORTH_EAST)
+            .visibility(Visibility::Inherited);
+    }
+
+    // East handle
+    fn resizable_east(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_EAST)
+            .top(Val::Px(0.))
+            .bottom(Val::Px(0.))
+            .visibility(Visibility::Inherited);
+    }
+    fn resizable_east_north_east(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_EAST)
+            .top(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+    fn resizable_east_south_east(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_EAST)
+            .bottom(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+
+    // South-east corner
+    fn resizable_south_east(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_SOUTH_EAST)
+            .visibility(Visibility::Inherited);
+    }
+
+    // South handle
+    fn resizable_south(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_SOUTH)
+            .right(Val::Px(0.))
+            .left(Val::Px(0.))
+            .visibility(Visibility::Inherited);
+    }
+    fn resizable_south_south_east(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_SOUTH)
+            .right(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+    fn resizable_south_south_west(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_SOUTH)
+            .left(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+
+    // South-west corner
+    fn resizable_south_west(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_SOUTH_WEST)
+            .visibility(Visibility::Inherited);
+    }
+
+    // West handle
+    fn resizable_west(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_WEST)
+            .top(Val::Px(0.))
+            .bottom(Val::Px(0.))
+            .visibility(Visibility::Inherited);
+    }
+    fn resizable_west_south_west(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_WEST)
+            .bottom(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+    fn resizable_west_north_west(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let resize_spacing = theme_data.spacing.resize_zone;
+
+        style_builder
+            .switch_target(HANDLE_WEST)
+            .top(Val::Px(resize_spacing.width + resize_spacing.handle_gap));
+    }
+
+    // North-west corner
+    fn resizable_north_west(style_builder: &mut StyleBuilder, _theme_data: &ThemeData) {
+        style_builder
+            .switch_target(HANDLE_NORTH_WEST)
+            .visibility(Visibility::Inherited);
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
         let theme_data = world.resource::<ThemeData>();
         let resize_spacing = theme_data.spacing.resize_zone;
+        let interaction_animation = theme_data.interaction_animation;
         let colors = theme_data.colors();
 
         let parent_id: Option<Entity> = match world.get::<Parent>(entity) {
@@ -365,17 +600,46 @@ impl ResizeHandles {
             None => Vec4::ZERO,
         };
 
-        // TODO: Check parent overflow, use pullback on non-clip edges
+        // TODO: bevy 0.14: account for parent border radius
+        let pullback = match parent_id {
+            Some(parent) => {
+                if let Some(parent_style) = world.get::<Style>(parent) {
+                    Vec2::new(
+                        match parent_style.overflow.x {
+                            OverflowAxis::Visible => resize_spacing.pullback,
+                            OverflowAxis::Clip => 0.,
+                        },
+                        match parent_style.overflow.y {
+                            OverflowAxis::Visible => resize_spacing.pullback,
+                            OverflowAxis::Clip => 0.,
+                        },
+                    )
+                } else {
+                    Vec2::splat(resize_spacing.pullback)
+                }
+            }
+            None => Vec2::splat(resize_spacing.pullback),
+        };
+
+        let handle_color = AnimatedVals {
+            idle: Color::NONE,
+            hover: colors.accent(Accent::Outline).into(),
+            ..default()
+        };
 
         style_builder
-            .top(Val::Px(-parent_border_px.x))
-            .left(Val::Px(-parent_border_px.w));
+            .top(Val::Px(-parent_border_px.x - pullback.y))
+            .right(Val::Px(parent_border_px.w - pullback.x))
+            .bottom(Val::Px(parent_border_px.x - pullback.y))
+            .left(Val::Px(-parent_border_px.w - pullback.x));
 
         style_builder
             .switch_placement(HANDLE_NORTH)
             .height(Val::Px(resize_spacing.width))
-            .width(Val::Percent(100.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_NORTH_EAST)
@@ -383,14 +647,19 @@ impl ResizeHandles {
             .width(Val::Px(resize_spacing.width))
             .top(Val::Px(0.))
             .right(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_EAST)
             .width(Val::Px(resize_spacing.width))
-            .height(Val::Percent(100.))
             .right(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_SOUTH_EAST)
@@ -398,15 +667,19 @@ impl ResizeHandles {
             .height(Val::Px(resize_spacing.width))
             .right(Val::Px(0.))
             .bottom(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_SOUTH)
             .height(Val::Px(resize_spacing.width))
-            .right(Val::Px(0.))
             .bottom(Val::Px(0.))
-            .left(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_SOUTH_WEST)
@@ -414,15 +687,19 @@ impl ResizeHandles {
             .height(Val::Px(resize_spacing.width))
             .bottom(Val::Px(0.))
             .left(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_WEST)
             .width(Val::Px(resize_spacing.width))
-            .top(Val::Px(0.))
-            .bottom(Val::Px(0.))
             .left(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
 
         style_builder
             .switch_placement(HANDLE_NORTH_WEST)
@@ -430,7 +707,10 @@ impl ResizeHandles {
             .height(Val::Px(resize_spacing.width))
             .top(Val::Px(0.))
             .left(Val::Px(0.))
-            .background_color(colors.accent(Accent::PrimaryFixed));
+            .visibility(Visibility::Hidden)
+            .animated()
+            .background_color(handle_color.clone())
+            .copy_from(interaction_animation);
     }
 
     fn container() -> impl Bundle {
@@ -439,11 +719,6 @@ impl ResizeHandles {
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    justify_content: JustifyContent::SpaceBetween,
-                    align_self: AlignSelf::Stretch,
-                    flex_direction: FlexDirection::Column,
                     flex_shrink: 0.,
                     overflow: Overflow::visible(),
                     ..default()
@@ -509,7 +784,6 @@ pub trait UiResizeHandlesExt<'w, 's> {
     fn resize_handles<'a>(
         &'a mut self,
         marker: impl Bundle + Clone,
-        process_handles: impl FnOnce(&mut UiBuilder<ResizeHandles>),
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
@@ -517,7 +791,6 @@ impl<'w, 's> UiResizeHandlesExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn resize_handles<'a>(
         &'a mut self,
         marker: impl Bundle + Clone,
-        _process_handles: impl FnOnce(&mut UiBuilder<ResizeHandles>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
         let mut resize_handles = ResizeHandles::default();
         let container = self
@@ -571,7 +844,7 @@ impl<'w, 's> UiResizeHandlesExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     ))
                     .id();
             })
-            .insert(resize_handles)
+            .insert(resize_handles.clone())
             .id();
 
         self.commands().ui_builder(container)

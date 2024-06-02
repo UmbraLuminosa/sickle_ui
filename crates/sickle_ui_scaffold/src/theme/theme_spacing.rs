@@ -61,6 +61,7 @@ pub struct InputSizes {
 pub struct ResizeZone {
     pub width: f32,
     pub pullback: f32,
+    pub handle_gap: f32,
 }
 
 // TODO: bevy 0.14: Add shape / border radius
@@ -126,8 +127,9 @@ impl Default for ThemeSpacing {
                 },
             },
             resize_zone: ResizeZone {
-                width: 2.,
-                pullback: 4.,
+                width: 6.,
+                pullback: 2.,
+                handle_gap: 1.,
             },
         }
     }

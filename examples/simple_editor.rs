@@ -6,14 +6,17 @@ use sickle_ui::{
         hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
-    theme::theme_data::{Contrast, Scheme, ThemeData},
+    theme::{
+        pseudo_state::{PseudoState, PseudoStates},
+        theme_data::{Contrast, Scheme, ThemeData},
+    },
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::{SetBackgroundColorExt, SetHeightExt, SetJustifyContentsExt, SetWidthExt},
     widgets::{
         dropdown::Dropdown, prelude::*, tab_container::UiTabContainerSubExt, WidgetLibraryUpdate,
     },
-    SickleUiPlugin,
+    CardinalDirection, SickleUiPlugin,
 };
 
 fn main() {
@@ -407,16 +410,43 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                                             NodeBundle {
                                                 style: Style {
                                                     margin: UiRect::all(Val::Px(20.)),
-                                                    border: UiRect::all(Val::Px(2.)),
+                                                    border: UiRect::px(2., 4., 6., 8.),
                                                     width: Val::Px(200.),
                                                     height: Val::Px(200.),
                                                     ..default()
                                                 },
-                                                border_color: Color::BLACK.into(),
+                                                border_color: Color::YELLOW.with_a(0.1).into(),
                                                 ..default()
                                             },
                                             |container| {
-                                                container.resize_handles(TMP, |_| {});
+                                                container.resize_handles(TMP).insert(
+                                                    PseudoStates::from(vec![
+                                                        PseudoState::Resizable(
+                                                            CardinalDirection::North,
+                                                        ),
+                                                        // PseudoState::Resizable(
+                                                        //     CardinalDirection::NorthEast,
+                                                        // ),
+                                                        PseudoState::Resizable(
+                                                            CardinalDirection::East,
+                                                        ),
+                                                        // PseudoState::Resizable(
+                                                        //     CardinalDirection::SouthEast,
+                                                        // ),
+                                                        PseudoState::Resizable(
+                                                            CardinalDirection::South,
+                                                        ),
+                                                        // PseudoState::Resizable(
+                                                        //     CardinalDirection::SouthWest,
+                                                        // ),
+                                                        PseudoState::Resizable(
+                                                            CardinalDirection::West,
+                                                        ),
+                                                        // PseudoState::Resizable(
+                                                        //     CardinalDirection::NorthWest,
+                                                        // ),
+                                                    ]),
+                                                );
                                             },
                                         );
                                     });
