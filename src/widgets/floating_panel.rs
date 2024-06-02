@@ -2,7 +2,9 @@ use bevy::ui::{ContentSize, FocusPolicy, RelativeCursorPosition};
 use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, window::WindowResized};
 
-use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt};
+use sickle_ui_scaffold::CardinalDirection;
+
+use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiResizeHandlesExt};
 use super::prelude::{SetLabelTextExt, UiScrollViewExt};
 use super::resize_handles::{ResizeDirection, ResizeHandle};
 use crate::drop_interaction::{Droppable, DroppableUpdate};
@@ -41,7 +43,7 @@ impl Plugin for FloatingPanelPlugin {
             .add_systems(
                 Update,
                 (
-                    index_floating_panel.run_if(panel_added),
+                    index_floating_panels.run_if(panel_added),
                     process_panel_close_pressed,
                     process_panel_fold_pressed,
                     update_panel_size_on_resize,
@@ -94,7 +96,7 @@ fn panel_added(q_panels: Query<Entity, Added<FloatingPanel>>) -> bool {
     q_panels.iter().count() > 0
 }
 
-fn index_floating_panel(mut q_panels: Query<&mut FloatingPanel>) {
+fn index_floating_panels(mut q_panels: Query<&mut FloatingPanel>) {
     let max = if let Some(Some(m)) = q_panels.iter().map(|p| p.z_index).max() {
         m
     } else {
@@ -373,12 +375,20 @@ fn update_panel_layout(
         }
 
         let render_resize_handles = !config.folded && config.resizable && !panel.moving;
-        commands
-            .style(panel.resize_handles.0)
-            .render(render_resize_handles);
-        commands
-            .style(panel.resize_handles.1)
-            .render(render_resize_handles);
+        if render_resize_handles {
+            commands
+                .entity(panel.resize_handles)
+                .insert(PseudoStates::from(vec![
+                    PseudoState::Resizable(CardinalDirection::North),
+                    PseudoState::Resizable(CardinalDirection::East),
+                    PseudoState::Resizable(CardinalDirection::South),
+                    PseudoState::Resizable(CardinalDirection::West),
+                ]));
+        } else {
+            commands
+                .entity(panel.resize_handles)
+                .remove::<PseudoStates>();
+        }
 
         let policy = match panel.moving {
             true => FocusPolicy::Pass,
@@ -424,7 +434,7 @@ fn update_panel_layout(
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct FloatingPanelResizeHandle {
     panel: Entity,
@@ -546,7 +556,7 @@ pub struct FloatingPanel {
     content_view: Entity,
     content_panel_container: Entity,
     content_panel: Entity,
-    resize_handles: (Entity, Entity),
+    resize_handles: Entity,
     resizing: bool,
     moving: bool,
     pub priority: bool,
@@ -567,7 +577,7 @@ impl Default for FloatingPanel {
             content_view: Entity::PLACEHOLDER,
             content_panel_container: Entity::PLACEHOLDER,
             content_panel: Entity::PLACEHOLDER,
-            resize_handles: (Entity::PLACEHOLDER, Entity::PLACEHOLDER),
+            resize_handles: Entity::PLACEHOLDER,
             resizing: Default::default(),
             moving: Default::default(),
             priority: Default::default(),
@@ -878,123 +888,39 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             "Untitled".into()
         };
 
-        let mut vertical_resize_handles = Entity::PLACEHOLDER;
-        let mut horizontal_resize_handles = Entity::PLACEHOLDER;
-        let mut title_container = Entity::PLACEHOLDER;
-        let mut title = Entity::PLACEHOLDER;
-        let mut fold_button = Entity::PLACEHOLDER;
-        let mut close_button_container = Entity::PLACEHOLDER;
-        let mut close_button = Entity::PLACEHOLDER;
-        let mut drag_handle = Entity::PLACEHOLDER;
-        let mut content_view = Entity::PLACEHOLDER;
-        let mut content_panel_container = Entity::PLACEHOLDER;
-        let mut content_panel = Entity::PLACEHOLDER;
+        let mut floating_panel = FloatingPanel {
+            size: layout.size.max(MIN_PANEL_SIZE),
+            position: layout.position.unwrap_or_default(),
+            z_index: None,
+            ..default()
+        };
+
         let mut frame = self.container(FloatingPanel::frame(title_text.clone()), |container| {
             let panel = container.id();
-
-            vertical_resize_handles = container
-                .container(
-                    (ResizeHandle::resize_handle_container(10),),
-                    |resize_container| {
-                        resize_container.container(
-                            (
-                                Name::new("Top Row"),
-                                NodeBundle {
-                                    style: Style {
-                                        width: Val::Percent(100.),
-                                        height: Val::Px(ResizeHandle::resize_zone_size()),
-                                        ..default()
-                                    },
-                                    ..default()
-                                },
-                            ),
-                            |top_row| {
-                                top_row.spawn((
-                                    ResizeHandle::resize_handle(ResizeDirection::North),
-                                    FloatingPanelResizeHandle { panel },
-                                ));
-                            },
-                        );
-
-                        resize_container.container(
-                            (
-                                Name::new("Bottom Row"),
-                                NodeBundle {
-                                    style: Style {
-                                        width: Val::Percent(100.),
-                                        height: Val::Px(ResizeHandle::resize_zone_size()),
-                                        ..default()
-                                    },
-                                    ..default()
-                                },
-                            ),
-                            |bottom_row| {
-                                bottom_row.spawn((
-                                    ResizeHandle::resize_handle(ResizeDirection::South),
-                                    FloatingPanelResizeHandle { panel },
-                                ));
-                            },
-                        );
-                    },
-                )
-                .style()
-                .render(config.resizable)
-                .id();
-
-            horizontal_resize_handles = container
-                .container(
-                    (ResizeHandle::resize_handle_container(11),),
-                    |resize_container| {
-                        resize_container.container(
-                            (
-                                Name::new("Middle Row"),
-                                NodeBundle {
-                                    style: Style {
-                                        width: Val::Percent(100.),
-                                        height: Val::Percent(100.),
-                                        justify_content: JustifyContent::SpaceBetween,
-                                        ..default()
-                                    },
-                                    ..default()
-                                },
-                            ),
-                            |middle_row| {
-                                middle_row.spawn((
-                                    ResizeHandle::resize_handle(ResizeDirection::West),
-                                    FloatingPanelResizeHandle { panel },
-                                ));
-                                middle_row.spawn((
-                                    ResizeHandle::resize_handle(ResizeDirection::East),
-                                    FloatingPanelResizeHandle { panel },
-                                ));
-                            },
-                        );
-                    },
-                )
-                .style()
-                .render(config.resizable)
+            floating_panel.resize_handles = container
+                .resize_handles(FloatingPanelResizeHandle { panel })
                 .id();
 
             let mut title_builder =
                 container.container(FloatingPanel::title_container(panel), |container| {
-                    fold_button = container
+                    floating_panel.fold_button = container
                         .spawn(FloatingPanel::fold_button(panel))
                         .style()
                         .render(config.foldable)
                         .id();
 
-                    title = container
+                    floating_panel.title = container
                         .label(LabelConfig {
                             label: title_text.clone(),
                             ..default()
                         })
                         .id();
 
-                    close_button_container = container
+                    floating_panel.close_button_container = container
                         .container(
                             FloatingPanel::close_button_container(),
                             |close_button_container| {
-                                close_button = close_button_container
+                                floating_panel.close_button = close_button_container
                                     .spawn(FloatingPanel::close_button(panel))
                                     .style()
                                     .render(config.closable)
@@ -1009,9 +935,9 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 title_builder.insert(Droppable);
             }
 
-            title_container = title_builder.id();
+            floating_panel.title_container = title_builder.id();
 
-            drag_handle = container
+            floating_panel.drag_handle = container
                 .spawn((
                     FloatingPanel::drag_handle(),
                     FloatingPanelDragHandle { panel },
@@ -1020,10 +946,10 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                 .render(config.title.is_none())
                 .id();
 
-            content_view = container
+            floating_panel.content_view = container
                 .scroll_view(restrict_to, |scroll_view| {
-                    content_panel_container = scroll_view.id();
-                    content_panel = scroll_view
+                    floating_panel.content_panel_container = scroll_view.id();
+                    floating_panel.content_panel = scroll_view
                         .panel(
                             config.title.clone().unwrap_or("Untitled".into()),
                             spawn_children,
@@ -1036,23 +962,6 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         });
 
         let own_id = frame.id();
-        let floating_panel = FloatingPanel {
-            size: layout.size.max(MIN_PANEL_SIZE),
-            position: layout.position.unwrap_or_default(),
-            z_index: None,
-            drag_handle,
-            fold_button,
-            title_container,
-            title,
-            close_button_container,
-            close_button,
-            content_view,
-            content_panel_container,
-            content_panel,
-            resize_handles: (horizontal_resize_handles, vertical_resize_handles),
-            priority: false,
-            ..default()
-        };
 
         if config.folded {
             frame.insert(PseudoStates::from(vec![PseudoState::Folded]));

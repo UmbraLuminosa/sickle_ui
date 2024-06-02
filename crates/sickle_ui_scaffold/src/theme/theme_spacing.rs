@@ -127,7 +127,7 @@ impl Default for ThemeSpacing {
                 },
             },
             resize_zone: ResizeZone {
-                width: 6.,
+                width: 4.,
                 pullback: 2.,
                 handle_gap: 1.,
             },

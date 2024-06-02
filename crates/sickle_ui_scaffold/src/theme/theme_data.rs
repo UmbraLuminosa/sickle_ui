@@ -49,6 +49,7 @@ pub struct ThemeData {
     pub text: ThemeTypography,
     pub icons: Icons,
     pub interaction_animation: AnimationSettings,
+    pub delayed_interaction_animation: AnimationSettings,
     pub enter_animation: AnimationSettings,
 }
 
@@ -58,6 +59,12 @@ impl Default for ThemeData {
         interaction_animation
             .pointer_enter(0.1, Ease::OutExpo, None)
             .pointer_leave(0.1, Ease::OutExpo, None)
+            .press(0.1, Ease::OutExpo, None);
+
+        let mut delayed_interaction_animation = AnimationSettings::new();
+        delayed_interaction_animation
+            .pointer_enter(0.1, Ease::OutExpo, 0.1)
+            .pointer_leave(0.1, Ease::OutExpo, 0.1)
             .press(0.1, Ease::OutExpo, None);
 
         let mut enter_animation = AnimationSettings::new();
@@ -70,6 +77,7 @@ impl Default for ThemeData {
             text: Default::default(),
             icons: Default::default(),
             interaction_animation,
+            delayed_interaction_animation,
             enter_animation,
         }
     }
