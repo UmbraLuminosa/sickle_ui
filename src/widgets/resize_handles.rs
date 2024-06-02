@@ -23,6 +23,14 @@ use crate::{
 use super::prelude::UiContainerExt;
 
 const RESIZE_HANDLES_LOCAL_Z_INDEX: i32 = 100;
+const HANDLE_NORTH: &'static str = "HandleNorth";
+const HANDLE_NORTH_EAST: &'static str = "HandleNorthEast";
+const HANDLE_EAST: &'static str = "HandleEast";
+const HANDLE_SOUTH_EAST: &'static str = "HandleSouthEast";
+const HANDLE_SOUTH: &'static str = "HandleSouth";
+const HANDLE_SOUTH_WEST: &'static str = "HandleSouthWest";
+const HANDLE_WEST: &'static str = "HandleWest";
+const HANDLE_NORTH_WEST: &'static str = "HandleNorthWest";
 
 pub struct ResizeHandlePlugin;
 
@@ -295,15 +303,6 @@ impl Default for ResizeHandles {
         }
     }
 }
-
-const HANDLE_NORTH: &'static str = "HandleNorth";
-const HANDLE_NORTH_EAST: &'static str = "HandleNorthEast";
-const HANDLE_EAST: &'static str = "HandleEast";
-const HANDLE_SOUTH_EAST: &'static str = "HandleSouthEast";
-const HANDLE_SOUTH: &'static str = "HandleSouth";
-const HANDLE_SOUTH_WEST: &'static str = "HandleSouthWest";
-const HANDLE_WEST: &'static str = "HandleWest";
-const HANDLE_NORTH_WEST: &'static str = "HandleNorthWest";
 
 impl UiContext for ResizeHandles {
     fn get(&self, target: &str) -> Result<Entity, String> {

@@ -60,7 +60,6 @@ impl Plugin for FloatingPanelPlugin {
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct FloatingPanelUpdate;
 
-// TODO: Disable resizing when a panel is dragged or resized
 fn update_floating_panel_panel_id(
     mut q_floating_panels: Query<
         (Entity, &mut FloatingPanel, &UpdateFloatingPanelPanelId),
@@ -412,17 +411,16 @@ fn update_panel_layout(
             .style(panel.close_button)
             .flux_interaction_enabled(!(panel.moving || panel.resizing));
 
-        commands
-            .style(entity)
-            .width(match config.folded {
-                true => Val::Auto,
-                false => Val::Px(panel.size.x.max(MIN_PANEL_SIZE.x)),
-            })
-            .height(match config.folded {
-                true => Val::Auto,
-                false => Val::Px(panel.size.y.max(MIN_PANEL_SIZE.y)),
-            })
-            .absolute_position(panel.position);
+        if panel.resizing {
+            commands
+                .style(entity)
+                .width(Val::Px(panel.size.x.max(MIN_PANEL_SIZE.x)))
+                .height(Val::Px(panel.size.y.max(MIN_PANEL_SIZE.y)));
+        }
+
+        if panel.moving || panel.resizing {
+            commands.style(entity).absolute_position(panel.position);
+        }
 
         if panel.priority {
             commands
@@ -632,20 +630,48 @@ impl DefaultTheme for FloatingPanel {
 
 impl FloatingPanel {
     pub fn theme() -> Theme<FloatingPanel> {
-        let base_theme = PseudoTheme::deferred(None, FloatingPanel::primary_style);
+        let base_theme = PseudoTheme::deferred_world(None, FloatingPanel::primary_style);
         let folded_theme =
-            PseudoTheme::deferred(vec![PseudoState::Folded], FloatingPanel::folded_style);
+            PseudoTheme::deferred_world(vec![PseudoState::Folded], FloatingPanel::folded_style);
+
         Theme::<FloatingPanel>::new(vec![base_theme, folded_theme])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+        let theme_data = world.resource::<ThemeData>().clone();
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
+        let Some(panel) = world.get::<FloatingPanel>(entity) else {
+            return;
+        };
 
         style_builder
+            .absolute_position(panel.position)
             .border(UiRect::all(Val::Px(theme_spacing.borders.small)))
             .border_color(colors.accent(Accent::Shadow))
             .background_color(colors.surface(Surface::Surface));
+
+        style_builder
+            .animated()
+            .height(AnimatedVals {
+                idle: Val::Px(panel.size.y.max(MIN_PANEL_SIZE.y)),
+                enter_from: Val::Px(theme_spacing.areas.small).into(),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
+
+        style_builder
+            .animated()
+            .width(AnimatedVals {
+                idle: Val::Px(panel.size.x.max(MIN_PANEL_SIZE.x)),
+                enter_from: Val::Px(theme_spacing.areas.extra_large).into(),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
+
+        style_builder
+            .switch_target(CONTENT_VIEW)
+            .height(Val::Percent(100.));
 
         style_builder
             .switch_target(TITLE_CONTAINER)
@@ -726,9 +752,33 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
     }
 
-    fn folded_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+    fn folded_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+        let theme_data = world.resource::<ThemeData>().clone();
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
+        let Some(panel) = world.get::<FloatingPanel>(entity) else {
+            return;
+        };
+
+        style_builder
+            .height(Val::Auto)
+            .animated()
+            .width(AnimatedVals {
+                idle: Val::Px(theme_spacing.areas.extra_large),
+                enter_from: Val::Px(panel.size.x.max(MIN_PANEL_SIZE.x)).into(),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
+
+        style_builder
+            .switch_target(CONTENT_VIEW)
+            .animated()
+            .height(AnimatedVals {
+                idle: Val::Percent(0.),
+                enter_from: Val::Percent(100.).into(),
+                ..default()
+            })
+            .copy_from(theme_data.enter_animation);
 
         style_builder.switch_target(FOLD_BUTTON).icon(
             theme_data

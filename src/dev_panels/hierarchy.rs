@@ -19,7 +19,9 @@ use super::entity_component_list::{
     EntityComponentList, EntityComponentListPlugin, UiEntityComponentListExt,
 };
 
+// TODO: Move to subapp? to separate inspection from UI entities
 pub struct HierarchyTreeViewPlugin;
+
 impl Plugin for HierarchyTreeViewPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<EntityComponentListPlugin>() {

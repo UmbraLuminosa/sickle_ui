@@ -238,6 +238,7 @@ pub struct AnimationSettings {
     pub hover: Option<LoopedAnimationConfig>,
     #[reflect(default)]
     pub pressed: Option<LoopedAnimationConfig>,
+    pub delete_on_entered: bool,
 }
 
 macro_rules! transition_animation_setter {
@@ -336,6 +337,7 @@ impl AnimationSettings {
         self.idle = other.idle;
         self.hover = other.hover;
         self.pressed = other.pressed;
+        self.delete_on_entered = other.delete_on_entered;
 
         self
     }
@@ -363,6 +365,12 @@ impl AnimationSettings {
     state_from_animation_setter!(hover, hover_from);
     state_animation_setter!(pressed);
     state_from_animation_setter!(pressed, pressed_from);
+
+    pub fn delete_on_entered(&mut self, do_delete: bool) -> &mut Self {
+        self.delete_on_entered = do_delete;
+
+        self
+    }
 
     pub fn to_tween(&self, flux_interaction: &FluxInteraction) -> Option<AnimationConfig> {
         match flux_interaction {

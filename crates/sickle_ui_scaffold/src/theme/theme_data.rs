@@ -68,7 +68,9 @@ impl Default for ThemeData {
             .press(0.1, Ease::OutExpo, None);
 
         let mut enter_animation = AnimationSettings::new();
-        enter_animation.enter(0.1, Ease::OutExpo, None);
+        enter_animation
+            .enter(0.1, Ease::OutExpo, None)
+            .delete_on_entered(true);
 
         Self {
             active_scheme: Default::default(),

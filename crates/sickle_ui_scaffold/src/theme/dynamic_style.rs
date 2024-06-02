@@ -173,6 +173,7 @@ fn update_dynamic_style_on_stopwatch_change(
             let style_changed = style.is_changed();
             let style = style.bypass_change_detection();
             let mut enter_completed = true;
+            let mut filter_entered = false;
 
             for context_attribute in &mut style.attributes {
                 let ContextStyleAttribute {
@@ -204,6 +205,8 @@ fn update_dynamic_style_on_stopwatch_change(
 
                 if controller.entering() {
                     enter_completed = false;
+                } else if controller.animation.delete_on_entered {
+                    filter_entered = true;
                 }
             }
 
@@ -214,6 +217,31 @@ fn update_dynamic_style_on_stopwatch_change(
             if let Some(mut enter_state) = enter_state {
                 if enter_state.completed != style.enter_completed {
                     enter_state.completed = style.enter_completed;
+                }
+            }
+
+            if filter_entered {
+                style.attributes = style
+                    .attributes
+                    .iter()
+                    .filter(|csa| {
+                        let ContextStyleAttribute {
+                            attribute: DynamicStyleAttribute::Animated { controller, .. },
+                            ..
+                        } = csa
+                        else {
+                            return true;
+                        };
+
+                        !(controller.animation.delete_on_entered && !controller.entering())
+                    })
+                    .cloned()
+                    .collect();
+
+                if style.attributes.len() == 0 {
+                    par_commands.command_scope(|mut commands| {
+                        commands.entity(entity).remove::<DynamicStyle>();
+                    });
                 }
             }
         });
