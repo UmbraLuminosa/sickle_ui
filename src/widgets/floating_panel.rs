@@ -32,6 +32,13 @@ const MIN_PANEL_SIZE: Vec2 = Vec2 { x: 150., y: 100. };
 const MIN_FLOATING_PANEL_Z_INDEX: usize = 1000;
 const PRIORITY_FLOATING_PANEL_Z_INDEX: usize = 10000;
 const WINDOW_RESIZE_PADDING: f32 = 20.;
+const DRAG_HANDLE: &'static str = "DragHandle";
+const TITLE_CONTAINER: &'static str = "TitleContainer";
+const TITLE: &'static str = "Title";
+const FOLD_BUTTON: &'static str = "FoldButton";
+const CLOSE_BUTTON_CONTAINER: &'static str = "CloseButtonContainer";
+const CLOSE_BUTTON: &'static str = "CloseButton";
+const CONTENT_VIEW: &'static str = "ContentView";
 
 pub struct FloatingPanelPlugin;
 
@@ -582,14 +589,6 @@ impl Default for FloatingPanel {
         }
     }
 }
-
-const DRAG_HANDLE: &'static str = "DragHandle";
-const TITLE_CONTAINER: &'static str = "TitleContainer";
-const TITLE: &'static str = "Title";
-const FOLD_BUTTON: &'static str = "FoldButton";
-const CLOSE_BUTTON_CONTAINER: &'static str = "CloseButtonContainer";
-const CLOSE_BUTTON: &'static str = "CloseButton";
-const CONTENT_VIEW: &'static str = "ContentView";
 
 impl UiContext for FloatingPanel {
     fn get(&self, target: &str) -> Result<Entity, String> {

@@ -1,14 +1,30 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::FocusPolicy};
+use sickle_ui_scaffold::{
+    theme::{
+        pseudo_state::PseudoState,
+        theme_colors::On,
+        theme_data::ThemeData,
+        typography::{FontScale, FontStyle, FontType},
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
+    },
+    ui_commands::ManagePseudoStateExt,
+    ui_style::{AnimatedVals, StyleBuilder},
+    FluxInteraction, TrackedInteraction,
+};
 
 use crate::{
     ui_builder::*,
-    ui_style::{SetFlexGrowExt, SetNodeShowHideExt, UiStyleExt},
+    ui_style::{SetNodeShowHideExt, UiStyleExt},
 };
 
 use super::{
-    prelude::{MenuItem, MenuItemConfig, MenuItemUpdate, UiContainerExt, UiMenuItemExt, UiRowExt},
+    prelude::{LabelConfig, MenuItemUpdate, UiContainerExt, UiLabelExt, UiPanelExt},
     WidgetLibraryUpdate,
 };
+
+const BUTTON_ICON: &'static str = "ButtonIcon";
+const BUTTON_LABEL: &'static str = "ButtonLabel";
+const CONTAINER: &'static str = "Container";
 
 pub struct FoldablePlugin;
 
@@ -20,6 +36,7 @@ impl Plugin for FoldablePlugin {
                 .after(MenuItemUpdate)
                 .before(WidgetLibraryUpdate),
         )
+        .add_plugins(ComponentThemePlugin::<Foldable>::default())
         .add_systems(
             Update,
             (handle_foldable_button_press, update_foldable_container)
@@ -33,15 +50,11 @@ impl Plugin for FoldablePlugin {
 pub struct FoldableUpdate;
 
 fn handle_foldable_button_press(
-    mut q_menu_items: Query<(&MenuItem, &mut Foldable), Changed<MenuItem>>,
+    mut q_foldables: Query<(&mut Foldable, &FluxInteraction), Changed<FluxInteraction>>,
 ) {
-    for (menu_item, mut foldable) in &mut q_menu_items {
-        if menu_item.interacted() {
-            if foldable.open {
-                foldable.open = false;
-            } else {
-                foldable.open = true;
-            }
+    for (mut foldable, interaction) in &mut q_foldables {
+        if interaction.is_released() {
+            foldable.open = !foldable.open;
 
             // Only process a maximum of one foldable in a frame
             break;
@@ -50,24 +63,42 @@ fn handle_foldable_button_press(
 }
 
 fn update_foldable_container(
-    mut q_menu_items: Query<(&mut MenuItemConfig, &Foldable), Changed<Foldable>>,
+    q_foldables: Query<(Entity, &Foldable), Changed<Foldable>>,
     mut commands: Commands,
 ) {
-    for (mut config, foldable) in &mut q_menu_items {
-        if foldable.open {
-            config.leading_icon = Some("embedded://sickle_ui/icons/chevron_down.png".into());
-            commands.style(foldable.container).show();
+    for (entity, foldable) in &q_foldables {
+        if foldable.empty {
+            commands
+                .entity(entity)
+                .add_pseudo_state(PseudoState::Empty)
+                .remove_pseudo_state(PseudoState::Folded);
+
+            continue;
         } else {
-            config.leading_icon = Some("embedded://sickle_ui/icons/chevron_right.png".into());
-            commands.style(foldable.container).hide();
+            commands
+                .entity(entity)
+                .remove_pseudo_state(PseudoState::Empty);
+        }
+
+        if foldable.open {
+            commands
+                .entity(entity)
+                .remove_pseudo_state(PseudoState::Folded);
+        } else {
+            commands
+                .entity(entity)
+                .add_pseudo_state(PseudoState::Folded);
         }
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Foldable {
     pub open: bool,
+    pub empty: bool,
+    icon: Entity,
+    label: Entity,
     container: Entity,
 }
 
@@ -75,28 +106,143 @@ impl Default for Foldable {
     fn default() -> Self {
         Self {
             open: Default::default(),
+            empty: Default::default(),
+            icon: Entity::PLACEHOLDER,
+            label: Entity::PLACEHOLDER,
             container: Entity::PLACEHOLDER,
         }
     }
 }
 
+impl UiContext for Foldable {
+    fn get(&self, target: &str) -> Result<Entity, String> {
+        match target {
+            BUTTON_ICON => Ok(self.icon),
+            BUTTON_LABEL => Ok(self.label),
+            CONTAINER => Ok(self.container),
+            _ => Err(format!(
+                "{} doesn't exists for Foldable. Possible contexts: {:?}",
+                target,
+                self.contexts()
+            )),
+        }
+    }
+
+    fn contexts(&self) -> Vec<&'static str> {
+        vec![BUTTON_ICON, BUTTON_LABEL, CONTAINER]
+    }
+}
+
+impl DefaultTheme for Foldable {
+    fn default_theme() -> Option<Theme<Foldable>> {
+        Foldable::theme().into()
+    }
+}
+
 impl Foldable {
+    pub fn theme() -> Theme<Foldable> {
+        let base_theme = PseudoTheme::deferred(None, Foldable::primary_style);
+        let folded_theme = PseudoTheme::deferred(vec![PseudoState::Folded], Foldable::folded_style);
+        let empty_theme = PseudoTheme::deferred(vec![PseudoState::Empty], Foldable::empty_style);
+
+        Theme::<Foldable>::new(vec![base_theme, folded_theme, empty_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+        let font = theme_data
+            .text
+            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+
+        style_builder
+            .switch_target(BUTTON_ICON)
+            .size(Val::Px(theme_spacing.icons.small))
+            .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
+            .icon(
+                theme_data
+                    .icons
+                    .expand_more
+                    .with(colors.on(On::Surface), theme_spacing.icons.small),
+            )
+            .animated()
+            .font_color(AnimatedVals {
+                idle: colors.on(On::SurfaceVariant),
+                hover: colors.on(On::Surface).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_target(BUTTON_LABEL)
+            .margin(UiRect::right(Val::Px(theme_spacing.gaps.medium)))
+            .sized_font(font)
+            .animated()
+            .font_color(AnimatedVals {
+                idle: colors.on(On::SurfaceVariant),
+                hover: colors.on(On::Surface).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_target(CONTAINER)
+            .display(Display::Flex)
+            .visibility(Visibility::Inherited);
+    }
+
+    fn folded_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder.switch_target(BUTTON_ICON).icon(
+            theme_data
+                .icons
+                .chevron_right
+                .with(colors.on(On::Surface), theme_spacing.icons.small),
+        );
+
+        style_builder
+            .switch_target(CONTAINER)
+            .display(Display::None)
+            .visibility(Visibility::Hidden);
+    }
+
+    fn empty_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder.switch_target(BUTTON_ICON).icon(
+            theme_data
+                .icons
+                .arrow_right
+                .with(colors.on(On::Surface), theme_spacing.icons.small),
+        );
+
+        style_builder
+            .switch_target(CONTAINER)
+            .display(Display::None)
+            .visibility(Visibility::Hidden);
+    }
+
     pub fn container(&self) -> Entity {
         self.container
     }
 
-    fn frame() -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Auto,
-                flex_direction: FlexDirection::Column,
-                justify_items: JustifyItems::Start,
-                align_items: AlignItems::Stretch,
+    fn button(name: String) -> impl Bundle {
+        (
+            Name::new(format!("Foldable [{}] - Button", name)),
+            ButtonBundle {
+                background_color: Color::NONE.into(),
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
-            ..default()
-        }
+            TrackedInteraction::default(),
+        )
+    }
+
+    fn button_icon() -> impl Bundle {
+        (Name::new("Fold Icon"), ImageBundle::default())
     }
 }
 
@@ -105,6 +251,7 @@ pub trait UiFoldableExt<'w, 's> {
         &'a mut self,
         name: impl Into<String>,
         open: bool,
+        empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
@@ -114,42 +261,38 @@ impl<'w, 's> UiFoldableExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         &'a mut self,
         name: impl Into<String>,
         open: bool,
+        empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let mut button = Entity::PLACEHOLDER;
-        let container;
         let name = name.into();
 
-        self.row(|row| {
-            button = row
-                .menu_item(MenuItemConfig {
-                    name: name.clone(),
-                    leading_icon: Some("embedded://sickle_ui/icons/chevron_right.png".into()),
-                    ..default()
-                })
-                .style()
-                .flex_grow(1.)
-                .id();
-        })
-        .insert(Name::new(format!("Foldable [{}] - Button Row", name)));
+        let mut foldable = Foldable {
+            open,
+            empty,
+            ..default()
+        };
 
-        container = self
-            .container(
-                (
-                    Name::new(format!("Foldable [{}] - Container", name)),
-                    Foldable::frame(),
-                ),
-                spawn_children,
-            )
+        let button = self
+            .container(Foldable::button(name.clone()), |button| {
+                foldable.icon = button.spawn(Foldable::button_icon()).id();
+                foldable.label = button
+                    .label(LabelConfig {
+                        label: name.clone(),
+                        ..default()
+                    })
+                    .id();
+            })
             .id();
+
+        foldable.container = self.panel(name, spawn_children).id();
         if !open {
-            self.commands().style(container).hide();
+            self.commands().style(foldable.container).hide();
+            self.commands()
+                .entity(button)
+                .add_pseudo_state(PseudoState::Folded);
         }
 
-        self.commands()
-            .entity(button)
-            .insert(Foldable { container, open });
-
+        self.commands().entity(button).insert(foldable);
         self.commands().ui_builder(button)
     }
 }

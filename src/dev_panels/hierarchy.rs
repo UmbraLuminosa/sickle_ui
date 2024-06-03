@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use sickle_ui_scaffold::FluxInteraction;
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
@@ -105,11 +106,11 @@ fn refresh_hierarchy_on_press(
 }
 
 fn update_hierarchy_selection(
-    q_menu_items: Query<(&MenuItem, &HierarchyNode), Changed<MenuItem>>,
+    q_hierarchy_nodes: Query<(&FluxInteraction, &HierarchyNode), Changed<FluxInteraction>>,
     mut q_hierarchy: Query<&mut HierarchyContainer>,
 ) {
-    for (menu_item, hierarchy_node) in &q_menu_items {
-        if menu_item.interacted() {
+    for (interaction, hierarchy_node) in &q_hierarchy_nodes {
+        if interaction.is_released() {
             let Ok(mut hierarchy) = q_hierarchy.get_mut(hierarchy_node.hierarchy) else {
                 continue;
             };
@@ -138,12 +139,16 @@ fn update_entity_component_list(
 }
 
 fn update_hierarchy_on_foldable_change(
-    mut q_foldables: Query<(&HierarchyNode, &mut MenuItemConfig, &Foldable), Changed<Foldable>>,
+    mut q_foldables: Query<(&HierarchyNode, &mut Foldable), Changed<Foldable>>,
     q_children: Query<&Children>,
     q_name: Query<&Name>,
     mut commands: Commands,
 ) {
-    for (hierarchy_node, mut config, foldable) in &mut q_foldables {
+    for (hierarchy_node, mut foldable) in &mut q_foldables {
+        if foldable.empty {
+            continue;
+        }
+
         commands.entity(foldable.container()).despawn_descendants();
 
         if foldable.open {
@@ -153,16 +158,17 @@ fn update_hierarchy_on_foldable_change(
                     spawn_hierarchy_level(hierarchy_node.hierarchy, *child, &mut builder, &q_name);
                 }
             } else {
-                config.leading_icon = None;
+                foldable.empty = true;
             }
         } else if q_children.get(hierarchy_node.entity).is_err() {
-            config.leading_icon = None;
+            foldable.empty = true;
         }
     }
 }
 
 // TODO: Refresh the hierarchy automatically
-
+// TODO: Rework hierarchy: use treeview with node callbacks, add search, pop-out,
+// anchestor access, theme, separate world for layout (or filter itself) etc. Tag open entities per hierarchy
 fn update_hierarchy_node_style(
     q_hierarchies: Query<(Entity, &HierarchyContainer), Changed<HierarchyContainer>>,
     q_hierarchy_nodes: Query<(Entity, &HierarchyNode)>,
@@ -196,8 +202,9 @@ fn spawn_hierarchy_level(
         Err(_) => format!("[{:?}]", entity),
     };
 
+    // TODO: move style to theme
     container
-        .foldable(name, false, |foldable| {
+        .foldable(name, false, false, |foldable| {
             foldable
                 .style()
                 .margin(UiRect::left(Val::Px(10.)))

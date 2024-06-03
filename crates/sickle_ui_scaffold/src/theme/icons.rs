@@ -51,15 +51,14 @@ pub struct CustomIconData {
 
 #[derive(Clone, Debug, Reflect)]
 pub struct Icons {
-    pub checkbox_unchecked: IconData,
-    pub checkbox_checked: IconData,
     pub checkmark: IconData,
     pub chevron_left: IconData,
     pub chevron_right: IconData,
-    pub expand_less: IconData,
-    pub expand_more: IconData,
     pub close: IconData,
     pub exit: IconData,
+    pub expand_less: IconData,
+    pub expand_more: IconData,
+    pub arrow_right: IconData,
     pub popout: IconData,
     pub redo: IconData,
     pub submenu: IconData,
@@ -70,8 +69,12 @@ pub struct Icons {
 impl Default for Icons {
     fn default() -> Self {
         Self {
-            checkbox_unchecked: IconData::Image("".into(), Color::WHITE),
-            checkbox_checked: IconData::Image("".into(), Color::WHITE),
+            arrow_right: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E5DF}',
+                Color::WHITE,
+                12.,
+            ),
             checkmark: IconData::FontCodepoint(
                 "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
                 '\u{E5CA}',
@@ -90,6 +93,13 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
+            close: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E5CD}',
+                Color::WHITE,
+                12.,
+            ),
+            exit: IconData::Image("".into(), Color::WHITE),
             expand_less: IconData::FontCodepoint(
                 "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
                 '\u{E5CE}',
@@ -102,13 +112,6 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
-            close: IconData::FontCodepoint(
-                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
-                '\u{E5CD}',
-                Color::WHITE,
-                12.,
-            ),
-            exit: IconData::Image("".into(), Color::WHITE),
             popout: IconData::Image("".into(), Color::WHITE),
             redo: IconData::Image("".into(), Color::WHITE),
             submenu: IconData::Image("".into(), Color::WHITE),
