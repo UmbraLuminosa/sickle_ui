@@ -3,13 +3,13 @@ use bevy::prelude::*;
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{SetBackgroundColorExt, SetVisibilityExt, UiStyleExt},
+    widgets::prelude::{MenuItemConfig, UiContainerExt, UiMenuItemExt},
     FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
 };
 
 use super::{
     context_menu::ContextMenuUpdate,
     menu::{Menu, MenuUpdate},
-    prelude::{MenuItemConfig, UiContainerExt, UiMenuItemExt},
 };
 
 const MENU_CONTAINER_Z_INDEX: i32 = 100001;

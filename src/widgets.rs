@@ -1,15 +1,13 @@
 pub mod checkbox;
 pub mod column;
 pub mod container;
-pub mod context_menu;
 pub mod docking_zone;
 pub mod dropdown;
 pub mod floating_panel;
 pub mod foldable;
 pub mod icon;
 pub mod label;
-pub mod menu;
-pub mod menu_item;
+pub mod menus;
 pub mod panel;
 pub mod radio_group;
 pub mod resize_handles;
@@ -17,48 +15,52 @@ pub mod row;
 pub mod scroll_view;
 pub mod sized_zone;
 pub mod slider;
-pub mod submenu;
 pub mod tab_container;
-pub mod toggle_menu_item;
 
 use bevy::prelude::*;
-use resize_handles::ResizeHandlePlugin;
+use menus::menu_separators::MenuSeparatorPlugin;
 
 use self::{
     checkbox::CheckboxPlugin,
-    context_menu::ContextMenuPlugin,
     docking_zone::DockingZonePlugin,
     dropdown::DropdownPlugin,
     floating_panel::{FloatingPanelPlugin, FloatingPanelUpdate},
     foldable::FoldablePlugin,
-    menu::MenuPlugin,
-    menu_item::MenuItemPlugin,
+    menus::context_menu::ContextMenuPlugin,
+    menus::menu::MenuPlugin,
+    menus::menu_bar::MenuBarPlugin,
+    menus::menu_item::MenuItemPlugin,
+    menus::submenu::SubmenuPlugin,
+    menus::toggle_menu_item::ToggleMenuItemPlugin,
     radio_group::RadioGroupPlugin,
+    resize_handles::ResizeHandlePlugin,
     scroll_view::ScrollViewPlugin,
     sized_zone::SizedZonePlugin,
     slider::SliderPlugin,
-    submenu::SubmenuPlugin,
     tab_container::TabContainerPlugin,
-    toggle_menu_item::ToggleMenuItemPlugin,
 };
 
+// TODO: Re-organize prelude
 pub mod prelude {
     pub use super::{
         checkbox::{Checkbox, UiCheckboxExt},
         column::UiColumnExt,
         container::UiContainerExt,
-        context_menu::{ContextMenuGenerator, GenerateContextMenu, ReflectContextMenuGenerator},
         docking_zone::UiDockingZoneExt,
-        dropdown::UiDropdownExt,
+        dropdown::*,
         floating_panel::{FloatingPanelConfig, FloatingPanelLayout, UiFloatingPanelExt},
         foldable::UiFoldableExt,
         icon::UiIconExt,
         label::{LabelConfig, SetLabelTextExt, UiLabelExt},
-        menu::{
-            MenuConfig, MenuItemSeparator, MenuSeparator, UiMenuExt, UiMenuItemSeparatorExt,
-            UiMenuSeparatorExt,
+        menus::context_menu::{
+            ContextMenuGenerator, GenerateContextMenu, ReflectContextMenuGenerator,
         },
-        menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt},
+        menus::menu::*,
+        menus::menu_bar::*,
+        menus::menu_item::*,
+        menus::menu_separators::*,
+        menus::submenu::{SubmenuConfig, UiSubmenuExt},
+        menus::toggle_menu_item::{ToggleMenuItem, ToggleMenuItemConfig, UiToggleMenuItemExt},
         panel::UiPanelExt,
         radio_group::{RadioGroup, UiRadioGroupExt},
         resize_handles::*,
@@ -66,9 +68,8 @@ pub mod prelude {
         scroll_view::UiScrollViewExt,
         sized_zone::{SizedZoneConfig, UiSizedZoneExt},
         slider::{SliderConfig, UiSliderExt},
-        submenu::{SubmenuConfig, UiSubmenuExt},
-        tab_container::UiTabContainerExt,
-        toggle_menu_item::{ToggleMenuItem, ToggleMenuItemConfig, UiToggleMenuItemExt},
+        tab_container::*,
+        WidgetLibraryUpdate,
     };
 }
 
@@ -85,10 +86,12 @@ impl Plugin for WidgetsPlugin {
                 DropdownPlugin,
                 FloatingPanelPlugin,
                 FoldablePlugin,
+                MenuPlugin,
             ))
             .add_plugins((
-                MenuPlugin,
+                MenuBarPlugin,
                 MenuItemPlugin,
+                MenuSeparatorPlugin,
                 RadioGroupPlugin,
                 ResizeHandlePlugin,
                 SliderPlugin,

@@ -7,13 +7,13 @@ use crate::{
     interactions::InteractiveBackground,
     ui_builder::*,
     ui_style::{ImageSource, SetBackgroundColorExt, SetImageExt, UiStyleExt},
+    widgets::prelude::{LabelConfig, SetLabelTextExt, UiContainerExt, UiLabelExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
 use super::{
     context_menu::ContextMenuUpdate,
-    menu::MenuUpdate,
-    prelude::{LabelConfig, SetLabelTextExt, UiContainerExt, UiLabelExt},
+    menu::{Menu, MenuUpdate, UiMenuSubExt},
     submenu::SubmenuUpdate,
 };
 
@@ -316,3 +316,30 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         item
     }
 }
+
+impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .menu_item(config)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+// TODO: Also add to context menu
+// impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
+//     fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+//         let container_id = self.container();
+//         let id = self
+//             .commands()
+//             .ui_builder(container_id)
+//             .menu_item(config)
+//             .id();
+
+//         self.commands().ui_builder(id)
+//     }
+// }

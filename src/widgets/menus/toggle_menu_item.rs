@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::ui_builder::UiBuilder;
 
-use super::prelude::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt};
+use super::menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt};
 
 pub struct ToggleMenuItemPlugin;
 
