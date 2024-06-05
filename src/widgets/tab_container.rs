@@ -14,8 +14,8 @@ use crate::{
 };
 
 use super::{
-    context_menu::ContextMenuUpdate,
     floating_panel::{FloatingPanel, FloatingPanelUpdate, UpdateFloatingPanelPanelId},
+    menus::context_menu::ContextMenuUpdate,
     panel::Panel,
     prelude::{
         ContextMenuGenerator, FloatingPanelConfig, FloatingPanelLayout, GenerateContextMenu,

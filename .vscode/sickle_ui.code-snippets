@@ -1,7 +1,7 @@
 {
 	"Sickle UI widget": {
 		"scope": "rust",
-		"prefix": ["sickle", "widget", "extension"],
+		"prefix": ["sickle"],
 		"body": [
 			"#[derive(Component, Debug, Default, Reflect)]",
 			"#[reflect(Component)]",
@@ -34,7 +34,7 @@
 
 	"Sickle UI plugin widget": {
 		"scope": "rust",
-		"prefix": ["sickle", "plugin", "widget"],
+		"prefix": ["sickle"],
 		"body": [
 			"pub struct  ${1:MyWidget}Plugin;",
 			"",
@@ -75,7 +75,7 @@
 
 	"Sickle UI themed plugin widget": {
 		"scope": "rust",
-		"prefix": ["sickle", "themed", "plugin", "widget"],
+		"prefix": ["sickle"],
 		"body": [
 			"pub struct  ${1:MyWidget}Plugin;",
 			"",
@@ -136,7 +136,7 @@
 
 	"Sickle UI contexted themed plugin widget": {
 		"scope": "rust",
-		"prefix": ["sickle", "contexted", "themed", "plugin", "widget"],
+		"prefix": ["sickle"],
 		"body": [
 			"pub struct  ${1:MyWidget}Plugin;",
 			"",

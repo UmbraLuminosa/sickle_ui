@@ -6,13 +6,14 @@ use sickle_ui::{
         hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
-    theme::theme_data::{Contrast, Scheme, ThemeData},
+    theme::{
+        theme_data::{Contrast, Scheme, ThemeData},
+        PseudoTheme, Theme,
+    },
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::{SetBackgroundColorExt, SetHeightExt, SetJustifyContentsExt, SetWidthExt},
-    widgets::{
-        dropdown::Dropdown, prelude::*, tab_container::UiTabContainerSubExt, WidgetLibraryUpdate,
-    },
+    widgets::{menus::extra_menu::UiExtraMenuExt, prelude::*},
     SickleUiPlugin,
 };
 
@@ -209,12 +210,8 @@ fn setup(
             .width(Val::Percent(100.))
             .background_color(Color::rgb(0.15, 0.155, 0.16));
 
-        column.row(|row| {
-            row.style()
-                .height(Val::Px(30.))
-                .background_color(Color::rgb(0.1, 0.1, 0.1));
-
-            row.menu(
+        column.menu_bar(|bar| {
+            bar.menu(
                 MenuConfig {
                     name: "Showcase".into(),
                     alt_code: KeyCode::KeyS.into(),
@@ -236,7 +233,7 @@ fn setup(
                     })
                     .insert(Page::Playground);
 
-                    menu.menu_item_separator();
+                    menu.separator();
                     menu.menu_item(MenuItemConfig {
                         name: "Exit".into(),
                         leading_icon: "embedded://sickle_ui/icons/exit_white.png"
@@ -247,29 +244,29 @@ fn setup(
                     .insert(ExitAppButton);
                 },
             );
-            row.container(
-                (
-                    NodeBundle {
-                        style: Style {
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::End,
-                            width: Val::Percent(100.),
-                            ..default()
-                        },
-                        ..default()
-                    },
-                    ExtraMenu,
-                ),
-                |row| {
-                    row.radio_group(vec!["Light", "Dark"], false)
-                        .insert(ThemeSwitch);
-                    row.dropdown(vec!["Standard", "Medium Contrast", "High Contrast"], 0)
-                        .insert(ThemeContrastSelect)
-                        .style()
-                        .width(Val::Px(150.));
-                },
-            );
+            bar.extra_menu(|extra| {
+                let narrow_dropdown = PseudoTheme::deferred(None, |style_builder, theme_data| {
+                    let theme_spacing = theme_data.spacing;
+                    style_builder
+                        .min_height(Val::Px(theme_spacing.areas.small))
+                        .padding(UiRect::axes(
+                            Val::Px(theme_spacing.gaps.medium),
+                            Val::Px(theme_spacing.gaps.extra_small),
+                        ));
+                });
+                let narrow_theme = Theme::<Dropdown>::new(vec![narrow_dropdown]);
+
+                extra
+                    .radio_group(vec!["Light", "Dark"], false)
+                    .insert(ThemeSwitch);
+                extra
+                    .dropdown(vec!["Standard", "Medium Contrast", "High Contrast"], 0)
+                    .insert((ThemeContrastSelect, narrow_theme))
+                    .style()
+                    .width(Val::Px(150.));
+            });
         });
+
         column
             .row(|_| {})
             .insert((ShowcaseContainer, UiContextRoot))

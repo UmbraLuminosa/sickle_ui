@@ -7,15 +7,11 @@ use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
     interactions::InteractiveBackground,
     ui_builder::UiBuilder,
+    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
-use super::{
-    context_menu::ContextMenuUpdate,
-    menu::MenuUpdate,
-    prelude::{LabelConfig, UiContainerExt, UiLabelExt},
-    submenu::SubmenuUpdate,
-};
+use super::menus::{context_menu::ContextMenuUpdate, menu::MenuUpdate, submenu::SubmenuUpdate};
 
 pub struct RadioGroupPlugin;
 

@@ -3,7 +3,6 @@ use sickle_macros::UiContext;
 
 use crate::{
     theme::{
-        dynamic_style::DynamicStyle,
         theme_colors::{Container, Surface},
         theme_data::ThemeData,
         ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
@@ -12,8 +11,6 @@ use crate::{
     ui_style::{SetAbsolutePositionExt, SetPositionTypeExt, StyleBuilder, UiStyleExt},
     FluxInteractionUpdate,
 };
-
-use super::prelude::UiMenuItemSeparatorExt;
 
 const MENU_CONTAINER_Z_INDEX: i32 = 100002;
 
@@ -216,7 +213,8 @@ fn generate_context_menu(world: &mut World) {
     let mut last_index = 0;
     for generator in generators {
         if generator.placement_index() > last_index + 1 {
-            commands.ui_builder(container_id).menu_item_separator();
+            // TODO: Fix separator
+            // commands.ui_builder(container_id).separator();
         }
         last_index = generator.placement_index();
 
@@ -375,8 +373,10 @@ impl ContextMenu {
     }
 
     fn frame() -> impl Bundle {
-        // TODO: Create theme for ContextMenu
-        let style: DynamicStyle = ThemeData::with_default(ContextMenu::container).into();
-        (NodeBundle::default(), Interaction::default(), style)
+        (
+            Name::new("Context Menu"),
+            NodeBundle::default(),
+            Interaction::default(),
+        )
     }
 }
