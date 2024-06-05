@@ -207,15 +207,21 @@ pub enum SickleInteraction {
     Hovered,
 }
 
+impl From<Interaction> for SickleInteraction {
+    fn from(interaction: Interaction) -> Self {
+        match interaction {
+            Interaction::Pressed => SickleInteraction::Pressed,
+            Interaction::Hovered => SickleInteraction::Hovered,
+            Interaction::None => SickleInteraction::None,
+        }
+    }
+}
+
 fn update_default_interaction(
     mut q_interaction: Query<(&Interaction, &mut SickleInteraction), Changed<Interaction>>,
 ) {
     for (bevy_interaction, mut sickle_interaction) in &mut q_interaction {
-        *sickle_interaction = match *bevy_interaction {
-            Interaction::Pressed => SickleInteraction::Pressed,
-            Interaction::Hovered => SickleInteraction::Hovered,
-            Interaction::None => SickleInteraction::None,
-        };
+        *sickle_interaction = bevy_interaction.clone().into();
     }
 }
 
