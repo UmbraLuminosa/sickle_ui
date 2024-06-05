@@ -20,7 +20,7 @@ use crate::theme::{
     icons::IconData,
     style_animation::{AnimationSettings, AnimationState, InteractionStyle},
     typography::SizedFont,
-    UiContext, 
+    UiContext,
 };
 
 pub use crate::FluxInteraction;

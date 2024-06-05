@@ -12,6 +12,7 @@ impl Plugin for FluxInteractionPlugin {
             .add_systems(
                 Update,
                 (
+                    update_default_interaction,
                     tick_flux_interaction_stopwatch,
                     update_flux_interaction,
                     reset_flux_interaction_stopwatch_on_change,
@@ -41,6 +42,7 @@ pub struct FluxInteractionUpdate;
 
 #[derive(Bundle, Clone, Debug, Default)]
 pub struct TrackedInteraction {
+    pub base: SickleInteraction,
     pub interaction: FluxInteraction,
     pub prev_interaction: PrevInteraction,
     pub stopwatch: FluxInteractionStopwatch,
@@ -190,6 +192,33 @@ pub enum PrevInteraction {
     Hovered,
 }
 
+/// Component that records interactions on UI elements.
+///
+/// If an entity has [`Interaction`], this component is automatically updated.
+///
+/// Can be used to trigger flux interactions with custom interaction sources (e.g. propagate
+/// interactions from parents).
+#[derive(Component, Clone, Copy, Debug, Default, Eq, PartialEq, Reflect)]
+#[reflect(Component, PartialEq)]
+pub enum SickleInteraction {
+    #[default]
+    None,
+    Pressed,
+    Hovered,
+}
+
+fn update_default_interaction(
+    mut q_interaction: Query<(&Interaction, &mut SickleInteraction), Changed<Interaction>>,
+) {
+    for (bevy_interaction, mut sickle_interaction) in &mut q_interaction {
+        *sickle_interaction = match *bevy_interaction {
+            Interaction::Pressed => SickleInteraction::Pressed,
+            Interaction::Hovered => SickleInteraction::Hovered,
+            Interaction::None => SickleInteraction::None,
+        };
+    }
+}
+
 fn tick_flux_interaction_stopwatch(
     config: Res<FluxInteractionConfig>,
     time: Res<Time<Real>>,
@@ -223,8 +252,8 @@ fn tick_flux_interaction_stopwatch(
 
 fn update_flux_interaction(
     mut q_interaction: Query<
-        (&PrevInteraction, &Interaction, &mut FluxInteraction),
-        Changed<Interaction>,
+        (&PrevInteraction, &SickleInteraction, &mut FluxInteraction),
+        Changed<SickleInteraction>,
     >,
 ) {
     for (prev, curr, mut flux) in &mut q_interaction {
@@ -232,17 +261,17 @@ fn update_flux_interaction(
             continue;
         }
 
-        if *prev == PrevInteraction::None && *curr == Interaction::Hovered {
+        if *prev == PrevInteraction::None && *curr == SickleInteraction::Hovered {
             *flux = FluxInteraction::PointerEnter;
-        } else if *prev == PrevInteraction::None && *curr == Interaction::Pressed
-            || *prev == PrevInteraction::Hovered && *curr == Interaction::Pressed
+        } else if *prev == PrevInteraction::None && *curr == SickleInteraction::Pressed
+            || *prev == PrevInteraction::Hovered && *curr == SickleInteraction::Pressed
         {
             *flux = FluxInteraction::Pressed;
-        } else if *prev == PrevInteraction::Hovered && *curr == Interaction::None {
+        } else if *prev == PrevInteraction::Hovered && *curr == SickleInteraction::None {
             *flux = FluxInteraction::PointerLeave;
-        } else if *prev == PrevInteraction::Pressed && *curr == Interaction::None {
+        } else if *prev == PrevInteraction::Pressed && *curr == SickleInteraction::None {
             *flux = FluxInteraction::PressCanceled;
-        } else if *prev == PrevInteraction::Pressed && *curr == Interaction::Hovered {
+        } else if *prev == PrevInteraction::Pressed && *curr == SickleInteraction::Hovered {
             *flux = FluxInteraction::Released;
         }
     }
@@ -267,13 +296,16 @@ fn reset_flux_interaction_stopwatch_on_change(
 }
 
 fn update_prev_interaction(
-    mut q_interaction: Query<(&mut PrevInteraction, &Interaction), Changed<Interaction>>,
+    mut q_interaction: Query<
+        (&mut PrevInteraction, &SickleInteraction),
+        Changed<SickleInteraction>,
+    >,
 ) {
     for (mut prev_interaction, interaction) in &mut q_interaction {
         *prev_interaction = match *interaction {
-            Interaction::Pressed => PrevInteraction::Pressed,
-            Interaction::Hovered => PrevInteraction::Hovered,
-            Interaction::None => PrevInteraction::None,
+            SickleInteraction::Pressed => PrevInteraction::Pressed,
+            SickleInteraction::Hovered => PrevInteraction::Hovered,
+            SickleInteraction::None => PrevInteraction::None,
         };
     }
 }
