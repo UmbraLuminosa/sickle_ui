@@ -22,6 +22,8 @@ use super::menu_bar::{MenuBar, UiMenuBarSubExt};
 
 // TODO: Move all z-index constants to a resource
 const MENU_CONTAINER_Z_INDEX: i32 = 100000;
+const CONTAINER: &'static str = "Container";
+const LABEL: &'static str = "Label";
 
 // TODO: Implement scrolling and up/down arrows when menu too large (>70%?)
 pub struct MenuPlugin;
@@ -186,9 +188,6 @@ impl Default for Menu {
     }
 }
 
-const CONTAINER: &'static str = "Container";
-const LABEL: &'static str = "Label";
-
 impl UiContext for Menu {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
@@ -239,7 +238,7 @@ impl Menu {
             .border_color(Color::NONE)
             .animated()
             .background_color(AnimatedVals {
-                idle: Color::NONE,
+                idle: colors.container(Container::SurfaceMid),
                 hover: colors.container(Container::SurfaceHigh).into(),
                 ..default()
             });
@@ -274,7 +273,7 @@ impl Menu {
             ))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
-            .background_color(colors.container(Container::SurfaceHighest))
+            .background_color(colors.container(Container::SurfaceHigh))
             .border_color(colors.accent(Accent::Shadow))
             .visibility(Visibility::Hidden)
             .focus_policy(FocusPolicy::Block);
@@ -285,7 +284,7 @@ impl Menu {
 
         style_builder
             .border_color(colors.accent(Accent::Shadow))
-            .background_color(colors.container(Container::SurfaceHighest));
+            .background_color(colors.container(Container::SurfaceHigh));
 
         style_builder
             .switch_target(LABEL)

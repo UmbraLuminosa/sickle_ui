@@ -1,12 +1,19 @@
-use bevy::prelude::*;
-use sickle_math::ease::Ease;
+use bevy::{prelude::*, ui::FocusPolicy};
+use sickle_ui_scaffold::{
+    theme::{
+        icons::IconData,
+        theme_colors::{Accent, Container, On},
+        theme_data::ThemeData,
+        typography::{FontScale, FontStyle, FontType},
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
+    },
+    ui_commands::RefreshThemeExt,
+    ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
+};
 
 use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
     input_extension::{ShortcutTextExt, SymmetricKeysExt},
-    interactions::InteractiveBackground,
     ui_builder::*,
-    ui_style::{ImageSource, SetBackgroundColorExt, SetImageExt, UiStyleExt},
     widgets::prelude::{LabelConfig, SetLabelTextExt, UiContainerExt, UiLabelExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
@@ -16,6 +23,12 @@ use super::{
     menu::{Menu, MenuUpdate, UiMenuSubExt},
     submenu::SubmenuUpdate,
 };
+
+const LEADING_ICON: &'static str = "LeadingIcon";
+const LABEL: &'static str = "Label";
+const SHORTCUT_CONTAINER: &'static str = "ShortcutContainer";
+const SHORTCUT: &'static str = "Shortcut";
+const TRAILING_ICON: &'static str = "TrailingIcon";
 
 pub struct MenuItemPlugin;
 
@@ -29,6 +42,7 @@ impl Plugin for MenuItemPlugin {
                 .before(SubmenuUpdate)
                 .before(ContextMenuUpdate),
         )
+        .add_plugins(ComponentThemePlugin::<MenuItem>::default())
         .add_systems(
             Update,
             (
@@ -45,6 +59,14 @@ impl Plugin for MenuItemPlugin {
 
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct MenuItemUpdate;
+
+fn update_menu_item_on_change(mut q_menu_items: Query<&mut MenuItem, Changed<MenuItem>>) {
+    for mut item in &mut q_menu_items {
+        if item.interacted {
+            item.interacted = false;
+        }
+    }
+}
 
 fn update_menu_item_on_pressed(
     mut q_menu_items: Query<(&mut MenuItem, &FluxInteraction), Changed<FluxInteraction>>,
@@ -89,41 +111,16 @@ fn update_menu_item_on_key_press(
     }
 }
 
-fn update_menu_item_on_change(mut q_menu_items: Query<&mut MenuItem, Changed<MenuItem>>) {
-    for mut item in &mut q_menu_items {
-        if item.interacted {
-            item.interacted = false;
-        }
-    }
-}
-
 fn update_menu_item_on_config_change(
-    q_menu_items: Query<(&MenuItem, &MenuItemConfig), Changed<MenuItemConfig>>,
+    q_menu_items: Query<(Entity, &MenuItem, &MenuItemConfig), Changed<MenuItemConfig>>,
     mut commands: Commands,
 ) {
-    for (menu_item, config) in &q_menu_items {
+    for (entity, menu_item, config) in &q_menu_items {
         let name = config.name.clone();
         let shortcut_text: Option<String> = match &config.shortcut {
             Some(vec) => vec.shortcut_text().into(),
             None => None,
         };
-        let leading = config.leading_icon.clone();
-        let trailing = config.trailing_icon.clone();
-
-        if let Some(leading) = leading {
-            commands
-                .entity(menu_item.leading)
-                .try_insert(UiImage::default());
-            commands
-                .style(menu_item.leading)
-                .image(ImageSource::Path(leading))
-                .background_color(Color::WHITE);
-        } else {
-            commands.entity(menu_item.leading).remove::<UiImage>();
-            commands
-                .style(menu_item.leading)
-                .background_color(Color::NONE);
-        }
 
         commands.entity(menu_item.label).set_label_text(name);
 
@@ -135,29 +132,27 @@ fn update_menu_item_on_config_change(
             commands.entity(menu_item.shortcut).set_label_text("");
         }
 
-        if let Some(trailing) = trailing {
-            commands
-                .entity(menu_item.trailing)
-                .try_insert(UiImage::default());
-            commands
-                .style(menu_item.trailing)
-                .image(ImageSource::Path(trailing))
-                .background_color(Color::WHITE);
-        } else {
-            commands.entity(menu_item.trailing).remove::<UiImage>();
-            commands
-                .style(menu_item.trailing)
-                .background_color(Color::NONE);
-        }
+        commands.entity(entity).refresh_theme::<MenuItem>();
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Debug, Default, Reflect)]
+#[reflect(Component)]
+pub struct MenuItemConfig {
+    pub name: String,
+    pub leading_icon: IconData,
+    pub trailing_icon: IconData,
+    pub alt_code: Option<KeyCode>,
+    pub shortcut: Option<Vec<KeyCode>>,
+}
+
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct MenuItem {
     interacted: bool,
     leading: Entity,
     label: Entity,
+    shortcut_container: Entity,
     shortcut: Entity,
     trailing: Entity,
 }
@@ -168,88 +163,142 @@ impl Default for MenuItem {
             interacted: Default::default(),
             leading: Entity::PLACEHOLDER,
             label: Entity::PLACEHOLDER,
+            shortcut_container: Entity::PLACEHOLDER,
             shortcut: Entity::PLACEHOLDER,
             trailing: Entity::PLACEHOLDER,
         }
     }
 }
 
-#[derive(Component, Debug, Default, Reflect)]
-#[reflect(Component)]
-pub struct MenuItemConfig {
-    pub name: String,
-    pub leading_icon: Option<String>,
-    pub trailing_icon: Option<String>,
-    pub alt_code: Option<KeyCode>,
-    pub shortcut: Option<Vec<KeyCode>>,
-    pub is_submenu: bool,
+impl DefaultTheme for MenuItem {
+    fn default_theme() -> Option<Theme<MenuItem>> {
+        MenuItem::theme().into()
+    }
+}
+
+impl UiContext for MenuItem {
+    fn get(&self, target: &str) -> Result<Entity, String> {
+        match target {
+            LEADING_ICON => Ok(self.leading),
+            LABEL => Ok(self.label),
+            SHORTCUT_CONTAINER => Ok(self.shortcut_container),
+            SHORTCUT => Ok(self.shortcut),
+            TRAILING_ICON => Ok(self.trailing),
+            _ => Err(format!(
+                "{} doesn't exists for MenuItem. Possible contexts: {:?}",
+                target,
+                self.contexts()
+            )),
+        }
+    }
+
+    fn contexts(&self) -> Vec<&'static str> {
+        vec![
+            LEADING_ICON,
+            LABEL,
+            SHORTCUT_CONTAINER,
+            SHORTCUT,
+            TRAILING_ICON,
+        ]
+    }
 }
 
 impl MenuItem {
+    pub fn theme() -> Theme<MenuItem> {
+        let base_theme = PseudoTheme::deferred_world(None, MenuItem::primary_style);
+        Theme::<MenuItem>::new(vec![base_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+        let Some(config) = world.get::<MenuItemConfig>(entity) else {
+            return;
+        };
+
+        let leading_icon = config.leading_icon.clone();
+        let trailing_icon = config.trailing_icon.clone();
+
+        let theme_data = world.resource::<ThemeData>().clone();
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+        let font = theme_data
+            .text
+            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+
+        style_builder
+            .justify_content(JustifyContent::End)
+            .align_items(AlignItems::Center)
+            .height(Val::Px(theme_spacing.areas.small))
+            .padding(UiRect::all(Val::Px(theme_spacing.gaps.extra_small)))
+            .margin(UiRect::vertical(Val::Px(theme_spacing.gaps.tiny)))
+            .animated()
+            .background_color(AnimatedVals {
+                idle: colors.container(Container::SurfaceHigh),
+                hover: colors.accent(Accent::OutlineVariant).into(),
+                ..default()
+            })
+            .copy_from(theme_data.interaction_animation);
+
+        style_builder
+            .switch_target(LEADING_ICON)
+            .aspect_ratio(1.)
+            .size(Val::Px(theme_spacing.icons.small))
+            .icon(leading_icon.with(colors.on(On::Surface), theme_spacing.icons.small));
+
+        style_builder
+            .switch_target(LABEL)
+            .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.medium)))
+            .sized_font(font.clone())
+            .font_color(colors.on(On::Surface));
+
+        style_builder
+            .switch_target(SHORTCUT_CONTAINER)
+            .justify_content(JustifyContent::End)
+            .flex_wrap(FlexWrap::NoWrap)
+            .flex_grow(2.)
+            .margin(UiRect::left(Val::Px(theme_spacing.areas.large)));
+
+        style_builder
+            .switch_target(SHORTCUT)
+            .sized_font(font)
+            .font_color(colors.on(On::Surface));
+
+        style_builder
+            .switch_target(TRAILING_ICON)
+            .aspect_ratio(1.)
+            .margin(UiRect::left(Val::Px(theme_spacing.gaps.small)))
+            .size(Val::Px(theme_spacing.icons.small))
+            .icon(trailing_icon.with(colors.on(On::Surface), theme_spacing.icons.small));
+    }
+
     pub fn interacted(&self) -> bool {
         self.interacted
     }
 
-    fn base_tween() -> AnimationConfig {
-        AnimationConfig {
-            duration: 0.1,
-            easing: Ease::OutExpo,
-            ..default()
-        }
-    }
-
-    fn button() -> impl Bundle {
+    fn button(name: String) -> impl Bundle {
         (
+            Name::new(name),
             ButtonBundle {
-                style: Style {
-                    padding: UiRect::all(Val::Px(5.)),
-                    justify_content: JustifyContent::End,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                background_color: Color::NONE.into(),
                 focus_policy: bevy::ui::FocusPolicy::Pass,
                 ..default()
             },
             TrackedInteraction::default(),
-            InteractiveBackground {
-                highlight: Color::rgba(0.9, 0.8, 0.7, 0.5).into(),
-                ..default()
-            },
-            AnimatedInteraction::<InteractiveBackground> {
-                tween: MenuItem::base_tween(),
-                ..default()
-            },
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 
     fn shortcut() -> impl Bundle {
-        (
-            Name::new("Shortcut"),
-            NodeBundle {
-                style: Style {
-                    margin: UiRect::left(Val::Px(50.)),
-                    justify_content: JustifyContent::End,
-                    flex_wrap: FlexWrap::NoWrap,
-                    flex_grow: 2.,
-                    ..default()
-                },
-                ..default()
-            },
-        )
+        (Name::new("Shortcut"), NodeBundle::default())
     }
 
     fn leading_icon() -> impl Bundle {
         (
             Name::new("Leading Icon"),
             ImageBundle {
-                style: Style {
-                    width: Val::Px(12.),
-                    aspect_ratio: (1.).into(),
-                    ..default()
-                },
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
+            BorderColor::default(),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 
@@ -257,14 +306,11 @@ impl MenuItem {
         (
             Name::new("Trailing Icon"),
             ImageBundle {
-                style: Style {
-                    width: Val::Px(12.),
-                    aspect_ratio: (1.).into(),
-                    margin: UiRect::left(Val::Px(5.)),
-                    ..default()
-                },
+                focus_policy: FocusPolicy::Pass,
                 ..default()
             },
+            BorderColor::default(),
+            LockedStyleAttributes::lock(LockableStyleAttribute::FocusPolicy),
         )
     }
 }
@@ -275,43 +321,22 @@ pub trait UiMenuItemExt<'w, 's> {
 
 impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
-        let mut leading = Entity::PLACEHOLDER;
-        let mut label = Entity::PLACEHOLDER;
-        let mut shortcut = Entity::PLACEHOLDER;
-        let mut trailing = Entity::PLACEHOLDER;
+        let mut menu_item = MenuItem::default();
         let name = format!("Menu Item [{}]", config.name.clone());
 
-        let mut item = self.container((Name::new(name), MenuItem::button(), config), |menu_item| {
-            leading = menu_item.spawn(MenuItem::leading_icon()).id();
-            label = menu_item
-                .label(LabelConfig {
-                    label: "".into(),
-                    margin: UiRect::horizontal(Val::Px(5.)),
-                    color: Color::ANTIQUE_WHITE,
-                    ..default()
+        let mut item = self.container((MenuItem::button(name), config), |container| {
+            menu_item.leading = container.spawn(MenuItem::leading_icon()).id();
+            menu_item.label = container.label(LabelConfig::default()).id();
+            menu_item.shortcut_container = container
+                .container(MenuItem::shortcut(), |shortcut_container| {
+                    menu_item.shortcut = shortcut_container.label(LabelConfig::default()).id();
                 })
                 .id();
-            menu_item.container(MenuItem::shortcut(), |shortcut_container| {
-                shortcut = shortcut_container
-                    .label(LabelConfig {
-                        label: "".into(),
-                        margin: UiRect::horizontal(Val::Px(5.)),
-                        color: Color::ANTIQUE_WHITE,
-                        ..default()
-                    })
-                    .id();
-            });
 
-            trailing = menu_item.spawn(MenuItem::trailing_icon()).id();
+            menu_item.trailing = container.spawn(MenuItem::trailing_icon()).id();
         });
 
-        item.insert(MenuItem {
-            leading,
-            label,
-            shortcut,
-            trailing,
-            ..default()
-        });
+        item.insert(menu_item);
 
         item
     }

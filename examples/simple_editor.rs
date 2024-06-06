@@ -7,6 +7,7 @@ use sickle_ui::{
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
     theme::{
+        icons::IconData,
         theme_data::{Contrast, Scheme, ThemeData},
         PseudoTheme, Theme,
     },
@@ -236,14 +237,41 @@ fn setup(
                     menu.separator();
                     menu.menu_item(MenuItemConfig {
                         name: "Exit".into(),
-                        leading_icon: "embedded://sickle_ui/icons/exit_white.png"
-                            .to_string()
-                            .into(),
+                        leading_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/exit_white.png".into(),
+                            Color::WHITE,
+                        ),
                         ..default()
                     })
                     .insert(ExitAppButton);
                 },
             );
+            bar.menu(
+                MenuConfig {
+                    name: "Use case".into(),
+                    alt_code: KeyCode::KeyS.into(),
+                    ..default()
+                },
+                |menu| {
+                    menu.menu_item(MenuItemConfig {
+                        name: "Layout".into(),
+                        ..default()
+                    });
+                    menu.menu_item(MenuItemConfig {
+                        name: "Interactions".into(),
+                        ..default()
+                    });
+
+                    menu.separator();
+                    menu.menu_item(MenuItemConfig {
+                        name: "Exit".into(),
+                        ..default()
+                    });
+                },
+            );
+
+            bar.separator();
+
             bar.extra_menu(|extra| {
                 let narrow_dropdown = PseudoTheme::deferred(None, |style_builder, theme_data| {
                     let theme_spacing = theme_data.spacing;
