@@ -546,7 +546,7 @@ impl<'a> ManagePseudoStateExt<'a> for EntityCommands<'a> {
             let pseudo_states = world.get_mut::<PseudoStates>(entity);
 
             if let Some(mut pseudo_states) = pseudo_states {
-                if !pseudo_states.has(state) {
+                if !pseudo_states.has(&state) {
                     pseudo_states.add(state);
                 }
             } else {

@@ -37,7 +37,7 @@ fn track_node_visibility(
 }
 
 #[derive(
-    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Reflect, Serialize, Deserialize,
+    Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Reflect, Serialize, Deserialize,
 )]
 pub enum PseudoState {
     #[default]
@@ -61,7 +61,7 @@ pub enum PseudoState {
     Closed,
     Error,
     Resizable(CardinalDirection),
-    Custom(&'static str),
+    Custom(String),
 }
 
 #[derive(Component, Clone, Debug, Default, Reflect)]
@@ -85,8 +85,8 @@ impl PseudoStates {
         Self(Vec::new())
     }
 
-    pub fn has(&self, state: PseudoState) -> bool {
-        self.0.contains(&state)
+    pub fn has(&self, state: &PseudoState) -> bool {
+        self.0.contains(state)
     }
 
     pub fn add(&mut self, state: PseudoState) {
