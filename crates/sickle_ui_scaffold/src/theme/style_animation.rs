@@ -238,6 +238,7 @@ pub struct AnimationSettings {
     pub hover: Option<LoopedAnimationConfig>,
     #[reflect(default)]
     pub pressed: Option<LoopedAnimationConfig>,
+    #[reflect(default)]
     pub delete_on_entered: bool,
 }
 
