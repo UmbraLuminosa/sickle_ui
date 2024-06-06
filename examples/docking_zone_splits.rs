@@ -220,7 +220,7 @@ fn update_test_pseudo_state_on_press(
                 match pseudo_states.get().len() {
                     0 => pseudo_states.add(PseudoState::Checked),
                     1 => pseudo_states.add(PseudoState::Empty),
-                    2 => match pseudo_states.has(PseudoState::Empty) {
+                    2 => match pseudo_states.has(&PseudoState::Empty) {
                         true => {
                             pseudo_states.add(PseudoState::Selected);
                         }

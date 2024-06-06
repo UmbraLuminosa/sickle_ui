@@ -134,7 +134,7 @@ fn update_drowdown_pseudo_state(
     mut commands: Commands,
 ) {
     for (panel, states) in &q_panels {
-        if states.has(PseudoState::Visible) {
+        if states.has(&PseudoState::Visible) {
             commands
                 .entity(panel.dropdown)
                 .add_pseudo_state(PseudoState::Open);
