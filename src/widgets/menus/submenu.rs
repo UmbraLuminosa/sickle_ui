@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use sickle_ui_scaffold::theme::icons::IconData;
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
@@ -265,7 +266,7 @@ pub struct SubmenuContainer {
 pub struct SubmenuConfig {
     pub name: String,
     pub alt_code: Option<KeyCode>,
-    pub leading_icon: Option<String>,
+    pub leading_icon: IconData,
 }
 
 impl Into<MenuItemConfig> for SubmenuConfig {
@@ -274,9 +275,10 @@ impl Into<MenuItemConfig> for SubmenuConfig {
             name: self.name,
             alt_code: self.alt_code,
             leading_icon: self.leading_icon,
-            trailing_icon: "embedded://sickle_ui/icons/submenu_white.png"
-                .to_string()
-                .into(),
+            trailing_icon: IconData::Image(
+                "embedded://sickle_ui/icons/submenu_white.png".to_string(),
+                Color::WHITE,
+            ),
             ..default()
         }
     }

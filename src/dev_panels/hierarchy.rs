@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use sickle_ui_scaffold::FluxInteraction;
+use sickle_ui_scaffold::{theme::icons::IconData, FluxInteraction};
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
@@ -271,8 +271,9 @@ impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                                     refresh_button = row
                                         .menu_item(MenuItemConfig {
                                             name: "Refresh".into(),
-                                            trailing_icon: Some(
+                                            trailing_icon: IconData::Image(
                                                 "embedded://sickle_ui/icons/redo_white.png".into(),
+                                                Color::WHITE,
                                             ),
                                             ..default()
                                         })

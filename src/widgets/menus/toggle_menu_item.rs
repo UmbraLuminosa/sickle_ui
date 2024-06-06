@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use sickle_ui_scaffold::theme::icons::IconData;
 
 use crate::ui_builder::UiBuilder;
 
@@ -36,11 +37,12 @@ fn update_toggle_menu_checkmark(
 ) {
     for (toggle, mut config) in &mut q_menu_items {
         if toggle.checked {
-            config.leading_icon = "embedded://sickle_ui/icons/checkmark.png"
-                .to_string()
-                .into();
+            config.leading_icon = IconData::Image(
+                "embedded://sickle_ui/icons/checkmark.png".to_string(),
+                Color::WHITE,
+            );
         } else {
-            config.leading_icon = None;
+            config.leading_icon = IconData::None;
         }
     }
 }

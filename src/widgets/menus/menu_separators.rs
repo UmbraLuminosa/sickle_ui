@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::{
     theme::{
-        theme_colors::On, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme, PseudoTheme,
-        Theme, UiContext,
+        theme_colors::Accent, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
+        PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::StyleBuilder,
@@ -46,10 +46,11 @@ impl MenuSeparator {
         let colors = theme_data.colors();
 
         style_builder
+            .align_self(AlignSelf::Center)
             .width(Val::Px(theme_spacing.gaps.tiny))
             .height(Val::Px(theme_spacing.areas.extra_small))
             .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.small)))
-            .background_color(colors.on(On::SurfaceVariant));
+            .background_color(colors.accent(Accent::OutlineVariant));
     }
 
     fn separator() -> impl Bundle {
@@ -67,7 +68,7 @@ impl<'w, 's> UiMenuSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, (Entity, MenuB
         let id = self
             .commands()
             .ui_builder(container_id)
-            .spawn(MenuSeparator::separator())
+            .spawn((MenuSeparator::separator(), MenuSeparator))
             .id();
 
         self.commands().ui_builder(id)
@@ -98,8 +99,8 @@ impl MenuItemSeparator {
         style_builder
             .min_width(Val::Px(theme_spacing.areas.extra_large))
             .height(Val::Px(theme_spacing.gaps.tiny))
-            .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.small)))
-            .background_color(colors.on(On::SurfaceVariant));
+            .margin(UiRect::vertical(Val::Px(theme_spacing.gaps.small)))
+            .background_color(colors.accent(Accent::OutlineVariant));
     }
 
     fn separator() -> impl Bundle {
@@ -117,7 +118,7 @@ impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
         let id = self
             .commands()
             .ui_builder(container_id)
-            .spawn(MenuItemSeparator::separator())
+            .spawn((MenuItemSeparator::separator(), MenuItemSeparator))
             .id();
 
         self.commands().ui_builder(id)

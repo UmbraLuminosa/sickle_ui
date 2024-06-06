@@ -262,8 +262,8 @@ impl DropdownOption {
             .margin(UiRect::bottom(Val::Px(theme_spacing.gaps.tiny)))
             .animated()
             .background_color(AnimatedVals {
-                idle: Color::NONE,
-                hover: colors.container(Container::SurfaceHighest).into(),
+                idle: colors.container(Container::SurfaceMid),
+                hover: colors.accent(Accent::OutlineVariant).into(),
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);

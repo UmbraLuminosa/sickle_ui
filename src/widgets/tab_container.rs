@@ -1,5 +1,6 @@
 use bevy::{ecs::system::Command, ui::RelativeCursorPosition, prelude::*};
 use sickle_math::ease::Ease;
+use sickle_ui_scaffold::theme::icons::IconData;
 
 use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
@@ -610,14 +611,20 @@ impl ContextMenuGenerator for Tab {
         container
             .menu_item(MenuItemConfig {
                 name: "Close Tab".into(),
-                leading_icon: Some("embedded://sickle_ui/icons/close.png".into()),
+                leading_icon: IconData::Image(
+                    "embedded://sickle_ui/icons/close.png".into(),
+                    Color::WHITE,
+                ),
                 ..default()
             })
             .insert(CloseTabContextMenu { tab: context });
         container
             .menu_item(MenuItemConfig {
                 name: "Popout Tab".into(),
-                trailing_icon: Some("embedded://sickle_ui/icons/popout_white.png".into()),
+                trailing_icon: IconData::Image(
+                    "embedded://sickle_ui/icons/popout_white.png".into(),
+                    Color::WHITE,
+                ),
                 ..default()
             })
             .insert(PopoutTabContextMenu { tab: context });
