@@ -134,8 +134,15 @@ impl PseudoTheme {
 }
 
 pub trait UiContext {
-    fn get(&self, target: &str) -> Result<Entity, String>;
-    fn contexts(&self) -> Vec<&'static str>;
+    fn get(&self, _target: &str) -> Result<Entity, String> {
+        Err(format!(
+            "{} theme has no contexts",
+            std::any::type_name::<Self>()
+        ))
+    }
+    fn contexts(&self) -> Vec<&'static str> {
+        vec![]
+    }
 }
 
 pub trait DefaultTheme: Clone + Component + UiContext {
