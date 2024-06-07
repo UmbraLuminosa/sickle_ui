@@ -136,7 +136,7 @@ impl PseudoTheme {
 pub trait UiContext {
     fn get(&self, _target: &str) -> Result<Entity, String> {
         Err(format!(
-            "{} theme has no contexts",
+            "{} has no UI contexts",
             std::any::type_name::<Self>()
         ))
     }
