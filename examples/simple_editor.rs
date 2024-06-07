@@ -253,8 +253,41 @@ fn setup(
                         name: "Standard menu item".into(),
                         ..default()
                     });
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with leading icon".into(),
+                        leading_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/details_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with trailing icon".into(),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with both icons".into(),
+                        leading_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/details_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+
+                    menu.separator();
+
                     menu.toggle_menu_item(ToggleMenuItemConfig {
                         name: "Toggle item".into(),
+                        shortcut: vec![KeyCode::ControlLeft, KeyCode::KeyT].into(),
                         ..default()
                     });
                     menu.toggle_menu_item(ToggleMenuItemConfig {
@@ -262,8 +295,17 @@ fn setup(
                         initially_checked: true,
                         ..default()
                     });
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Toggle item with trailing icon".into(),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
 
                     menu.separator();
+
                     menu.menu_item(MenuItemConfig {
                         name: "Exit".into(),
                         ..default()

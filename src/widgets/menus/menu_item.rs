@@ -42,7 +42,7 @@ impl Plugin for MenuItemPlugin {
             (
                 update_menu_item_on_change,
                 update_menu_item_on_pressed,
-                update_menu_item_on_key_press,
+                update_menu_item_on_shortcut_press,
             )
                 .chain()
                 .in_set(MenuItemUpdate),
@@ -71,7 +71,7 @@ fn update_menu_item_on_pressed(
     }
 }
 
-fn update_menu_item_on_key_press(
+fn update_menu_item_on_shortcut_press(
     mut q_menu_items: Query<(&mut MenuItem, &Shortcut), Changed<Shortcut>>,
 ) {
     for (mut item, shortcut) in &mut q_menu_items {
@@ -225,6 +225,7 @@ impl MenuItem {
             .text
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
+        // TODO: Fix hover ghosting
         style_builder
             .justify_content(JustifyContent::End)
             .align_items(AlignItems::Center)

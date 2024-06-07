@@ -15,6 +15,7 @@ use crate::ui_builder::UiBuilder;
 use super::{
     menu::{Menu, UiMenuSubExt},
     menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate},
+    shortcut::Shortcut,
 };
 
 pub struct ToggleMenuItemPlugin;
@@ -25,7 +26,11 @@ impl Plugin for ToggleMenuItemPlugin {
             .add_plugins(ComponentThemePlugin::<ToggleMenuItem>::default())
             .add_systems(
                 Update,
-                (update_toggle_menu_item_value, update_toggle_menu_checkmark)
+                (
+                    update_toggle_menu_item_value,
+                    update_toggle_menu_item_on_shortcut_press,
+                    update_toggle_menu_checkmark,
+                )
                     .chain()
                     .in_set(ToggleMenuItemUpdate),
             );
@@ -40,6 +45,16 @@ fn update_toggle_menu_item_value(
 ) {
     for (mut toggle, interaction) in &mut q_menu_items {
         if interaction.is_pressed() {
+            toggle.checked = !toggle.checked;
+        }
+    }
+}
+
+fn update_toggle_menu_item_on_shortcut_press(
+    mut q_menu_items: Query<(&mut ToggleMenuItem, &Shortcut), Changed<Shortcut>>,
+) {
+    for (mut toggle, shortcut) in &mut q_menu_items {
+        if shortcut.pressed() {
             toggle.checked = !toggle.checked;
         }
     }

@@ -91,6 +91,7 @@ impl Default for Checkbox {
 impl UiContext for Checkbox {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
+            // TODO: Make const pub on the component (see MenuItem)
             CHECKMARK_BACKGROUND => Ok(self.checkmark_background),
             CHECKMARK => Ok(self.checkmark),
             LABEL => Ok(self.label),
