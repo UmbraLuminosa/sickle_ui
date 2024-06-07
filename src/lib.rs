@@ -16,6 +16,7 @@ use scroll_interaction::ScrollInteractionPlugin;
 use theme::ThemePlugin;
 use widgets::WidgetsPlugin;
 
+pub use sickle_macros::*;
 pub use sickle_math::*;
 pub use sickle_ui_scaffold::*;
 
