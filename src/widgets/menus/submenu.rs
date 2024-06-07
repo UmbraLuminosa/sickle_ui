@@ -19,7 +19,7 @@ const MENU_CONTAINER_SWITCH_TIMEOUT: f32 = 0.3;
 
 // TODO: Add vertically scrollable container and height constraint
 // TODO: Best effort position submenu within window bounds
-// TODO: lock clip of button and menu bar
+// TODO: lock clip of button
 pub struct SubmenuPlugin;
 
 impl Plugin for SubmenuPlugin {
