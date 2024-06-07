@@ -22,8 +22,6 @@ use super::menu_bar::{MenuBar, UiMenuBarSubExt};
 
 // TODO: Move all z-index constants to a resource
 const MENU_CONTAINER_Z_INDEX: i32 = 100000;
-const CONTAINER: &'static str = "Container";
-const LABEL: &'static str = "Label";
 
 // TODO: Implement scrolling and up/down arrows when menu too large (>70%?)
 pub struct MenuPlugin;
@@ -191,8 +189,8 @@ impl Default for Menu {
 impl UiContext for Menu {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
-            LABEL => Ok(self.label),
-            CONTAINER => Ok(self.container),
+            Menu::LABEL => Ok(self.label),
+            Menu::CONTAINER => Ok(self.container),
             _ => Err(format!(
                 "{} doesn't exists for Menu. Possible contexts: {:?}",
                 target,
@@ -202,7 +200,7 @@ impl UiContext for Menu {
     }
 
     fn contexts(&self) -> Vec<&'static str> {
-        vec![LABEL, CONTAINER]
+        vec![Menu::LABEL, Menu::CONTAINER]
     }
 }
 
@@ -213,6 +211,9 @@ impl DefaultTheme for Menu {
 }
 
 impl Menu {
+    pub const CONTAINER: &'static str = "Container";
+    pub const LABEL: &'static str = "Label";
+
     pub fn theme() -> Theme<Menu> {
         let base_theme = PseudoTheme::deferred(None, Menu::primary_style);
         let open_theme = PseudoTheme::deferred(vec![PseudoState::Open], Menu::open_style);
@@ -244,7 +245,7 @@ impl Menu {
             });
 
         style_builder
-            .switch_target(LABEL)
+            .switch_target(Menu::LABEL)
             .sized_font(font)
             .animated()
             .font_color(AnimatedVals {
@@ -255,7 +256,7 @@ impl Menu {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(CONTAINER)
+            .switch_target(Menu::CONTAINER)
             .top(Val::Px(theme_spacing.areas.small))
             .left(Val::Px(-theme_spacing.borders.extra_small))
             .position_type(PositionType::Absolute)
@@ -282,11 +283,11 @@ impl Menu {
             .background_color(colors.container(Container::SurfaceHigh));
 
         style_builder
-            .switch_target(LABEL)
+            .switch_target(Menu::LABEL)
             .font_color(colors.on(On::Surface));
 
         style_builder
-            .switch_target(CONTAINER)
+            .switch_target(Menu::CONTAINER)
             .visibility(Visibility::Inherited);
     }
 

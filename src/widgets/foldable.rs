@@ -22,10 +22,6 @@ use super::{
     WidgetLibraryUpdate,
 };
 
-const BUTTON_ICON: &'static str = "ButtonIcon";
-const BUTTON_LABEL: &'static str = "ButtonLabel";
-const CONTAINER: &'static str = "Container";
-
 pub struct FoldablePlugin;
 
 impl Plugin for FoldablePlugin {
@@ -117,9 +113,9 @@ impl Default for Foldable {
 impl UiContext for Foldable {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
-            BUTTON_ICON => Ok(self.icon),
-            BUTTON_LABEL => Ok(self.label),
-            CONTAINER => Ok(self.container),
+            Foldable::BUTTON_ICON => Ok(self.icon),
+            Foldable::BUTTON_LABEL => Ok(self.label),
+            Foldable::CONTAINER => Ok(self.container),
             _ => Err(format!(
                 "{} doesn't exists for Foldable. Possible contexts: {:?}",
                 target,
@@ -129,7 +125,11 @@ impl UiContext for Foldable {
     }
 
     fn contexts(&self) -> Vec<&'static str> {
-        vec![BUTTON_ICON, BUTTON_LABEL, CONTAINER]
+        vec![
+            Foldable::BUTTON_ICON,
+            Foldable::BUTTON_LABEL,
+            Foldable::CONTAINER,
+        ]
     }
 }
 
@@ -140,6 +140,10 @@ impl DefaultTheme for Foldable {
 }
 
 impl Foldable {
+    pub const BUTTON_ICON: &'static str = "ButtonIcon";
+    pub const BUTTON_LABEL: &'static str = "ButtonLabel";
+    pub const CONTAINER: &'static str = "Container";
+
     pub fn theme() -> Theme<Foldable> {
         let base_theme = PseudoTheme::deferred(None, Foldable::primary_style);
         let folded_theme = PseudoTheme::deferred(vec![PseudoState::Folded], Foldable::folded_style);
@@ -156,7 +160,7 @@ impl Foldable {
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
         style_builder
-            .switch_target(BUTTON_ICON)
+            .switch_target(Foldable::BUTTON_ICON)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(
@@ -174,7 +178,7 @@ impl Foldable {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(BUTTON_LABEL)
+            .switch_target(Foldable::BUTTON_LABEL)
             .margin(UiRect::right(Val::Px(theme_spacing.gaps.medium)))
             .sized_font(font)
             .animated()
@@ -186,7 +190,7 @@ impl Foldable {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(CONTAINER)
+            .switch_target(Foldable::CONTAINER)
             .display(Display::Flex)
             .visibility(Visibility::Inherited);
     }
@@ -195,7 +199,7 @@ impl Foldable {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
-        style_builder.switch_target(BUTTON_ICON).icon(
+        style_builder.switch_target(Foldable::BUTTON_ICON).icon(
             theme_data
                 .icons
                 .chevron_right
@@ -203,7 +207,7 @@ impl Foldable {
         );
 
         style_builder
-            .switch_target(CONTAINER)
+            .switch_target(Foldable::CONTAINER)
             .display(Display::None)
             .visibility(Visibility::Hidden);
     }
@@ -212,7 +216,7 @@ impl Foldable {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
-        style_builder.switch_target(BUTTON_ICON).icon(
+        style_builder.switch_target(Foldable::BUTTON_ICON).icon(
             theme_data
                 .icons
                 .arrow_right
@@ -220,7 +224,7 @@ impl Foldable {
         );
 
         style_builder
-            .switch_target(CONTAINER)
+            .switch_target(Foldable::CONTAINER)
             .display(Display::None)
             .visibility(Visibility::Hidden);
     }

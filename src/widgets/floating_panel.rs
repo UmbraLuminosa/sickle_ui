@@ -32,13 +32,6 @@ const MIN_PANEL_SIZE: Vec2 = Vec2 { x: 150., y: 100. };
 const MIN_FLOATING_PANEL_Z_INDEX: usize = 1000;
 const PRIORITY_FLOATING_PANEL_Z_INDEX: usize = 10000;
 const WINDOW_RESIZE_PADDING: f32 = 20.;
-const DRAG_HANDLE: &'static str = "DragHandle";
-const TITLE_CONTAINER: &'static str = "TitleContainer";
-const TITLE: &'static str = "Title";
-const FOLD_BUTTON: &'static str = "FoldButton";
-const CLOSE_BUTTON_CONTAINER: &'static str = "CloseButtonContainer";
-const CLOSE_BUTTON: &'static str = "CloseButton";
-const CONTENT_VIEW: &'static str = "ContentView";
 
 pub struct FloatingPanelPlugin;
 
@@ -593,13 +586,13 @@ impl Default for FloatingPanel {
 impl UiContext for FloatingPanel {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
-            DRAG_HANDLE => Ok(self.drag_handle),
-            TITLE_CONTAINER => Ok(self.title_container),
-            TITLE => Ok(self.title),
-            FOLD_BUTTON => Ok(self.fold_button),
-            CLOSE_BUTTON_CONTAINER => Ok(self.close_button_container),
-            CLOSE_BUTTON => Ok(self.close_button),
-            CONTENT_VIEW => Ok(self.content_view),
+            FloatingPanel::DRAG_HANDLE => Ok(self.drag_handle),
+            FloatingPanel::TITLE_CONTAINER => Ok(self.title_container),
+            FloatingPanel::TITLE => Ok(self.title),
+            FloatingPanel::FOLD_BUTTON => Ok(self.fold_button),
+            FloatingPanel::CLOSE_BUTTON_CONTAINER => Ok(self.close_button_container),
+            FloatingPanel::CLOSE_BUTTON => Ok(self.close_button),
+            FloatingPanel::CONTENT_VIEW => Ok(self.content_view),
             _ => Err(format!(
                 "{} doesn't exists for FloatingPanel. Possible contexts: {:?}",
                 target,
@@ -610,13 +603,13 @@ impl UiContext for FloatingPanel {
 
     fn contexts(&self) -> Vec<&'static str> {
         vec![
-            DRAG_HANDLE,
-            TITLE_CONTAINER,
-            TITLE,
-            FOLD_BUTTON,
-            CLOSE_BUTTON_CONTAINER,
-            CLOSE_BUTTON,
-            CONTENT_VIEW,
+            FloatingPanel::DRAG_HANDLE,
+            FloatingPanel::TITLE_CONTAINER,
+            FloatingPanel::TITLE,
+            FloatingPanel::FOLD_BUTTON,
+            FloatingPanel::CLOSE_BUTTON_CONTAINER,
+            FloatingPanel::CLOSE_BUTTON,
+            FloatingPanel::CONTENT_VIEW,
         ]
     }
 }
@@ -628,6 +621,14 @@ impl DefaultTheme for FloatingPanel {
 }
 
 impl FloatingPanel {
+    pub const DRAG_HANDLE: &'static str = "DragHandle";
+    pub const TITLE_CONTAINER: &'static str = "TitleContainer";
+    pub const TITLE: &'static str = "Title";
+    pub const FOLD_BUTTON: &'static str = "FoldButton";
+    pub const CLOSE_BUTTON_CONTAINER: &'static str = "CloseButtonContainer";
+    pub const CLOSE_BUTTON: &'static str = "CloseButton";
+    pub const CONTENT_VIEW: &'static str = "ContentView";
+
     pub fn theme() -> Theme<FloatingPanel> {
         let base_theme = PseudoTheme::deferred_world(None, FloatingPanel::primary_style);
         let folded_theme =
@@ -669,18 +670,18 @@ impl FloatingPanel {
             .copy_from(theme_data.enter_animation);
 
         style_builder
-            .switch_target(CONTENT_VIEW)
+            .switch_target(FloatingPanel::CONTENT_VIEW)
             .height(Val::Percent(100.));
 
         style_builder
-            .switch_target(TITLE_CONTAINER)
+            .switch_target(FloatingPanel::TITLE_CONTAINER)
             .width(Val::Percent(100.))
             .align_items(AlignItems::Center)
             .justify_content(JustifyContent::Start)
             .background_color(colors.container(Container::SurfaceMid));
 
         style_builder
-            .switch_target(TITLE)
+            .switch_target(FloatingPanel::TITLE)
             .flex_grow(1.)
             .margin(UiRect::px(
                 theme_spacing.gaps.small,
@@ -696,12 +697,12 @@ impl FloatingPanel {
             .font_color(colors.on(On::Surface));
 
         style_builder
-            .switch_target(CLOSE_BUTTON_CONTAINER)
+            .switch_target(FloatingPanel::CLOSE_BUTTON_CONTAINER)
             .right(Val::Px(0.))
             .background_color(colors.container(Container::SurfaceMid));
 
         style_builder
-            .switch_context(DRAG_HANDLE.to_string(), None)
+            .switch_context(FloatingPanel::DRAG_HANDLE.to_string(), None)
             .width(Val::Percent(100.))
             .height(Val::Px(theme_spacing.borders.small * 2.))
             .border(UiRect::bottom(Val::Px(theme_spacing.borders.small)))
@@ -715,7 +716,7 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(FOLD_BUTTON.to_string(), None)
+            .switch_context(FloatingPanel::FOLD_BUTTON.to_string(), None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(
@@ -733,7 +734,7 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(CLOSE_BUTTON.to_string(), None)
+            .switch_context(FloatingPanel::CLOSE_BUTTON.to_string(), None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(
@@ -770,7 +771,7 @@ impl FloatingPanel {
             .copy_from(theme_data.enter_animation);
 
         style_builder
-            .switch_target(CONTENT_VIEW)
+            .switch_target(FloatingPanel::CONTENT_VIEW)
             .animated()
             .height(AnimatedVals {
                 idle: Val::Percent(0.),
@@ -779,12 +780,14 @@ impl FloatingPanel {
             })
             .copy_from(theme_data.enter_animation);
 
-        style_builder.switch_target(FOLD_BUTTON).icon(
-            theme_data
-                .icons
-                .chevron_right
-                .with(colors.on(On::Surface), theme_spacing.icons.small),
-        );
+        style_builder
+            .switch_target(FloatingPanel::FOLD_BUTTON)
+            .icon(
+                theme_data
+                    .icons
+                    .chevron_right
+                    .with(colors.on(On::Surface), theme_spacing.icons.small),
+            );
     }
 
     pub fn content_panel_container(&self) -> Entity {

@@ -25,11 +25,6 @@ use super::{
     scroll_view::{ScrollView, ScrollViewLayoutUpdate},
 };
 
-const DROPDOWN_LABEL: &'static str = "Label";
-const DROPDOWN_ICON: &'static str = "Icon";
-const DROPDOWN_PANEL: &'static str = "Panel";
-const DROPDOWN_SCROLL_VIEW: &'static str = "ScrollView";
-const DROPDOWN_OPTION_LABEL: &'static str = "Label";
 const DROPDOWN_PANEL_Z_INDEX: usize = 11000;
 
 pub struct DropdownPlugin;
@@ -218,7 +213,7 @@ impl Default for DropdownOption {
 impl UiContext for DropdownOption {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
-            DROPDOWN_OPTION_LABEL => Ok(self.label),
+            DropdownOption::LABEL => Ok(self.label),
             _ => Err(format!(
                 "{} doesn't exists for DropdownOption. Possible contexts: {:?}",
                 target,
@@ -228,7 +223,7 @@ impl UiContext for DropdownOption {
     }
 
     fn contexts(&self) -> Vec<&'static str> {
-        vec![DROPDOWN_OPTION_LABEL]
+        vec![DropdownOption::LABEL]
     }
 }
 
@@ -239,6 +234,8 @@ impl DefaultTheme for DropdownOption {
 }
 
 impl DropdownOption {
+    pub const LABEL: &'static str = "Label";
+
     pub fn theme() -> Theme<DropdownOption> {
         let base_theme = PseudoTheme::deferred(None, DropdownOption::primary_style);
 
@@ -269,7 +266,7 @@ impl DropdownOption {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(DROPDOWN_OPTION_LABEL)
+            .switch_target(DropdownOption::LABEL)
             .sized_font(font)
             .font_color(colors.on(On::Surface));
     }
@@ -318,10 +315,10 @@ impl Default for Dropdown {
 impl UiContext for Dropdown {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
-            DROPDOWN_LABEL => Ok(self.label),
-            DROPDOWN_ICON => Ok(self.icon),
-            DROPDOWN_PANEL => Ok(self.panel),
-            DROPDOWN_SCROLL_VIEW => Ok(self.scroll_view),
+            Dropdown::LABEL => Ok(self.label),
+            Dropdown::ICON => Ok(self.icon),
+            Dropdown::PANEL => Ok(self.panel),
+            Dropdown::SCROLL_VIEW => Ok(self.scroll_view),
             _ => Err(format!(
                 "{} doesn't exists for Dropdown. Possible contexts: {:?}",
                 target,
@@ -332,10 +329,10 @@ impl UiContext for Dropdown {
 
     fn contexts(&self) -> Vec<&'static str> {
         vec![
-            DROPDOWN_LABEL,
-            DROPDOWN_ICON,
-            DROPDOWN_PANEL,
-            DROPDOWN_SCROLL_VIEW,
+            Dropdown::LABEL,
+            Dropdown::ICON,
+            Dropdown::PANEL,
+            Dropdown::SCROLL_VIEW,
         ]
     }
 }
@@ -347,6 +344,11 @@ impl DefaultTheme for Dropdown {
 }
 
 impl Dropdown {
+    pub const LABEL: &'static str = "Label";
+    pub const ICON: &'static str = "Icon";
+    pub const PANEL: &'static str = "Panel";
+    pub const SCROLL_VIEW: &'static str = "ScrollView";
+
     pub fn value(&self) -> Option<usize> {
         self.value
     }
@@ -392,7 +394,7 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(DROPDOWN_LABEL)
+            .switch_target(Dropdown::LABEL)
             .sized_font(font)
             .animated()
             .font_color(AnimatedVals {
@@ -403,7 +405,7 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(DROPDOWN_ICON)
+            .switch_target(Dropdown::ICON)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::left(Val::Px(theme_spacing.gaps.large)))
             .icon(
@@ -421,7 +423,7 @@ impl Dropdown {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_target(DROPDOWN_PANEL)
+            .switch_target(Dropdown::PANEL)
             .position_type(PositionType::Absolute)
             .z_index(ZIndex::Global(DROPDOWN_PANEL_Z_INDEX as i32))
             .border(UiRect::all(Val::Px(theme_spacing.gaps.tiny)))
@@ -444,7 +446,7 @@ impl Dropdown {
         let enter_animation = world.resource::<ThemeData>().enter_animation.clone();
 
         style_builder
-            .switch_target(DROPDOWN_PANEL)
+            .switch_target(Dropdown::PANEL)
             .top(placement.top)
             .right(placement.right)
             .bottom(placement.bottom)
@@ -459,7 +461,7 @@ impl Dropdown {
             .copy_from(enter_animation);
 
         style_builder
-            .switch_target(DROPDOWN_SCROLL_VIEW)
+            .switch_target(Dropdown::SCROLL_VIEW)
             .animated()
             .tracked_style_state(TrackedStyleState::default_vals())
             .copy_from(enter_animation);
