@@ -718,7 +718,7 @@ impl AnimationState {
         // We could store `elapsed` and the `easing` type and try to continue animations,
         // but there is no guarantee we continue the interrupted one.
         let base_ratio = (((elapsed - delay) / tween_time) * (1. - offset)).clamp(0., 1.);
-        let tween_ratio = offset + base_ratio.ease(easing);
+        let tween_ratio = (offset + base_ratio.ease(easing)).clamp(0., 1.);
 
         if *from == target_style {
             AnimationState {

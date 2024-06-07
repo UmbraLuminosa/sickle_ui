@@ -225,7 +225,6 @@ impl MenuItem {
             .text
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
-        // TODO: Fix hover ghosting
         style_builder
             .justify_content(JustifyContent::End)
             .align_items(AlignItems::Center)
