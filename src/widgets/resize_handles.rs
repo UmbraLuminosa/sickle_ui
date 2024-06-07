@@ -507,6 +507,8 @@ impl ResizeHandles {
         };
 
         style_builder
+            .position_type(PositionType::Absolute)
+            .flex_shrink(0.)
             .top(Val::Px(-parent_border_px.x - pullback.y))
             .right(Val::Px(parent_border_px.w - pullback.x))
             .bottom(Val::Px(parent_border_px.x - pullback.y))
@@ -717,8 +719,6 @@ impl ResizeHandles {
             Name::new("Resize Handles"),
             NodeBundle {
                 style: Style {
-                    position_type: PositionType::Absolute,
-                    flex_shrink: 0.,
                     overflow: Overflow::visible(),
                     ..default()
                 },

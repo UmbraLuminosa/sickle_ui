@@ -91,10 +91,6 @@ struct ShowcaseContainer;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component)]
-struct ExtraMenu;
-
-#[derive(Component, Debug, Default, Reflect)]
-#[reflect(Component)]
 struct HierarchyPanel;
 
 #[derive(Resource, Debug, Default, Reflect)]
@@ -254,11 +250,16 @@ fn setup(
                 },
                 |menu| {
                     menu.menu_item(MenuItemConfig {
-                        name: "Layout".into(),
+                        name: "Standard menu item".into(),
                         ..default()
                     });
-                    menu.menu_item(MenuItemConfig {
-                        name: "Interactions".into(),
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Toggle item".into(),
+                        ..default()
+                    });
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Already toggled item".into(),
+                        initially_checked: true,
                         ..default()
                     });
 
@@ -333,13 +334,10 @@ fn update_current_page(
 
 fn clear_content_on_menu_change(
     root_node: Query<Entity, With<ShowcaseContainer>>,
-    q_extra_menu: Query<Entity, With<ExtraMenu>>,
     mut commands: Commands,
 ) {
     let root_entity = root_node.single();
-    let extra_menu = q_extra_menu.single();
     commands.entity(root_entity).despawn_descendants();
-    commands.entity(extra_menu).despawn_descendants();
     commands.set_cursor(CursorIcon::Default);
 }
 

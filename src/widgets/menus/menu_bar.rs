@@ -7,7 +7,7 @@ use sickle_ui_scaffold::{
         theme_colors::Container, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
         PseudoTheme, Theme, UiContext,
     },
-    ui_style::StyleBuilder,
+    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
 };
 
 pub struct MenuBarPlugin;
@@ -46,7 +46,17 @@ impl MenuBar {
     }
 
     fn frame() -> impl Bundle {
-        (Name::new("Menu Bar"), NodeBundle::default())
+        (
+            Name::new("Menu Bar"),
+            NodeBundle {
+                style: Style {
+                    overflow: Overflow::visible(),
+                    ..default()
+                },
+                ..default()
+            },
+            LockedStyleAttributes::lock(LockableStyleAttribute::Overflow),
+        )
     }
 }
 

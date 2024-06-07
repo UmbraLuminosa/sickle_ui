@@ -265,12 +265,7 @@ impl Menu {
                 0.,
                 theme_spacing.borders.extra_small,
             ))
-            .padding(UiRect::px(
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.medium,
-            ))
+            .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
             .background_color(colors.container(Container::SurfaceHigh))

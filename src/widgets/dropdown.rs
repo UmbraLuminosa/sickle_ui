@@ -591,12 +591,16 @@ impl Dropdown {
             ButtonBundle {
                 style: Style {
                     flex_direction: FlexDirection::Row,
+                    overflow: Overflow::visible(),
                     ..default()
                 },
                 ..default()
             },
             TrackedInteraction::default(),
-            LockedStyleAttributes::lock(LockableStyleAttribute::FlexDirection),
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FlexDirection,
+                LockableStyleAttribute::Overflow,
+            ]),
             DropdownOptions(options),
         )
     }
