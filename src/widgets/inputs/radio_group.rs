@@ -1,17 +1,22 @@
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, ui::FocusPolicy};
+
 use sickle_math::ease::Ease;
+use sickle_ui_scaffold::{
+    ui_builder::UiBuilder, FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
+};
 
 use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
     interactions::InteractiveBackground,
-    ui_builder::UiBuilder,
     widgets::{
+        layout::{
+            container::UiContainerExt,
+            label::{LabelConfig, UiLabelExt},
+        },
         menus::{context_menu::ContextMenuUpdate, menu::MenuUpdate, submenu::SubmenuUpdate},
-        prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     },
-    FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
 pub struct RadioGroupPlugin;

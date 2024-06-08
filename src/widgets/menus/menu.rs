@@ -1,18 +1,22 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
 use sickle_ui_scaffold::{
+    theme::prelude::*,
+    ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ManagePseudoStateExt,
     ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-};
-
-use crate::{
-    theme::prelude::*,
-    ui_builder::*,
-    widgets::prelude::{LabelConfig, MenuItem, UiContainerExt, UiLabelExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
 
-use super::menu_bar::{MenuBar, UiMenuBarSubExt};
+use crate::widgets::layout::{
+    container::UiContainerExt,
+    label::{LabelConfig, UiLabelExt},
+};
+
+use super::{
+    menu_bar::{MenuBar, UiMenuBarSubExt},
+    menu_item::MenuItem,
+};
 
 // TODO: Move all z-index constants to a resource
 const MENU_CONTAINER_Z_INDEX: i32 = 100000;

@@ -1,6 +1,6 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use crate::{
+use sickle_ui_scaffold::{
     theme::prelude::*,
     ui_builder::UiBuilder,
     ui_commands::ManagePseudoStateExt,
@@ -8,8 +8,12 @@ use crate::{
         AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityUncheckedExt,
         StyleBuilder, UiStyleUncheckedExt,
     },
-    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     FluxInteraction, TrackedInteraction,
+};
+
+use crate::widgets::layout::{
+    container::UiContainerExt,
+    label::{LabelConfig, UiLabelExt},
 };
 
 pub struct CheckboxPlugin;

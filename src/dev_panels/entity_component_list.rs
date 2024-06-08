@@ -1,12 +1,17 @@
 use bevy::{ecs::system::CommandQueue, prelude::*};
 
-use crate::{
+use sickle_ui_scaffold::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
         SetAlignContentExt, SetAlignItemsExt, SetBackgroundColorExt, SetFlexWrapExt, SetMarginExt,
         SetOverflowExt, SetPaddingExt,
     },
-    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiRowExt},
+};
+
+use crate::widgets::layout::{
+    container::UiContainerExt,
+    label::{LabelConfig, UiLabelExt},
+    row::UiRowExt,
 };
 
 pub struct EntityComponentListPlugin;

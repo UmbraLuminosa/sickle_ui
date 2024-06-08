@@ -1,18 +1,19 @@
 use bevy::{prelude::*, ui::FocusPolicy};
+
 use sickle_ui_scaffold::{
+    theme::prelude::*,
+    ui_builder::*,
     ui_commands::ManagePseudoStateExt,
-    ui_style::{AnimatedVals, StyleBuilder},
+    ui_style::{AnimatedVals, SetNodeShowHideExt, StyleBuilder, UiStyleExt},
     FluxInteraction, TrackedInteraction,
 };
 
-use crate::{
-    theme::prelude::*,
-    ui_builder::*,
-    ui_style::{SetNodeShowHideExt, UiStyleExt},
-    widgets::{
-        prelude::{LabelConfig, MenuItemUpdate, UiContainerExt, UiLabelExt, UiPanelExt},
-        WidgetLibraryUpdate,
-    },
+use crate::widgets::{menus::menu_item::MenuItemUpdate, WidgetLibraryUpdate};
+
+use super::{
+    container::UiContainerExt,
+    label::{LabelConfig, UiLabelExt},
+    panel::UiPanelExt,
 };
 
 pub struct FoldablePlugin;

@@ -1,28 +1,39 @@
-use bevy::{ecs::system::Command, ui::RelativeCursorPosition, prelude::*};
-use sickle_math::ease::Ease;
-use sickle_ui_scaffold::theme::theme_data::ThemeData;
+use bevy::{ecs::system::Command, prelude::*, ui::RelativeCursorPosition};
 
-use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
+use sickle_math::ease::Ease;
+use sickle_ui_scaffold::{
     drag_interaction::{DragState, Draggable, DraggableUpdate},
     interactions::InteractiveBackground,
+    theme::theme_data::ThemeData,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{
         SetBackgroundColorExt, SetFluxInteractionExt, SetLeftExt, SetNodeShowHideExt,
         SetOverflowExt, SetPositionTypeExt, SetZIndexExt, UiStyleExt,
     },
-    widgets::prelude::{
-        ContextMenu, ContextMenuGenerator, ContextMenuUpdate, FloatingPanelConfig,
-        FloatingPanelLayout, GenerateContextMenu, LabelConfig, MenuItem, MenuItemConfig,
-        MenuItemUpdate, ReflectContextMenuGenerator, UiContainerExt, UiFloatingPanelExt,
-        UiLabelExt, UiMenuItemExt, UiPanelExt, UiScrollViewExt,
-    },
     TrackedInteraction,
 };
 
+use crate::{
+    animated_interaction::{AnimatedInteraction, AnimationConfig},
+    widgets::menus::{
+        context_menu::{
+            ContextMenu, ContextMenuGenerator, ContextMenuUpdate, GenerateContextMenu,
+            ReflectContextMenuGenerator,
+        },
+        menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt},
+    },
+};
+
 use super::{
-    floating_panel::{FloatingPanel, FloatingPanelUpdate, UpdateFloatingPanelPanelId},
+    container::UiContainerExt,
+    floating_panel::{
+        FloatingPanel, FloatingPanelConfig, FloatingPanelLayout, FloatingPanelUpdate,
+        UiFloatingPanelExt, UpdateFloatingPanelPanelId,
+    },
+    label::{LabelConfig, UiLabelExt},
     panel::Panel,
+    panel::UiPanelExt,
+    scroll_view::UiScrollViewExt,
     sized_zone::SizedZonePreUpdate,
 };
 

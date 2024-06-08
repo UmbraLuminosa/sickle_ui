@@ -3,12 +3,11 @@ use bevy::{
     prelude::*,
     ui::{FocusPolicy, RelativeCursorPosition},
 };
-use sickle_macros::UiContext;
 
-use crate::{
+use sickle_macros::UiContext;
+use sickle_ui_scaffold::{
     drag_interaction::{DragState, Draggable},
     drop_interaction::{DropPhase, DropZone, DroppableUpdate},
-    hierarchy_delay::DelayActions,
     theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ResetChildrenInUiSurface,
@@ -18,6 +17,8 @@ use crate::{
         UiStyleExt, UiStyleUncheckedExt,
     },
 };
+
+use crate::hierarchy_delay::DelayActions;
 
 use super::{
     floating_panel::FloatingPanelTitle,

@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
-use crate::{
-    ui_builder::*,
+use sickle_ui_scaffold::{
+    ui_builder::{UiBuilder, UiRoot},
     ui_style::{LockableStyleAttribute, LockedStyleAttributes},
-    widgets::prelude::UiContainerExt,
 };
+
+use super::container::UiContainerExt;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component)]

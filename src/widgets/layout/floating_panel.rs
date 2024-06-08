@@ -1,29 +1,30 @@
-use bevy::ui::{ContentSize, FocusPolicy, RelativeCursorPosition};
-use bevy::window::PrimaryWindow;
-use bevy::{prelude::*, window::WindowResized};
-
-use sickle_ui_scaffold::CardinalDirection;
-
-use super::resize_handles::{ResizeDirection, ResizeHandle};
-use crate::drop_interaction::{Droppable, DroppableUpdate};
-use crate::ui_builder::UiBuilderExt;
-use crate::ui_commands::ManagePseudoStateExt;
-use crate::ui_style::{
-    AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt,
-    SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetNodeShowHideExt, SetWidthExt,
-    SetZIndexExt, StyleBuilder, UiStyleExt,
+use bevy::{
+    prelude::*,
+    ui::{ContentSize, FocusPolicy, RelativeCursorPosition},
+    window::{PrimaryWindow, WindowResized},
 };
-use crate::widgets::prelude::{
-    LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiResizeHandlesExt,
-};
-use crate::widgets::prelude::{SetLabelTextExt, UiScrollViewExt};
-use crate::FluxInteraction;
-use crate::{
+
+use sickle_ui_scaffold::{
     drag_interaction::{DragState, Draggable},
+    drop_interaction::{Droppable, DroppableUpdate},
     scroll_interaction::ScrollAxis,
     theme::prelude::*,
-    ui_builder::UiBuilder,
-    TrackedInteraction,
+    ui_builder::{UiBuilder, UiBuilderExt},
+    ui_commands::ManagePseudoStateExt,
+    ui_style::{
+        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt,
+        SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetNodeShowHideExt, SetWidthExt,
+        SetZIndexExt, StyleBuilder, UiStyleExt,
+    },
+    CardinalDirection, FluxInteraction, TrackedInteraction,
+};
+
+use crate::widgets::layout::{
+    container::UiContainerExt,
+    label::{LabelConfig, SetLabelTextExt, UiLabelExt},
+    panel::UiPanelExt,
+    resize_handles::{ResizeDirection, ResizeHandle, UiResizeHandlesExt},
+    scroll_view::UiScrollViewExt,
 };
 
 const MIN_PANEL_SIZE: Vec2 = Vec2 { x: 150., y: 100. };

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::ui_builder::UiBuilder;
+use sickle_ui_scaffold::ui_builder::UiBuilder;
 
-use crate::widgets::prelude::UiContainerExt;
+use super::container::UiContainerExt;
 
 #[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]

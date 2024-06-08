@@ -1,6 +1,6 @@
 use bevy::{ecs::system::EntityCommands, prelude::*, ui::UiSystem};
 
-use crate::ui_commands::ResetChildrenInUiSurface;
+use sickle_ui_scaffold::ui_commands::ResetChildrenInUiSurface;
 
 pub struct HierarchyDelayPlugin;
 

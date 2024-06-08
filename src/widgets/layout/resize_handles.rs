@@ -1,22 +1,23 @@
 use bevy::prelude::*;
 use bevy::ui::RelativeCursorPosition;
 use bevy_reflect::Reflect;
+
 use sickle_math::ease::Ease;
 use sickle_ui_scaffold::{
+    drag_interaction::Draggable,
+    theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt},
+    ui_commands::SetCursorExt,
     ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-    CardinalDirection, UiUtils,
+    CardinalDirection, FluxInteraction, FluxInteractionUpdate, TrackedInteraction, UiUtils,
 };
 
 use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
-    drag_interaction::Draggable,
     interactions::InteractiveBackground,
-    theme::prelude::*,
-    ui_commands::SetCursorExt,
-    widgets::prelude::UiContainerExt,
-    FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
+
+use super::container::UiContainerExt;
 
 const RESIZE_HANDLES_LOCAL_Z_INDEX: i32 = 100;
 const HANDLE_NORTH: &'static str = "HandleNorth";

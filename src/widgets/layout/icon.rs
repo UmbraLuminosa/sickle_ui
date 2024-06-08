@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
+use sickle_ui_scaffold::{
     ui_builder::*,
     ui_style::{ImageSource, SetImageExt},
 };

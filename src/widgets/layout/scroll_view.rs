@@ -1,16 +1,24 @@
-use bevy::{input::mouse::MouseScrollUnit, prelude::*, ui::{FocusPolicy, RelativeCursorPosition}};
-use sickle_math::ease::Ease;
+use bevy::{
+    input::mouse::MouseScrollUnit,
+    prelude::*,
+    ui::{FocusPolicy, RelativeCursorPosition},
+};
 
-use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
+use sickle_math::ease::Ease;
+use sickle_ui_scaffold::{
     drag_interaction::{DragState, Draggable, DraggableUpdate},
-    interactions::InteractiveBackground,
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
     ui_style::{SetPaddingExt, TrackedStyleState, UiStyleExt},
-    widgets::prelude::UiContainerExt,
     TrackedInteraction,
 };
+
+use crate::{
+    animated_interaction::{AnimatedInteraction, AnimationConfig},
+    interactions::InteractiveBackground,
+};
+
+use super::container::UiContainerExt;
 
 pub struct ScrollViewPlugin;
 

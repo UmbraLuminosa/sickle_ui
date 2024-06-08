@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::ui_builder::*;
+use sickle_ui_scaffold::ui_builder::{UiBuilder, UiRoot};
 
 pub trait UiContainerExt<'w, 's> {
     fn container<'a>(

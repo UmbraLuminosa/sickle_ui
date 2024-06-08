@@ -3,7 +3,6 @@ pub mod layout;
 pub mod menus;
 
 use bevy::prelude::*;
-use menus::menu_separators::MenuSeparatorPlugin;
 
 use self::{
     inputs::checkbox::CheckboxPlugin,
@@ -21,6 +20,7 @@ use self::{
     menus::menu::MenuPlugin,
     menus::menu_bar::MenuBarPlugin,
     menus::menu_item::MenuItemPlugin,
+    menus::menu_separators::MenuSeparatorPlugin,
     menus::shortcut::ShortcutPlugin,
     menus::submenu::SubmenuPlugin,
     menus::toggle_menu_item::ToggleMenuItemPlugin,
@@ -29,14 +29,42 @@ use self::{
 // TODO: Re-organize prelude
 pub mod prelude {
     pub use super::{
-        inputs::checkbox::*, inputs::dropdown::*, inputs::radio_group::*, inputs::slider::*,
-        layout::column::*, layout::container::*, layout::docking_zone::*,
-        layout::floating_panel::*, layout::foldable::*, layout::icon::*, layout::label::*,
-        layout::panel::*, layout::resize_handles::*, layout::row::*, layout::scroll_view::*,
-        layout::sized_zone::*, layout::tab_container::*, menus::context_menu::*, menus::menu::*,
-        menus::menu_bar::*, menus::menu_item::*, menus::menu_separators::*, menus::shortcut::*,
-        menus::submenu::*, menus::toggle_menu_item::*, WidgetLibraryUpdate,
+        // TODO: Add missing system sets
+        inputs::checkbox::{Checkbox, UiCheckboxExt},
+        inputs::dropdown::{Dropdown, UiDropdownExt},
+        inputs::radio_group::{RadioGroup, RadioGroupUpdate, UiRadioGroupExt},
+        inputs::slider::{Slider, UiSliderExt},
+        layout::column::UiColumnExt,
+        layout::container::UiContainerExt,
+        layout::docking_zone::UiDockingZoneExt,
+        layout::floating_panel::{FloatingPanelConfig, FloatingPanelLayout, UiFloatingPanelExt},
+        layout::foldable::{Foldable, FoldableUpdate, UiFoldableExt},
+        layout::icon::UiIconExt,
+        layout::label::{LabelConfig, UiLabelExt},
+        layout::panel::UiPanelExt,
+        layout::resize_handles::{ResizeHandle, UiResizeHandlesExt},
+        layout::row::UiRowExt,
+        layout::scroll_view::{ScrollViewLayoutUpdate, UiScrollViewExt},
+        layout::sized_zone::{SizedZoneConfig, SizedZonePreUpdate, UiSizedZoneExt},
+        layout::tab_container::{TabContainerUpdate, UiTabContainerExt, UiTabContainerSubExt},
+        menus::context_menu::{
+            ContextMenuGenerator, ContextMenuUpdate, ReflectContextMenuGenerator, UiContextMenuExt,
+        },
+        menus::extra_menu::{ExtraMenu, UiExtraMenuExt},
+        menus::menu::{MenuConfig, MenuUpdate, UiMenuExt, UiMenuSubExt},
+        menus::menu_bar::{UiMenuBarExt, UiMenuBarSubExt},
+        menus::menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate, UiMenuItemExt},
+        menus::menu_separators::{UiMenuItemSeparatorExt, UiMenuSeparatorExt},
+        menus::shortcut::{Shortcut, ShortcutPreUpdate},
+        menus::submenu::{SubmenuConfig, SubmenuUpdate, UiSubmenuExt, UiSubmenuSubExt},
+        menus::toggle_menu_item::{
+            ToggleMenuItemConfig, ToggleMenuItemUpdate, UiToggleMenuItemExt,
+        },
+        WidgetLibraryUpdate,
     };
+
+    // Used with scroll views, floating panels, etc. often
+    pub use sickle_ui_scaffold::scroll_interaction::ScrollAxis;
 }
 
 pub struct WidgetsPlugin;

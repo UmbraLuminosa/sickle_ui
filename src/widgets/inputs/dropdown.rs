@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use crate::{
+use sickle_ui_scaffold::{
     theme::prelude::*,
     ui_builder::UiBuilder,
     ui_commands::ManagePseudoStateExt,
@@ -11,11 +11,14 @@ use crate::{
         SetFocusPolicyUncheckedExt, SetHeightUncheckedExt, SetVisibilityUncheckedExt, StyleBuilder,
         TrackedStyleState, UiStyleUncheckedExt,
     },
-    widgets::prelude::{
-        LabelConfig, ScrollView, ScrollViewLayoutUpdate, UiContainerExt, UiLabelExt, UiPanelExt,
-        UiScrollViewExt,
-    },
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction, UiUtils,
+};
+
+use crate::widgets::layout::{
+    container::UiContainerExt,
+    label::{LabelConfig, UiLabelExt},
+    panel::UiPanelExt,
+    scroll_view::{ScrollView, ScrollViewLayoutUpdate, UiScrollViewExt},
 };
 
 const DROPDOWN_PANEL_Z_INDEX: usize = 11000;

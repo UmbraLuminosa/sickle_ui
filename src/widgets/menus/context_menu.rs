@@ -1,14 +1,13 @@
 use bevy::{ecs::system::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow};
+
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::{
-    theme::theme_colors::Accent,
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes},
-};
-
-use crate::{
     theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
-    ui_style::{SetAbsolutePositionExt, SetPositionTypeExt, StyleBuilder, UiStyleExt},
+    ui_style::{
+        LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt, SetPositionTypeExt,
+        StyleBuilder, UiStyleExt,
+    },
     FluxInteractionUpdate,
 };
 

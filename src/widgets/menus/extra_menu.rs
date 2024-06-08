@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{ui_builder::*, widgets::prelude::UiContainerExt};
+use sickle_ui_scaffold::ui_builder::{UiBuilder, UiBuilderExt};
+
+use crate::widgets::layout::container::UiContainerExt;
 
 use super::menu_bar::{MenuBar, UiMenuBarSubExt};
 

@@ -1,20 +1,17 @@
 use bevy::{prelude::*, ui::FocusPolicy};
-use sickle_ui_scaffold::{
-    ui_commands::ManagePseudoStateExt,
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-};
 
-use crate::{
+use sickle_ui_scaffold::{
     theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt},
-    widgets::prelude::MenuItemConfig,
+    ui_commands::ManagePseudoStateExt,
+    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
     FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
 };
 
 use super::{
     context_menu::{ContextMenu, ContextMenuUpdate, UiContextMenuExt},
     menu::{Menu, MenuUpdate, UiMenuSubExt},
-    menu_item::MenuItem,
+    menu_item::{MenuItem, MenuItemConfig},
 };
 
 const MENU_CONTAINER_FADE_TIMEOUT: f32 = 1.;

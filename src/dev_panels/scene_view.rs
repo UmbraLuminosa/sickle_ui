@@ -10,19 +10,22 @@ use bevy::{
     utils::HashMap,
 };
 
-use crate::{
-    ui_builder::*,
+use sickle_ui_scaffold::{
+    ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
         SetBackgroundColorExt, SetHeightExt, SetJustifySelfExt, SetMinWidthExt, SetPositionTypeExt,
         SetWidthExt,
     },
-    widgets::{
-        prelude::{
-            Checkbox, RadioGroup, Slider, SliderAxis, SliderConfig, UiCheckboxExt, UiColumnExt,
-            UiRadioGroupExt, UiRowExt, UiSliderExt,
-        },
-        WidgetLibraryUpdate,
+};
+
+use crate::widgets::{
+    inputs::{
+        checkbox::{Checkbox, UiCheckboxExt},
+        radio_group::{RadioGroup, UiRadioGroupExt},
+        slider::{Slider, SliderAxis, SliderConfig, UiSliderExt},
     },
+    layout::{column::UiColumnExt, row::UiRowExt},
+    WidgetLibraryUpdate,
 };
 
 pub struct SceneViewPlugin;

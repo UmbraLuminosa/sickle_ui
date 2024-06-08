@@ -4,7 +4,7 @@ use bevy::{
     ui::FocusPolicy,
 };
 
-use crate::ui_builder::*;
+use sickle_ui_scaffold::ui_builder::UiBuilder;
 
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]

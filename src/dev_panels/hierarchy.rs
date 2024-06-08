@@ -1,16 +1,25 @@
 use bevy::prelude::*;
-use sickle_ui_scaffold::{theme::icons::IconData, FluxInteraction};
 
-use crate::{
+use sickle_ui_scaffold::{
+    theme::icons::IconData,
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{
         SetBackgroundColorExt, SetBorderColorExt, SetBorderExt, SetMarginExt, SetPaddingExt,
         SetWidthExt, UiStyleExt,
     },
-    widgets::prelude::{
-        Foldable, MenuItem, MenuItemConfig, SizedZoneConfig, UiColumnExt, UiFoldableExt,
-        UiMenuItemExt, UiPanelExt, UiRowExt, UiScrollViewExt, UiSizedZoneExt,
+    FluxInteraction,
+};
+
+use crate::widgets::{
+    layout::{
+        column::UiColumnExt,
+        foldable::{Foldable, UiFoldableExt},
+        panel::UiPanelExt,
+        row::UiRowExt,
+        scroll_view::UiScrollViewExt,
+        sized_zone::{SizedZoneConfig, UiSizedZoneExt},
     },
+    menus::menu_item::{MenuItem, MenuItemConfig, UiMenuItemExt},
 };
 
 use super::entity_component_list::{

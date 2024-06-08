@@ -1,11 +1,11 @@
 use bevy::prelude::*;
+
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::{
+    theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::StyleBuilder,
 };
-
-use crate::theme::prelude::*;
 
 use super::{
     context_menu::{ContextMenu, UiContextMenuExt},

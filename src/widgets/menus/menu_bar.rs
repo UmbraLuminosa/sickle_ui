@@ -1,13 +1,9 @@
 use bevy::prelude::*;
 
-use crate::ui_builder::*;
-
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::{
-    theme::{
-        theme_colors::Container, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
-        PseudoTheme, Theme, UiContext,
-    },
+    theme::prelude::*,
+    ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
 };
 

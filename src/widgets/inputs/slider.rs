@@ -1,14 +1,20 @@
-use bevy::{input::mouse::MouseScrollUnit, ui::RelativeCursorPosition, prelude::*};
+use bevy::{input::mouse::MouseScrollUnit, prelude::*, ui::RelativeCursorPosition};
+
 use sickle_math::ease::Ease;
+use sickle_ui_scaffold::{
+    drag_interaction::{DragState, Draggable, DraggableUpdate},
+    scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
+    ui_builder::UiBuilder,
+    TrackedInteraction,
+};
 
 use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
-    drag_interaction::{DragState, Draggable, DraggableUpdate},
     interactions::InteractiveBackground,
-    scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
-    ui_builder::UiBuilder,
-    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
-    TrackedInteraction,
+    widgets::layout::{
+        container::UiContainerExt,
+        label::{LabelConfig, UiLabelExt},
+    },
 };
 
 pub struct SliderPlugin;

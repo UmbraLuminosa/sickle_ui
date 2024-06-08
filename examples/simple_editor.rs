@@ -14,7 +14,7 @@ use sickle_ui::{
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::{SetBackgroundColorExt, SetHeightExt, SetJustifyContentsExt, SetWidthExt},
-    widgets::{menus::extra_menu::UiExtraMenuExt, prelude::*},
+    widgets::prelude::*,
     SickleUiPlugin,
 };
 
