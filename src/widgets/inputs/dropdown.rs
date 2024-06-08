@@ -366,10 +366,10 @@ impl Dropdown {
             .justify_content(JustifyContent::SpaceBetween)
             .background_color(colors.container(Container::Primary))
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
-            .min_height(Val::Px(theme_spacing.areas.medium))
+            .height(Val::Px(theme_spacing.areas.small))
             .padding(UiRect::axes(
                 Val::Px(theme_spacing.gaps.medium),
-                Val::Px(theme_spacing.gaps.small),
+                Val::Px(theme_spacing.gaps.extra_small),
             ))
             .animated()
             .border_color(AnimatedVals {

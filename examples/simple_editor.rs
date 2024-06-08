@@ -6,11 +6,7 @@ use sickle_ui::{
         hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
         scene_view::{SceneView, SceneViewPlugin, SpawnSceneViewPreUpdate, UiSceneViewExt},
     },
-    theme::{
-        icons::IconData,
-        theme_data::{Contrast, Scheme, ThemeData},
-        PseudoTheme, Theme,
-    },
+    theme::prelude::*,
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::prelude::*,
@@ -467,23 +463,12 @@ fn setup(
             bar.separator();
 
             bar.extra_menu(|extra| {
-                let narrow_dropdown = PseudoTheme::deferred(None, |style_builder, theme_data| {
-                    let theme_spacing = theme_data.spacing;
-                    style_builder
-                        .min_height(Val::Px(theme_spacing.areas.small))
-                        .padding(UiRect::axes(
-                            Val::Px(theme_spacing.gaps.medium),
-                            Val::Px(theme_spacing.gaps.extra_small),
-                        ));
-                });
-                let narrow_theme = Theme::<Dropdown>::new(vec![narrow_dropdown]);
-
                 extra
-                    .radio_group(vec!["Light", "Dark"], false)
+                    .radio_group(vec!["Light", "Dark"], 1, false)
                     .insert(ThemeSwitch);
                 extra
                     .dropdown(vec!["Standard", "Medium Contrast", "High Contrast"], 0)
-                    .insert((ThemeContrastSelect, narrow_theme))
+                    .insert(ThemeContrastSelect)
                     .style()
                     .width(Val::Px(150.));
             });
@@ -668,7 +653,11 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                         true,
                         |tab_container| {
                             tab_container.add_tab("Placeholder".into(), |placeholder| {
-                                placeholder.radio_group(vec!["Light", "Dark"], false);
+                                placeholder.row(|row| {
+                                    row.checkbox(None, false);
+                                    row.radio_group(vec!["Light", "Dark"], 1, false);
+                                });
+
                                 placeholder.row(|row| {
                                     row.style().justify_content(JustifyContent::SpaceBetween);
                                     row.dropdown(
@@ -729,7 +718,7 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                                         ],
                                         None,
                                     );
-
+                                    row.checkbox(None, false);
                                     row.dropdown(
                                         vec![
                                             "Standard",

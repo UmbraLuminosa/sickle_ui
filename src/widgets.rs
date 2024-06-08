@@ -28,15 +28,16 @@ use self::{
 
 pub mod prelude {
     pub use super::{
-        // TODO: Add missing system sets
         inputs::checkbox::{Checkbox, UiCheckboxExt},
         inputs::dropdown::{Dropdown, UiDropdownExt},
-        inputs::radio_group::{RadioGroup, RadioGroupUpdate, UiRadioGroupExt},
+        inputs::radio_group::{RadioGroup, UiRadioGroupExt},
         inputs::slider::{Slider, UiSliderExt},
         layout::column::UiColumnExt,
         layout::container::UiContainerExt,
         layout::docking_zone::UiDockingZoneExt,
-        layout::floating_panel::{FloatingPanelConfig, FloatingPanelLayout, UiFloatingPanelExt},
+        layout::floating_panel::{
+            FloatingPanelConfig, FloatingPanelLayout, FloatingPanelUpdate, UiFloatingPanelExt,
+        },
         layout::foldable::{Foldable, FoldableUpdate, UiFoldableExt},
         layout::icon::UiIconExt,
         layout::label::{LabelConfig, UiLabelExt},

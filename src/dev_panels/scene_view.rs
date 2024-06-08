@@ -169,7 +169,7 @@ fn spawn_scene_view(
                 .position_type(PositionType::Absolute);
 
             scene_controls
-                .checkbox("Rotate Scene".into(), false)
+                .checkbox(Some("Rotate Scene".into()), false)
                 .insert(SceneRotationControl {
                     scene_view: container,
                 });
@@ -189,7 +189,7 @@ fn spawn_scene_view(
                 .min_width(Val::Px(250.));
             scene_controls
                 .row(|row| {
-                    row.radio_group(vec!["Natural", "Dim", "Night"], true)
+                    row.radio_group(vec!["Natural", "Dim", "Night"], 1, true)
                         .insert(SceneLightControl {
                             scene_view: container,
                         })

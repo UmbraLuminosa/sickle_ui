@@ -119,9 +119,7 @@ impl Checkbox {
             .height(Val::Px(theme_spacing.inputs.checkbox.line_height))
             .justify_content(JustifyContent::Start)
             .align_items(AlignItems::Center)
-            .padding(UiRect::all(Val::Px(
-                theme_spacing.inputs.checkbox.line_padding(),
-            )))
+            .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.small)))
             .background_color(Color::NONE);
 
         style_builder
@@ -217,8 +215,12 @@ impl Checkbox {
             .copy_from(theme_data.enter_animation);
     }
 
-    fn checkbox_container() -> impl Bundle {
-        (ButtonBundle::default(), TrackedInteraction::default())
+    fn checkbox_container(name: String) -> impl Bundle {
+        (
+            Name::new(name),
+            ButtonBundle::default(),
+            TrackedInteraction::default(),
+        )
     }
 
     fn checkmark_background() -> impl Bundle {
@@ -251,49 +253,48 @@ impl Checkbox {
 pub trait UiCheckboxExt<'w, 's> {
     fn checkbox<'a>(
         &'a mut self,
-        label: Option<impl Into<String>>,
-        value: bool,
+        label: Option<String>,
+        checked: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
 impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn checkbox<'a>(
         &'a mut self,
-        label: Option<impl Into<String>>,
-        value: bool,
+        label: Option<String>,
+        checked: bool,
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let mut checkmark_background: Entity = Entity::PLACEHOLDER;
-        let mut checkmark: Entity = Entity::PLACEHOLDER;
-        let mut label_id: Entity = Entity::PLACEHOLDER;
-        let mut name_attr: String = String::from("Checkbox");
+        let mut checkbox = Checkbox {
+            checked,
+            ..default()
+        };
 
-        let mut input = self.container(Checkbox::checkbox_container(), |container| {
-            checkmark_background = container
+        let label = match label {
+            Some(into_string) => into_string,
+            None => "".into(),
+        };
+        let has_label = label.len() > 0;
+        let name = match has_label {
+            true => format!("Checkbox [{}]", label.clone()),
+            false => "Checkbox".into(),
+        };
+
+        let mut input = self.container(Checkbox::checkbox_container(name), |container| {
+            checkbox.checkmark_background = container
                 .container(Checkbox::checkmark_background(), |checkmark_bg| {
-                    checkmark = checkmark_bg.spawn(Checkbox::checkmark()).id();
+                    checkbox.checkmark = checkmark_bg.spawn(Checkbox::checkmark()).id();
                 })
                 .id();
 
-            if let Some(label) = label {
-                let label_string: String = label.into();
-                name_attr = format!("Checkbox [{}]", label_string.clone());
-                label_id = container
-                    .label(LabelConfig {
-                        label: label_string.clone(),
-                        ..default()
-                    })
-                    .id();
-            }
+            checkbox.label = container
+                .label(LabelConfig { label, ..default() })
+                .style()
+                .render(has_label)
+                .id();
         });
 
-        let checkbox = Checkbox {
-            checked: value,
-            checkmark_background,
-            checkmark,
-            label: label_id,
-        };
+        input.insert(checkbox);
 
-        input.insert((Name::new(name_attr), checkbox));
         input
     }
 }

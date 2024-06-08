@@ -240,7 +240,7 @@ impl MenuItem {
 
         style_builder
             .switch_target(MenuItem::LABEL)
-            .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.medium)))
+            .margin(UiRect::horizontal(Val::Px(theme_spacing.gaps.small)))
             .sized_font(font.clone())
             .font_color(colors.on(On::Surface));
 

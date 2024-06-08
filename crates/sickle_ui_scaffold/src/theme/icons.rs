@@ -60,12 +60,15 @@ pub struct Icons {
     pub expand_less: IconData,
     pub expand_more: IconData,
     pub open_in_new: IconData,
+    pub radio_button_checked: IconData,
+    pub radio_button_unchecked: IconData,
     pub redo: IconData,
     pub submenu: IconData,
     pub undo: IconData,
     pub custom: Vec<CustomIconData>,
 }
 
+// TODO: create codepoint parser?
 impl Default for Icons {
     fn default() -> Self {
         Self {
@@ -120,6 +123,18 @@ impl Default for Icons {
             open_in_new: IconData::FontCodepoint(
                 "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
                 '\u{E89E}',
+                Color::WHITE,
+                12.,
+            ),
+            radio_button_checked: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E837}',
+                Color::WHITE,
+                12.,
+            ),
+            radio_button_unchecked: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E836}',
                 Color::WHITE,
                 12.,
             ),

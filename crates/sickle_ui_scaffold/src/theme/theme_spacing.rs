@@ -43,10 +43,6 @@ pub struct CheckboxSizes {
 }
 
 impl CheckboxSizes {
-    pub fn line_padding(&self) -> f32 {
-        (self.line_height - self.checkbox_size - 2. * self.border_size) / 2.
-    }
-
     pub fn checkbox_size(&self) -> f32 {
         self.checkbox_size + 2. * self.border_size
     }
@@ -122,7 +118,7 @@ impl Default for ThemeSpacing {
                 checkbox: CheckboxSizes {
                     line_height: 32.,
                     border_size: 1.,
-                    checkbox_size: 14.,
+                    checkbox_size: 12.,
                     checkmark_size: 14.,
                 },
             },
