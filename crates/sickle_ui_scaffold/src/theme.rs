@@ -112,7 +112,10 @@ impl PseudoTheme {
     }
 
     pub fn is_base_theme(&self) -> bool {
-        self.state.is_none()
+        match &self.state {
+            Some(list) => list.is_empty(),
+            None => true,
+        }
     }
 
     pub fn count_match(&self, node_states: &Vec<PseudoState>) -> usize {
@@ -265,7 +268,6 @@ where
     C: DefaultTheme,
 {
     fn build(&self, app: &mut App) {
-        // TODO: only add systems when theming cfg is set
         match self.is_custom {
             true => app.add_systems(PostUpdate, Theme::<C>::custom_post_update()),
             false => app.add_systems(PostUpdate, Theme::<C>::post_update()),
