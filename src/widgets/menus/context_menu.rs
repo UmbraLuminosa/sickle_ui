@@ -1,16 +1,21 @@
 use bevy::{ecs::system::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow};
 use sickle_macros::UiContext;
+use sickle_ui_scaffold::{
+    theme::theme_colors::Accent,
+    ui_style::{LockableStyleAttribute, LockedStyleAttributes},
+};
 
 use crate::{
     theme::{
-        theme_colors::{Container, Surface},
-        theme_data::ThemeData,
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
+        theme_colors::Container, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
+        PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{SetAbsolutePositionExt, SetPositionTypeExt, StyleBuilder, UiStyleExt},
     FluxInteractionUpdate,
 };
+
+use super::menu_separators::UiMenuItemSeparatorExt;
 
 const MENU_CONTAINER_Z_INDEX: i32 = 100002;
 
@@ -200,25 +205,29 @@ fn generate_context_menu(world: &mut World) {
 
     let mut queue = CommandQueue::default();
     let mut commands = Commands::new(&mut queue, world);
+    let name = format!("Context Menu of [{:?}]", entity);
 
     let container_id = commands
         .ui_builder(root_node)
-        .spawn((
-            Name::new(format!("Context Menu of [{:?}]", entity)),
-            ContextMenu::frame(),
-            ContextMenu { context: entity },
-        ))
+        .spawn(ContextMenu::frame(name))
         .id();
 
+    let context_menu = ContextMenu {
+        context: entity,
+        container: container_id,
+    };
+
+    commands.entity(container_id).insert(context_menu);
+
+    let builder = &mut commands.ui_builder(context_menu);
     let mut last_index = 0;
     for generator in generators {
         if generator.placement_index() > last_index + 1 {
-            // TODO: Fix separator
-            // commands.ui_builder(container_id).separator();
+            builder.separator();
         }
         last_index = generator.placement_index();
 
-        generator.build_context_menu(entity, &mut commands.ui_builder(container_id));
+        generator.build_context_menu(entity, builder);
     }
 
     queue.apply(world);
@@ -303,7 +312,7 @@ pub struct ContextMenuUpdate;
 
 #[reflect_trait]
 pub trait ContextMenuGenerator {
-    fn build_context_menu(&self, context: Entity, container: &mut UiBuilder<Entity>);
+    fn build_context_menu(&self, context: Entity, container: &mut UiBuilder<ContextMenu>);
     fn placement_index(&self) -> usize;
 }
 
@@ -320,16 +329,18 @@ impl GenerateContextMenu {
     }
 }
 
-#[derive(Component, Clone, Debug, Reflect, UiContext)]
+#[derive(Component, Clone, Copy, Debug, Reflect, UiContext)]
 #[reflect(Component)]
 pub struct ContextMenu {
     context: Entity,
+    container: Entity,
 }
 
 impl Default for ContextMenu {
     fn default() -> Self {
         Self {
             context: Entity::PLACEHOLDER,
+            container: Entity::PLACEHOLDER,
         }
     }
 }
@@ -358,25 +369,40 @@ impl ContextMenu {
             .max_height(Val::Percent(100.))
             .position_type(PositionType::Absolute)
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
-            .padding(UiRect::px(
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.small,
-                theme_spacing.gaps.medium,
-            ))
+            .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
             .background_color(colors.container(Container::SurfaceHigh))
-            .border_color(colors.surface(Surface::SurfaceVariant))
-            .visibility(Visibility::Hidden)
-            .focus_policy(FocusPolicy::Block);
+            .border_color(colors.accent(Accent::Shadow))
+            .visibility(Visibility::Hidden);
     }
 
-    fn frame() -> impl Bundle {
+    fn frame(name: String) -> impl Bundle {
         (
-            Name::new("Context Menu"),
-            NodeBundle::default(),
+            Name::new(name),
+            NodeBundle {
+                style: Style {
+                    overflow: Overflow::visible(),
+                    ..default()
+                },
+                focus_policy: FocusPolicy::Block,
+                ..default()
+            },
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FocusPolicy,
+                LockableStyleAttribute::Overflow,
+            ]),
             Interaction::default(),
         )
+    }
+}
+
+pub trait UiContextMenuExt<'w, 's> {
+    fn container(&self) -> Entity;
+}
+
+impl<'w, 's> UiContextMenuExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
+    fn container(&self) -> Entity {
+        self.context().container
     }
 }

@@ -13,6 +13,7 @@ use sickle_ui_scaffold::{
 use crate::ui_builder::UiBuilder;
 
 use super::{
+    context_menu::{ContextMenu, UiContextMenuExt},
     menu::{Menu, UiMenuSubExt},
     menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate},
     shortcut::Shortcut,
@@ -247,6 +248,22 @@ impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
 }
 
 impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+    fn toggle_menu_item<'a>(
+        &'a mut self,
+        config: ToggleMenuItemConfig,
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .toggle_menu_item(config)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
     fn toggle_menu_item<'a>(
         &'a mut self,
         config: ToggleMenuItemConfig,

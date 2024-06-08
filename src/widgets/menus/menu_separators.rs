@@ -10,8 +10,10 @@ use sickle_ui_scaffold::{
 };
 
 use super::{
+    context_menu::{ContextMenu, UiContextMenuExt},
     menu::{Menu, UiMenuSubExt},
     menu_bar::{MenuBar, UiMenuBarSubExt},
+    submenu::{Submenu, UiSubmenuSubExt},
 };
 
 pub struct MenuSeparatorPlugin;
@@ -113,6 +115,32 @@ pub trait UiMenuItemSeparatorExt<'w, 's> {
 }
 
 impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .spawn((MenuItemSeparator::separator(), MenuItemSeparator))
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .spawn((MenuItemSeparator::separator(), MenuItemSeparator))
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
     fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
         let container_id = self.container();
         let id = self

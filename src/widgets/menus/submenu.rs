@@ -1,32 +1,33 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::FocusPolicy};
 use sickle_ui_scaffold::{
     theme::{
-        icons::IconData, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme, PseudoTheme,
-        Theme, UiContext,
+        icons::IconData,
+        pseudo_state::PseudoState,
+        theme_colors::{Accent, Container},
+        theme_data::ThemeData,
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
-    ui_style::StyleBuilder,
+    ui_commands::ManagePseudoStateExt,
+    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
 };
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{SetBackgroundColorExt, SetVisibilityExt, UiStyleExt},
     widgets::prelude::MenuItemConfig,
     FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
 };
 
 use super::{
-    context_menu::ContextMenuUpdate,
+    context_menu::{ContextMenu, ContextMenuUpdate, UiContextMenuExt},
     menu::{Menu, MenuUpdate, UiMenuSubExt},
     menu_item::MenuItem,
 };
 
-const MENU_CONTAINER_Z_INDEX: i32 = 100001;
 const MENU_CONTAINER_FADE_TIMEOUT: f32 = 1.;
 const MENU_CONTAINER_SWITCH_TIMEOUT: f32 = 0.3;
 
 // TODO: Add vertically scrollable container and height constraint
 // TODO: Best effort position submenu within window bounds
-// TODO: lock clip of button
 pub struct SubmenuPlugin;
 
 impl Plugin for SubmenuPlugin {
@@ -47,7 +48,6 @@ impl Plugin for SubmenuPlugin {
                 open_submenu_on_hover,
                 close_submenus_on_menu_change,
                 update_open_submenu_containers,
-                update_submenu_container_visibility,
                 update_submenu_state,
                 update_submenu_style,
             )
@@ -69,14 +69,12 @@ fn unlock_submenu_container_on_menu_interaction(
             continue;
         }
 
-        if let Some(external_container) = container.external_container {
-            let Ok(interaction) = q_external_interaction.get(external_container) else {
-                continue;
-            };
+        let Ok(interaction) = q_external_interaction.get(container.external_container) else {
+            continue;
+        };
 
-            if interaction.is_changed() {
-                state.is_locked = false;
-            }
+        if interaction.is_changed() {
+            state.is_locked = false;
         }
     }
 }
@@ -111,7 +109,7 @@ fn open_submenu_on_hover(
     )>,
     mut q_containers: Query<(Entity, &mut SubmenuContainer, &mut SubmenuContainerState)>,
 ) {
-    let mut opened: Option<(Entity, Option<Entity>)> = None;
+    let mut opened: Option<(Entity, Entity)> = None;
     for (entity, submenu, interaction, stopwatch) in &q_submenus {
         if *interaction == FluxInteraction::PointerEnter {
             let Ok((entity, mut container, mut state)) = q_containers.get_mut(submenu.container)
@@ -178,16 +176,15 @@ fn update_open_submenu_containers(world: &mut World) {
     for (entity, container) in q_changed.iter(world) {
         if container.is_open {
             open_container = entity.into();
-            open_external = container.external_container;
+            open_external = container.external_container.into();
         } else {
             containers_closed.push(entity);
         }
     }
 
-    if let Some(open) = open_container {
+    if let (Some(open), Some(external)) = (open_container, open_external) {
         for (entity, mut container) in q_all_containers.iter_mut(world) {
-            if container.external_container == open_external && container.is_open && entity != open
-            {
+            if container.external_container == external && container.is_open && entity != open {
                 container.is_open = false;
                 sibling_containers.push(entity);
             }
@@ -200,18 +197,6 @@ fn update_open_submenu_containers(world: &mut World) {
 
     for entity in containers_closed.iter() {
         close_containers_of(world, *entity);
-    }
-}
-
-fn update_submenu_container_visibility(
-    q_submenus: Query<(Entity, &SubmenuContainer), Changed<SubmenuContainer>>,
-    mut commands: Commands,
-) {
-    for (entity, container) in &q_submenus {
-        commands.style(entity).visibility(match container.is_open {
-            true => Visibility::Inherited,
-            false => Visibility::Hidden,
-        });
     }
 }
 
@@ -228,12 +213,17 @@ fn update_submenu_state(
     }
 }
 
-fn update_submenu_style(q_submenus: Query<(Entity, Ref<Submenu>)>, mut commands: Commands) {
+fn update_submenu_style(
+    q_submenus: Query<(Entity, &Submenu), Changed<Submenu>>,
+    mut commands: Commands,
+) {
     for (entity, submenu) in &q_submenus {
         if submenu.is_open {
-            commands.style(entity).background_color(Color::DARK_GRAY);
-        } else if submenu.is_changed() {
-            commands.style(entity).background_color(Color::NONE);
+            commands.entity(entity).add_pseudo_state(PseudoState::Open);
+        } else {
+            commands
+                .entity(entity)
+                .remove_pseudo_state(PseudoState::Open);
         }
     }
 }
@@ -262,11 +252,20 @@ pub struct SubmenuContainerState {
     is_locked: bool,
 }
 
-#[derive(Component, Clone, Debug, Default, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct SubmenuContainer {
     is_open: bool,
-    external_container: Option<Entity>,
+    external_container: Entity,
+}
+
+impl Default for SubmenuContainer {
+    fn default() -> Self {
+        Self {
+            is_open: Default::default(),
+            external_container: Entity::PLACEHOLDER,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -293,7 +292,7 @@ pub struct Submenu {
     is_open: bool,
     is_focused: bool,
     container: Entity,
-    external_container: Option<Entity>,
+    external_container: Entity,
     leading: Entity,
     leading_icon: IconData,
     label: Entity,
@@ -309,7 +308,7 @@ impl Default for Submenu {
             is_open: false,
             is_focused: false,
             container: Entity::PLACEHOLDER,
-            external_container: None,
+            external_container: Entity::PLACEHOLDER,
             leading: Entity::PLACEHOLDER,
             leading_icon: Default::default(),
             label: Entity::PLACEHOLDER,
@@ -326,11 +325,11 @@ impl Into<Submenu> for MenuItem {
         Submenu {
             is_open: false,
             is_focused: false,
-            external_container: None,
+            external_container: Entity::PLACEHOLDER,
             container: Entity::PLACEHOLDER,
             label: self.label(),
             leading: self.leading(),
-            leading_icon: self.trailing_icon(),
+            leading_icon: self.leading_icon(),
             shortcut_container: self.shortcut_container(),
             shortcut: self.shortcut(),
             trailing: self.trailing(),
@@ -379,8 +378,9 @@ impl Submenu {
 
     pub fn theme() -> Theme<Submenu> {
         let base_theme = PseudoTheme::deferred_world(None, Submenu::primary_style);
+        let open_theme = PseudoTheme::deferred_world(vec![PseudoState::Open], Submenu::open_style);
 
-        Theme::<Submenu>::new(vec![base_theme])
+        Theme::<Submenu>::new(vec![base_theme, open_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
@@ -389,36 +389,65 @@ impl Submenu {
         };
 
         let theme_data = world.resource::<ThemeData>().clone();
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
         let leading_icon = menu_item.leading_icon.clone();
         let trailing_icon = theme_data.icons.arrow_right;
 
         MenuItem::menu_item_style(style_builder, world, leading_icon, trailing_icon);
-    }
-}
 
-impl SubmenuContainer {
-    fn frame() -> impl Bundle {
+        style_builder
+            .switch_target(Submenu::MENU_CONTAINER)
+            .position_type(PositionType::Absolute)
+            .top(Val::Px(0.))
+            .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
+            .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
+            .flex_direction(FlexDirection::Column)
+            .z_index(ZIndex::Local(1))
+            .background_color(colors.container(Container::SurfaceHigh))
+            .border_color(colors.accent(Accent::Shadow))
+            .display(Display::None)
+            .visibility(Visibility::Hidden);
+    }
+
+    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+        let theme_data = world.resource::<ThemeData>().clone();
+        let colors = theme_data.colors();
+
+        style_builder.background_color(colors.accent(Accent::OutlineVariant));
+
+        // Unsafe unwrap: if the menu item doesn't have a node, panic!
+        let node = world.get::<Node>(entity).unwrap();
+
+        style_builder
+            .switch_target(Submenu::MENU_CONTAINER)
+            .left(Val::Px(node.size().x))
+            .display(Display::Flex)
+            .visibility(Visibility::Inherited);
+    }
+
+    fn container_bundle(external_container: Entity) -> impl Bundle {
         (
+            Name::new("Submenu Container"),
             NodeBundle {
                 style: Style {
-                    left: Val::Percent(100.),
-                    position_type: PositionType::Absolute,
-                    border: UiRect::px(1., 1., 1., 1.),
-                    padding: UiRect::px(5., 5., 5., 10.),
-                    margin: UiRect::px(5., 0., -5., 0.),
-                    flex_direction: FlexDirection::Column,
-                    align_self: AlignSelf::FlexStart,
-                    align_items: AlignItems::Stretch,
+                    overflow: Overflow::visible(),
                     ..default()
                 },
-                z_index: ZIndex::Global(MENU_CONTAINER_Z_INDEX),
-                background_color: Color::rgb(0.1, 0.1, 0.1).into(),
-                border_color: Color::ANTIQUE_WHITE.into(),
-                focus_policy: bevy::ui::FocusPolicy::Block,
+                focus_policy: FocusPolicy::Block,
                 ..default()
             },
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FocusPolicy,
+                LockableStyleAttribute::Overflow,
+            ]),
             Interaction::default(),
             TrackedInteraction::default(),
+            SubmenuContainerState::default(),
+            SubmenuContainer {
+                external_container,
+                ..default()
+            },
         )
     }
 }
@@ -447,20 +476,12 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let external_container = Some(self.id());
+        let external_container = self.id();
         let (id, menu_item) = MenuItem::scaffold(self, config.into());
         let container = self
             .commands()
             .ui_builder(id)
-            .spawn((
-                Name::new("Submenu Container"),
-                SubmenuContainer::frame(),
-                SubmenuContainerState::default(),
-                SubmenuContainer {
-                    external_container,
-                    ..default()
-                },
-            ))
+            .spawn(Submenu::container_bundle(external_container))
             .id();
 
         let submenu = Submenu {
@@ -495,6 +516,23 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
 }
 
 impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+    fn submenu<'a>(
+        &'a mut self,
+        config: SubmenuConfig,
+        spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .submenu(config, spawn_items)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,

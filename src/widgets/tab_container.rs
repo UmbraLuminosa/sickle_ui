@@ -1,6 +1,6 @@
 use bevy::{ecs::system::Command, ui::RelativeCursorPosition, prelude::*};
 use sickle_math::ease::Ease;
-use sickle_ui_scaffold::theme::icons::IconData;
+use sickle_ui_scaffold::theme::theme_data::ThemeData;
 
 use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
@@ -16,7 +16,7 @@ use crate::{
 
 use super::{
     floating_panel::{FloatingPanel, FloatingPanelUpdate, UpdateFloatingPanelPanelId},
-    menus::context_menu::ContextMenuUpdate,
+    menus::context_menu::{ContextMenu, ContextMenuUpdate},
     panel::Panel,
     prelude::{
         ContextMenuGenerator, FloatingPanelConfig, FloatingPanelLayout, GenerateContextMenu,
@@ -607,24 +607,20 @@ impl Default for Tab {
 }
 
 impl ContextMenuGenerator for Tab {
-    fn build_context_menu(&self, context: Entity, container: &mut UiBuilder<Entity>) {
+    fn build_context_menu(&self, context: Entity, container: &mut UiBuilder<ContextMenu>) {
+        let icons = ThemeData::default().icons;
+
         container
             .menu_item(MenuItemConfig {
                 name: "Close Tab".into(),
-                leading_icon: IconData::Image(
-                    "embedded://sickle_ui/icons/close.png".into(),
-                    Color::WHITE,
-                ),
+                leading_icon: icons.close,
                 ..default()
             })
             .insert(CloseTabContextMenu { tab: context });
         container
             .menu_item(MenuItemConfig {
                 name: "Popout Tab".into(),
-                trailing_icon: IconData::Image(
-                    "embedded://sickle_ui/icons/popout_white.png".into(),
-                    Color::WHITE,
-                ),
+                trailing_icon: icons.open_in_new,
                 ..default()
             })
             .insert(PopoutTabContextMenu { tab: context });

@@ -231,12 +231,11 @@ fn setup(
                     .insert(Page::Playground);
 
                     menu.separator();
+
+                    let icons = ThemeData::default().icons;
                     menu.menu_item(MenuItemConfig {
                         name: "Exit".into(),
-                        leading_icon: IconData::Image(
-                            "embedded://sickle_ui/icons/exit_white.png".into(),
-                            Color::WHITE,
-                        ),
+                        leading_icon: icons.exit_to_app,
                         ..default()
                     })
                     .insert(ExitAppButton);
@@ -308,7 +307,7 @@ fn setup(
 
                     menu.submenu(
                         SubmenuConfig {
-                            name: "Exit".into(),
+                            name: "Submenu".into(),
                             ..default()
                         },
                         |submenu| {
@@ -332,6 +331,134 @@ fn setup(
                                 ),
                                 ..default()
                             });
+                        },
+                    );
+                },
+            );
+
+            bar.menu(
+                MenuConfig {
+                    name: "Test case".into(),
+                    alt_code: KeyCode::KeyS.into(),
+                    ..default()
+                },
+                |menu| {
+                    menu.menu_item(MenuItemConfig {
+                        name: "Standard menu item".into(),
+                        ..default()
+                    });
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with leading icon".into(),
+                        leading_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/details_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with trailing icon".into(),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+
+                    menu.menu_item(MenuItemConfig {
+                        name: "Menu item with both icons".into(),
+                        leading_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/details_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+
+                    menu.separator();
+
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Toggle item".into(),
+                        shortcut: vec![KeyCode::ControlLeft, KeyCode::KeyT].into(),
+                        ..default()
+                    });
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Already toggled item".into(),
+                        initially_checked: true,
+                        ..default()
+                    });
+                    menu.toggle_menu_item(ToggleMenuItemConfig {
+                        name: "Toggle item with trailing icon".into(),
+                        trailing_icon: IconData::Image(
+                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                            Color::WHITE,
+                        ),
+                        ..default()
+                    });
+
+                    menu.separator();
+
+                    menu.submenu(
+                        SubmenuConfig {
+                            name: "Submenu".into(),
+                            ..default()
+                        },
+                        |submenu| {
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Standard menu item".into(),
+                                ..default()
+                            });
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Menu item with leading icon".into(),
+                                leading_icon: IconData::Image(
+                                    "embedded://sickle_ui/icons/details_menu.png".into(),
+                                    Color::WHITE,
+                                ),
+                                ..default()
+                            });
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Menu item with trailing icon".into(),
+                                trailing_icon: IconData::Image(
+                                    "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                                    Color::WHITE,
+                                ),
+                                ..default()
+                            });
+
+                            submenu.submenu(
+                                SubmenuConfig {
+                                    name: "Submenu with lead icon".into(),
+                                    leading_icon: IconData::Image(
+                                        "embedded://sickle_ui/icons/details_menu.png".into(),
+                                        Color::WHITE,
+                                    ),
+                                    ..default()
+                                },
+                                |submenu| {
+                                    submenu.menu_item(MenuItemConfig {
+                                        name: "Standard menu item".into(),
+                                        ..default()
+                                    });
+                                    submenu.menu_item(MenuItemConfig {
+                                        name: "Menu item with leading icon".into(),
+                                        leading_icon: IconData::Image(
+                                            "embedded://sickle_ui/icons/details_menu.png".into(),
+                                            Color::WHITE,
+                                        ),
+                                        ..default()
+                                    });
+                                    submenu.menu_item(MenuItemConfig {
+                                        name: "Menu item with trailing icon".into(),
+                                        trailing_icon: IconData::Image(
+                                            "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                                            Color::WHITE,
+                                        ),
+                                        ..default()
+                                    });
+                                },
+                            );
                         },
                     );
                 },

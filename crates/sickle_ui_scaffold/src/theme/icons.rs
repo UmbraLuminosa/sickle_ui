@@ -51,15 +51,15 @@ pub struct CustomIconData {
 
 #[derive(Clone, Debug, Reflect)]
 pub struct Icons {
+    pub arrow_right: IconData,
     pub checkmark: IconData,
     pub chevron_left: IconData,
     pub chevron_right: IconData,
     pub close: IconData,
-    pub exit: IconData,
+    pub exit_to_app: IconData,
     pub expand_less: IconData,
     pub expand_more: IconData,
-    pub arrow_right: IconData,
-    pub popout: IconData,
+    pub open_in_new: IconData,
     pub redo: IconData,
     pub submenu: IconData,
     pub undo: IconData,
@@ -99,7 +99,12 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
-            exit: IconData::Image("".into(), Color::WHITE),
+            exit_to_app: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E879}',
+                Color::WHITE,
+                12.,
+            ),
             expand_less: IconData::FontCodepoint(
                 "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
                 '\u{E5CE}',
@@ -112,7 +117,12 @@ impl Default for Icons {
                 Color::WHITE,
                 12.,
             ),
-            popout: IconData::Image("".into(), Color::WHITE),
+            open_in_new: IconData::FontCodepoint(
+                "embedded://sickle_ui/fonts/MaterialIcons-Regular.ttf".into(),
+                '\u{E89E}',
+                Color::WHITE,
+                12.,
+            ),
             redo: IconData::Image("".into(), Color::WHITE),
             submenu: IconData::Image("".into(), Color::WHITE),
             undo: IconData::Image("".into(), Color::WHITE),

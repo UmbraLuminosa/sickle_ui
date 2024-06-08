@@ -18,7 +18,7 @@ use crate::{
 };
 
 use super::{
-    context_menu::ContextMenuUpdate,
+    context_menu::{ContextMenu, ContextMenuUpdate, UiContextMenuExt},
     menu::{Menu, MenuUpdate, UiMenuSubExt},
     shortcut::Shortcut,
     submenu::{Submenu, SubmenuUpdate, UiSubmenuSubExt},
@@ -407,16 +407,15 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     }
 }
 
-// TODO: Also add to context menu
-// impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
-//     fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
-//         let container_id = self.container();
-//         let id = self
-//             .commands()
-//             .ui_builder(container_id)
-//             .menu_item(config)
-//             .id();
+impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .menu_item(config)
+            .id();
 
-//         self.commands().ui_builder(id)
-//     }
-// }
+        self.commands().ui_builder(id)
+    }
+}

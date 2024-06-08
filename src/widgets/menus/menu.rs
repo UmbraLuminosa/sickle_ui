@@ -9,7 +9,7 @@ use sickle_ui_scaffold::{
         ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_commands::ManagePseudoStateExt,
-    ui_style::{AnimatedVals, StyleBuilder},
+    ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
 };
 
 use crate::{
@@ -271,8 +271,7 @@ impl Menu {
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
             .background_color(colors.container(Container::SurfaceHigh))
             .border_color(colors.accent(Accent::Shadow))
-            .visibility(Visibility::Hidden)
-            .focus_policy(FocusPolicy::Block);
+            .visibility(Visibility::Hidden);
     }
 
     fn open_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -302,7 +301,18 @@ impl Menu {
     fn container() -> impl Bundle {
         (
             Name::new("Container"),
-            NodeBundle::default(),
+            NodeBundle {
+                style: Style {
+                    overflow: Overflow::visible(),
+                    ..default()
+                },
+                focus_policy: FocusPolicy::Block,
+                ..default()
+            },
+            LockedStyleAttributes::from_vec(vec![
+                LockableStyleAttribute::FocusPolicy,
+                LockableStyleAttribute::Overflow,
+            ]),
             Interaction::default(),
         )
     }
