@@ -1,3 +1,6 @@
+use bevy::{prelude::*, ui::UiSystem};
+use std::marker::PhantomData;
+
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
 pub mod icons;
@@ -8,16 +11,24 @@ pub mod theme_data;
 pub mod theme_spacing;
 pub mod typography;
 
-use std::marker::PhantomData;
-
-use bevy::{prelude::*, ui::UiSystem};
-
 use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder};
 
 use self::{
     dynamic_style::*, dynamic_style_attribute::*, pseudo_state::*, style_animation::*,
     theme_data::ThemeData,
 };
+
+pub mod prelude {
+    pub use super::{
+        dynamic_style::DynamicStyle,
+        icons::IconData,
+        pseudo_state::{PseudoState, PseudoStates},
+        theme_colors::{Accent, Container, On, Surface},
+        theme_data::ThemeData,
+        typography::{FontScale, FontStyle, FontType},
+        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
+    };
+}
 
 pub struct ThemePlugin;
 

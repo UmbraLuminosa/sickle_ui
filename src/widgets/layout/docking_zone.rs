@@ -9,13 +9,7 @@ use crate::{
     drag_interaction::{DragState, Draggable},
     drop_interaction::{DropPhase, DropZone, DroppableUpdate},
     hierarchy_delay::DelayActions,
-    theme::{
-        dynamic_style::DynamicStyle,
-        pseudo_state::{PseudoState, PseudoStates},
-        theme_colors::Accent,
-        theme_data::ThemeData,
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
+    theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_commands::ResetChildrenInUiSurface,
     ui_style::{

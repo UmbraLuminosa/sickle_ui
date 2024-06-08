@@ -6,10 +6,7 @@ use sickle_ui_scaffold::{
 };
 
 use crate::{
-    theme::{
-        theme_colors::Container, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme,
-        PseudoTheme, Theme, UiContext,
-    },
+    theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
     ui_style::{SetAbsolutePositionExt, SetPositionTypeExt, StyleBuilder, UiStyleExt},
     FluxInteractionUpdate,

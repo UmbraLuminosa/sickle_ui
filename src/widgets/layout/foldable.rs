@@ -1,18 +1,12 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 use sickle_ui_scaffold::{
-    theme::{
-        pseudo_state::PseudoState,
-        theme_colors::On,
-        theme_data::ThemeData,
-        typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
     ui_commands::ManagePseudoStateExt,
     ui_style::{AnimatedVals, StyleBuilder},
     FluxInteraction, TrackedInteraction,
 };
 
 use crate::{
+    theme::prelude::*,
     ui_builder::*,
     ui_style::{SetNodeShowHideExt, UiStyleExt},
     widgets::{

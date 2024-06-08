@@ -3,13 +3,7 @@ use std::collections::VecDeque;
 use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::{
-    theme::{
-        pseudo_state::{PseudoState, PseudoStates},
-        theme_colors::{Accent, Container, On},
-        theme_data::ThemeData,
-        typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
+    theme::prelude::*,
     ui_builder::UiBuilder,
     ui_commands::ManagePseudoStateExt,
     ui_style::{

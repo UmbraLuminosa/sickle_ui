@@ -1,16 +1,10 @@
 use bevy::prelude::*;
 use sickle_ui_scaffold::{
-    theme::{
-        icons::IconData, pseudo_state::PseudoState, theme_data::ThemeData, ComponentThemePlugin,
-        DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
-    ui_builder::UiBuilderExt,
-    ui_commands::ManagePseudoStateExt,
-    ui_style::StyleBuilder,
+    ui_builder::UiBuilderExt, ui_commands::ManagePseudoStateExt, ui_style::StyleBuilder,
     FluxInteraction,
 };
 
-use crate::ui_builder::UiBuilder;
+use crate::{theme::prelude::*, ui_builder::UiBuilder};
 
 use super::{
     context_menu::{ContextMenu, UiContextMenuExt},

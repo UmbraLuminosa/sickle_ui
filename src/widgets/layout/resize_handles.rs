@@ -3,10 +3,6 @@ use bevy::ui::RelativeCursorPosition;
 use bevy_reflect::Reflect;
 use sickle_math::ease::Ease;
 use sickle_ui_scaffold::{
-    theme::{
-        pseudo_state::PseudoState, theme_colors::Accent, theme_data::ThemeData,
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
     CardinalDirection, UiUtils,
@@ -16,6 +12,7 @@ use crate::{
     animated_interaction::{AnimatedInteraction, AnimationConfig},
     drag_interaction::Draggable,
     interactions::InteractiveBackground,
+    theme::prelude::*,
     ui_commands::SetCursorExt,
     widgets::prelude::UiContainerExt,
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,

@@ -1,17 +1,11 @@
 use bevy::{prelude::*, ui::FocusPolicy};
-use sickle_ui_scaffold::{
-    theme::{
-        icons::IconData,
-        theme_colors::{Accent, Container, On},
-        theme_data::ThemeData,
-        typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
-    ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
+use sickle_ui_scaffold::ui_style::{
+    AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder,
 };
 
 use crate::{
     input_extension::ShortcutTextExt,
+    theme::prelude::*,
     ui_builder::*,
     widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,

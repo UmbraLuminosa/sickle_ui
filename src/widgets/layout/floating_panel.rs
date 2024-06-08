@@ -6,11 +6,6 @@ use sickle_ui_scaffold::CardinalDirection;
 
 use super::resize_handles::{ResizeDirection, ResizeHandle};
 use crate::drop_interaction::{Droppable, DroppableUpdate};
-use crate::theme::pseudo_state::{PseudoState, PseudoStates};
-use crate::theme::theme_colors::{Accent, Container, On, Surface};
-use crate::theme::theme_data::ThemeData;
-use crate::theme::typography::{FontScale, FontStyle, FontType};
-use crate::theme::{ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext};
 use crate::ui_builder::UiBuilderExt;
 use crate::ui_commands::ManagePseudoStateExt;
 use crate::ui_style::{
@@ -26,6 +21,7 @@ use crate::FluxInteraction;
 use crate::{
     drag_interaction::{DragState, Draggable},
     scroll_interaction::ScrollAxis,
+    theme::prelude::*,
     ui_builder::UiBuilder,
     TrackedInteraction,
 };

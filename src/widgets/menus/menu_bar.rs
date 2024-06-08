@@ -1,5 +1,6 @@
-use crate::ui_builder::*;
 use bevy::prelude::*;
+
+use crate::ui_builder::*;
 
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::{

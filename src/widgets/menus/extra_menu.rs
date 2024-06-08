@@ -1,5 +1,6 @@
-use crate::{ui_builder::*, widgets::prelude::UiContainerExt};
 use bevy::prelude::*;
+
+use crate::{ui_builder::*, widgets::prelude::UiContainerExt};
 
 use super::menu_bar::{MenuBar, UiMenuBarSubExt};
 

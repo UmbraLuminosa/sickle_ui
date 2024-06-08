@@ -1,13 +1,7 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::{
-    theme::{
-        pseudo_state::PseudoState,
-        theme_colors::{Container, On},
-        theme_data::ThemeData,
-        typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
+    theme::prelude::*,
     ui_builder::UiBuilder,
     ui_commands::ManagePseudoStateExt,
     ui_style::{
