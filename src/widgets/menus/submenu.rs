@@ -1,16 +1,23 @@
 use bevy::prelude::*;
-use sickle_ui_scaffold::theme::icons::IconData;
+use sickle_ui_scaffold::{
+    theme::{
+        icons::IconData, theme_data::ThemeData, ComponentThemePlugin, DefaultTheme, PseudoTheme,
+        Theme, UiContext,
+    },
+    ui_style::StyleBuilder,
+};
 
 use crate::{
     ui_builder::{UiBuilder, UiBuilderExt},
     ui_style::{SetBackgroundColorExt, SetVisibilityExt, UiStyleExt},
-    widgets::prelude::{MenuItemConfig, UiContainerExt, UiMenuItemExt},
+    widgets::prelude::MenuItemConfig,
     FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
 };
 
 use super::{
     context_menu::ContextMenuUpdate,
-    menu::{Menu, MenuUpdate},
+    menu::{Menu, MenuUpdate, UiMenuSubExt},
+    menu_item::MenuItem,
 };
 
 const MENU_CONTAINER_Z_INDEX: i32 = 100001;
@@ -31,6 +38,7 @@ impl Plugin for SubmenuPlugin {
                 .before(MenuUpdate)
                 .before(ContextMenuUpdate),
         )
+        .add_plugins(ComponentThemePlugin::<Submenu>::default())
         .add_systems(
             Update,
             (
@@ -261,8 +269,7 @@ pub struct SubmenuContainer {
     external_container: Option<Entity>,
 }
 
-#[derive(Component, Clone, Debug, Default, Reflect)]
-#[reflect(Component)]
+#[derive(Clone, Debug, Default)]
 pub struct SubmenuConfig {
     pub name: String,
     pub alt_code: Option<KeyCode>,
@@ -275,22 +282,25 @@ impl Into<MenuItemConfig> for SubmenuConfig {
             name: self.name,
             alt_code: self.alt_code,
             leading_icon: self.leading_icon,
-            trailing_icon: IconData::Image(
-                "embedded://sickle_ui/icons/submenu_white.png".to_string(),
-                Color::WHITE,
-            ),
             ..default()
         }
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Submenu {
     is_open: bool,
     is_focused: bool,
     container: Entity,
     external_container: Option<Entity>,
+    leading: Entity,
+    leading_icon: IconData,
+    label: Entity,
+    shortcut_container: Entity,
+    shortcut: Entity,
+    trailing: Entity,
+    alt_code: Option<KeyCode>,
 }
 
 impl Default for Submenu {
@@ -300,7 +310,89 @@ impl Default for Submenu {
             is_focused: false,
             container: Entity::PLACEHOLDER,
             external_container: None,
+            leading: Entity::PLACEHOLDER,
+            leading_icon: Default::default(),
+            label: Entity::PLACEHOLDER,
+            shortcut_container: Entity::PLACEHOLDER,
+            shortcut: Entity::PLACEHOLDER,
+            trailing: Entity::PLACEHOLDER,
+            alt_code: Default::default(),
         }
+    }
+}
+
+impl Into<Submenu> for MenuItem {
+    fn into(self) -> Submenu {
+        Submenu {
+            is_open: false,
+            is_focused: false,
+            external_container: None,
+            container: Entity::PLACEHOLDER,
+            label: self.label(),
+            leading: self.leading(),
+            leading_icon: self.trailing_icon(),
+            shortcut_container: self.shortcut_container(),
+            shortcut: self.shortcut(),
+            trailing: self.trailing(),
+            alt_code: self.alt_code(),
+        }
+    }
+}
+
+impl DefaultTheme for Submenu {
+    fn default_theme() -> Option<Theme<Submenu>> {
+        Submenu::theme().into()
+    }
+}
+
+impl UiContext for Submenu {
+    fn get(&self, target: &str) -> Result<Entity, String> {
+        match target {
+            MenuItem::LEADING_ICON => Ok(self.leading),
+            MenuItem::LABEL => Ok(self.label),
+            MenuItem::SHORTCUT_CONTAINER => Ok(self.shortcut_container),
+            MenuItem::SHORTCUT => Ok(self.shortcut),
+            MenuItem::TRAILING_ICON => Ok(self.trailing),
+            Submenu::MENU_CONTAINER => Ok(self.container),
+            _ => Err(format!(
+                "{} doesn't exists for MenuItem. Possible contexts: {:?}",
+                target,
+                self.contexts()
+            )),
+        }
+    }
+
+    fn contexts(&self) -> Vec<&'static str> {
+        vec![
+            MenuItem::LEADING_ICON,
+            MenuItem::LABEL,
+            MenuItem::SHORTCUT_CONTAINER,
+            MenuItem::SHORTCUT,
+            MenuItem::TRAILING_ICON,
+            Submenu::MENU_CONTAINER,
+        ]
+    }
+}
+
+impl Submenu {
+    pub const MENU_CONTAINER: &'static str = "MenuContainer";
+
+    pub fn theme() -> Theme<Submenu> {
+        let base_theme = PseudoTheme::deferred_world(None, Submenu::primary_style);
+
+        Theme::<Submenu>::new(vec![base_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+        let Some(menu_item) = world.get::<Submenu>(entity) else {
+            return;
+        };
+
+        let theme_data = world.resource::<ThemeData>().clone();
+        let leading_icon = menu_item.leading_icon.clone();
+        let trailing_icon = theme_data.icons.arrow_right;
+
+        MenuItem::menu_item_style(style_builder, world, leading_icon, trailing_icon);
     }
 }
 
@@ -331,11 +423,21 @@ impl SubmenuContainer {
     }
 }
 
+pub trait UiSubmenuSubExt<'w, 's> {
+    fn container(&self) -> Entity;
+}
+
+impl<'w, 's> UiSubmenuSubExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+    fn container(&self) -> Entity {
+        self.context().container
+    }
+}
+
 pub trait UiSubmenuExt<'w, 's> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
-        spawn_items: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
     ) -> UiBuilder<'w, 's, 'a, Entity>;
 }
 
@@ -343,39 +445,68 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
-        spawn_items: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
     ) -> UiBuilder<'w, 's, 'a, Entity> {
-        let external_container = Some(self.context());
-
-        let menu_id = self.menu_item(config.clone().into()).id();
+        let external_container = Some(self.id());
+        let (id, menu_item) = MenuItem::scaffold(self, config.into());
         let container = self
             .commands()
-            .ui_builder(menu_id)
-            .container(
-                (
-                    Name::new("Submenu Container"),
-                    SubmenuContainer::frame(),
-                    SubmenuContainerState::default(),
-                    SubmenuContainer {
-                        external_container,
-                        ..default()
-                    },
-                ),
-                spawn_items,
-            )
+            .ui_builder(id)
+            .spawn((
+                Name::new("Submenu Container"),
+                SubmenuContainer::frame(),
+                SubmenuContainerState::default(),
+                SubmenuContainer {
+                    external_container,
+                    ..default()
+                },
+            ))
             .id();
 
-        let name = format!("Submenu [{}]", config.name.clone());
-        self.commands().ui_builder(menu_id).insert((
-            Name::new(name),
-            Submenu {
-                container,
-                external_container,
-                ..default()
-            },
-            config,
-        ));
+        let submenu = Submenu {
+            container,
+            external_container,
+            ..menu_item.into()
+        };
 
-        self.commands().ui_builder(menu_id)
+        let mut content_builder = self.commands().ui_builder(submenu.clone());
+        spawn_items(&mut content_builder);
+
+        self.commands().ui_builder(id).insert(submenu);
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+    fn submenu<'a>(
+        &'a mut self,
+        config: SubmenuConfig,
+        spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .submenu(config, spawn_items)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+    fn submenu<'a>(
+        &'a mut self,
+        config: SubmenuConfig,
+        spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .submenu(config, spawn_items)
+            .id();
+
+        self.commands().ui_builder(id)
     }
 }

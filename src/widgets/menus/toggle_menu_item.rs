@@ -16,6 +16,7 @@ use super::{
     menu::{Menu, UiMenuSubExt},
     menu_item::{MenuItem, MenuItemConfig, MenuItemUpdate},
     shortcut::Shortcut,
+    submenu::{Submenu, UiSubmenuSubExt},
 };
 
 pub struct ToggleMenuItemPlugin;
@@ -77,8 +78,7 @@ fn update_toggle_menu_checkmark(
     }
 }
 
-#[derive(Component, Clone, Debug, Default, Reflect)]
-#[reflect(Component)]
+#[derive(Clone, Debug, Default)]
 pub struct ToggleMenuItemConfig {
     pub name: String,
     pub trailing_icon: IconData,
@@ -127,24 +127,24 @@ impl Default for ToggleMenuItem {
     }
 }
 
-impl DefaultTheme for ToggleMenuItem {
-    fn default_theme() -> Option<Theme<ToggleMenuItem>> {
-        ToggleMenuItem::theme().into()
-    }
-}
-
 impl Into<ToggleMenuItem> for MenuItem {
     fn into(self) -> ToggleMenuItem {
         ToggleMenuItem {
             checked: false,
-            alt_code: self.alt_code(),
             label: self.label(),
             leading: self.leading(),
             shortcut_container: self.shortcut_container(),
             shortcut: self.shortcut(),
             trailing: self.trailing(),
             trailing_icon: self.trailing_icon(),
+            alt_code: self.alt_code(),
         }
+    }
+}
+
+impl DefaultTheme for ToggleMenuItem {
+    fn default_theme() -> Option<Theme<ToggleMenuItem>> {
+        ToggleMenuItem::theme().into()
     }
 }
 
@@ -231,6 +231,22 @@ impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
 }
 
 impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+    fn toggle_menu_item<'a>(
+        &'a mut self,
+        config: ToggleMenuItemConfig,
+    ) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .toggle_menu_item(config)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiToggleMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     fn toggle_menu_item<'a>(
         &'a mut self,
         config: ToggleMenuItemConfig,

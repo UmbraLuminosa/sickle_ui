@@ -27,9 +27,9 @@ pub struct UiBuilder<'w, 's, 'a, T> {
     context: T,
 }
 
-impl<'w, 's, T: Copy> UiBuilder<'w, 's, '_, T> {
-    pub fn context(&self) -> T {
-        self.context
+impl<'w, 's, T> UiBuilder<'w, 's, '_, T> {
+    pub fn context(&self) -> &T {
+        &self.context
     }
 
     pub fn commands(&mut self) -> &mut Commands<'w, 's> {
@@ -47,7 +47,7 @@ impl<'w, 's> UiBuilder<'w, 's, '_, UiRoot> {
 
 impl<'w, 's> UiBuilder<'w, 's, '_, Entity> {
     pub fn id(&self) -> Entity {
-        self.context()
+        *self.context()
     }
 
     pub fn entity_commands(&mut self) -> EntityCommands<'_> {

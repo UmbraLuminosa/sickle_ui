@@ -21,7 +21,7 @@ use super::{
     context_menu::ContextMenuUpdate,
     menu::{Menu, MenuUpdate, UiMenuSubExt},
     shortcut::Shortcut,
-    submenu::SubmenuUpdate,
+    submenu::{Submenu, SubmenuUpdate, UiSubmenuSubExt},
 };
 
 pub struct MenuItemPlugin;
@@ -382,6 +382,19 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
 }
 
 impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+        let container_id = self.container();
+        let id = self
+            .commands()
+            .ui_builder(container_id)
+            .menu_item(config)
+            .id();
+
+        self.commands().ui_builder(id)
+    }
+}
+
+impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
         let container_id = self.container();
         let id = self

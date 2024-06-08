@@ -306,10 +306,34 @@ fn setup(
 
                     menu.separator();
 
-                    menu.menu_item(MenuItemConfig {
-                        name: "Exit".into(),
-                        ..default()
-                    });
+                    menu.submenu(
+                        SubmenuConfig {
+                            name: "Exit".into(),
+                            ..default()
+                        },
+                        |submenu| {
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Standard menu item".into(),
+                                ..default()
+                            });
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Menu item with leading icon".into(),
+                                leading_icon: IconData::Image(
+                                    "embedded://sickle_ui/icons/details_menu.png".into(),
+                                    Color::WHITE,
+                                ),
+                                ..default()
+                            });
+                            submenu.menu_item(MenuItemConfig {
+                                name: "Menu item with trailing icon".into(),
+                                trailing_icon: IconData::Image(
+                                    "embedded://sickle_ui/icons/tiles_menu.png".into(),
+                                    Color::WHITE,
+                                ),
+                                ..default()
+                            });
+                        },
+                    );
                 },
             );
 

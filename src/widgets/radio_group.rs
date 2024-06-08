@@ -255,7 +255,7 @@ impl<'w, 's> UiRadioGroupExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             |radio_group| {
                 for i in 0..option_count {
                     let label = queue.pop_front().unwrap();
-                    let id = radio_group.context();
+                    let id = radio_group.id();
                     let mut check_node: Entity = Entity::PLACEHOLDER;
                     let label_string = label.into();
                     let name = format!("Radio Button [{}]", label_string.clone());
