@@ -2,12 +2,16 @@ use std::{time::Duration, vec};
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+
 use sickle_math::{
     ease::{Ease, ValueEasing},
     lerp::Lerp,
 };
 
-use crate::{ui_style::AnimatedVals, FluxInteraction, StopwatchLock};
+use crate::{
+    flux_interaction::{FluxInteraction, StopwatchLock},
+    ui_style::attribute::AnimatedVals,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InteractionStyle {

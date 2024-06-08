@@ -4,20 +4,12 @@ use bevy::prelude::*;
 use sickle_math::ease::Ease;
 use sickle_ui::{
     dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
-    theme::{
-        dynamic_style::DynamicStyleEnterState,
-        pseudo_state::{PseudoState, PseudoStates},
-        style_animation::{AnimationLoop, AnimationSettings, LoopedAnimationConfig},
-        theme_data::{Contrast::Standard, Scheme, ThemeData},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
-    },
+    flux_interaction::{FluxInteraction, FluxInteractionUpdate},
+    theme::prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
-    ui_style::{
-        AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetJustifyContentsExt,
-        SetWidthExt, StyleBuilder,
-    },
+    ui_style::prelude::*,
     widgets::prelude::*,
-    FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
+    SickleUiPlugin,
 };
 
 fn main() {
@@ -199,9 +191,9 @@ fn update_theme_data_on_press(
     for interaction in &q_test_boxes {
         if *interaction == Interaction::Pressed {
             if theme_data.active_scheme.is_dark() {
-                theme_data.active_scheme = Scheme::Light(Standard);
+                theme_data.active_scheme = Scheme::Light(Contrast::Standard);
             } else {
-                theme_data.active_scheme = Scheme::Dark(Standard);
+                theme_data.active_scheme = Scheme::Dark(Contrast::Standard);
             }
         }
     }

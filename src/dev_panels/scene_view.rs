@@ -12,10 +12,7 @@ use bevy::{
 
 use sickle_ui_scaffold::{
     ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{
-        SetBackgroundColorExt, SetHeightExt, SetJustifySelfExt, SetMinWidthExt, SetPositionTypeExt,
-        SetWidthExt,
-    },
+    ui_style::prelude::*,
 };
 
 use crate::widgets::{

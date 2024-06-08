@@ -1,11 +1,6 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-    FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use crate::{
     input_extension::ShortcutTextExt,

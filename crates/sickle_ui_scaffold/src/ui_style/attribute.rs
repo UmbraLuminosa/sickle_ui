@@ -1,6 +1,14 @@
-use bevy::prelude::*;
+use std::{
+    fmt::{Debug, Formatter, Result},
+    sync::Arc,
+};
 
-use super::*;
+use bevy::{ecs::system::EntityCommand, prelude::*};
+use serde::{Deserialize, Serialize};
+
+use sickle_math::lerp::Lerp;
+
+use crate::{flux_interaction::FluxInteraction, theme::prelude::*};
 
 #[derive(Clone, Copy, Debug, Default, Reflect, Serialize, Deserialize)]
 pub struct InteractiveVals<T: Clone + Default> {

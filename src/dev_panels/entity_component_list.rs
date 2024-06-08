@@ -2,10 +2,7 @@ use bevy::{ecs::system::CommandQueue, prelude::*};
 
 use sickle_ui_scaffold::{
     ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{
-        SetAlignContentExt, SetAlignItemsExt, SetBackgroundColorExt, SetFlexWrapExt, SetMarginExt,
-        SetOverflowExt, SetPaddingExt,
-    },
+    ui_style::prelude::*,
 };
 
 use crate::widgets::layout::{

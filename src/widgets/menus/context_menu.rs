@@ -1,15 +1,7 @@
 use bevy::{ecs::system::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow};
 
 use sickle_macros::UiContext;
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot},
-    ui_style::{
-        LockableStyleAttribute, LockedStyleAttributes, SetAbsolutePositionExt, SetPositionTypeExt,
-        StyleBuilder, UiStyleExt,
-    },
-    FluxInteractionUpdate,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use super::menu_separators::UiMenuItemSeparatorExt;
 

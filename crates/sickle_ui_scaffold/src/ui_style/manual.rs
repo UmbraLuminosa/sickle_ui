@@ -1,6 +1,10 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::EntityCommand, prelude::*, text::TextLayoutInfo, ui::widget::TextFlags};
 
-use super::*;
+use crate::{flux_interaction::FluxInteraction, theme::icons::IconData};
+
+use super::{
+    generated::*, LockableStyleAttribute, LockedStyleAttributes, UiStyle, UiStyleUnchecked,
+};
 
 // Special style-related components needing manual implementation
 macro_rules! check_lock {

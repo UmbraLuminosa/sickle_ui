@@ -1,8 +1,11 @@
+// TODO: Deprecated, remove file
+
 use bevy::prelude::*;
+
 use sickle_macros::simple_interaction_for;
 use sickle_math::lerp::Lerp;
 
-use crate::{animated_interaction::*, FluxInteraction};
+use crate::{animated_interaction::*, flux_interaction::FluxInteraction};
 
 pub struct InteractionsPlugin;
 

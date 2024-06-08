@@ -1,12 +1,6 @@
 use bevy::prelude::*;
 
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_commands::ManagePseudoStateExt,
-    ui_style::StyleBuilder,
-    FluxInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use super::{
     context_menu::{ContextMenu, UiContextMenuExt},

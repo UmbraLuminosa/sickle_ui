@@ -1,40 +1,24 @@
-mod attribute;
-mod builder;
-mod generated;
-mod manual;
+pub mod attribute;
+pub mod builder;
+pub mod generated;
+pub mod manual;
 
-use bevy::{
-    ecs::system::{EntityCommand, EntityCommands},
-    prelude::*,
-    text::TextLayoutInfo,
-    ui::{widget::TextFlags, FocusPolicy},
-    utils::HashSet,
-};
-use serde::{Deserialize, Serialize};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::HashSet};
 
 use sickle_math::lerp::Lerp;
 
-use crate::theme::{
-    dynamic_style::{ContextStyleAttribute, DynamicStyle},
-    dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
-    icons::IconData,
-    style_animation::{AnimationSettings, AnimationState, InteractionStyle},
-    typography::SizedFont,
-    UiContext,
-};
+use attribute::AnimatedVals;
+use generated::LockableStyleAttribute;
 
-pub use crate::FluxInteraction;
-
-use std::{
-    fmt::{Debug, Formatter, Result},
-    sync::Arc,
-};
-
-// TODO: Reorganize imports / expprts
-pub use attribute::*;
-pub use builder::*;
-pub use generated::*;
-pub use manual::*;
+pub mod prelude {
+    pub use super::{
+        attribute::{AnimatedVals, InteractiveVals},
+        builder::StyleBuilder,
+        generated::*,
+        manual::*,
+        *,
+    };
+}
 
 pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,

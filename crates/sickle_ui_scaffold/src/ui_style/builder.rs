@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use super::*;
+use crate::theme::prelude::*;
+
+use super::{attribute::CustomAnimatedStyleAttribute, generated::*, LogicalEq};
 
 pub struct InteractiveStyleBuilder<'a> {
     pub style_builder: &'a mut StyleBuilder,

@@ -1,15 +1,16 @@
-use bevy::prelude::*;
-
 mod assets;
 pub mod dev_panels;
 pub mod hierarchy_delay;
 pub mod input_extension;
 pub mod widgets;
 
+use bevy::prelude::*;
+
 use animated_interaction::AnimatedInteractionPlugin;
 use assets::BuiltInAssetsPlugin;
 use drag_interaction::DragInteractionPlugin;
 use drop_interaction::DropInteractionPlugin;
+use flux_interaction::FluxInteractionPlugin;
 use hierarchy_delay::HierarchyDelayPlugin;
 use interactions::InteractionsPlugin;
 use scroll_interaction::ScrollInteractionPlugin;

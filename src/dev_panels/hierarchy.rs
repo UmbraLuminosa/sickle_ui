@@ -1,14 +1,6 @@
 use bevy::prelude::*;
 
-use sickle_ui_scaffold::{
-    theme::icons::IconData,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{
-        SetBackgroundColorExt, SetBorderColorExt, SetBorderExt, SetMarginExt, SetPaddingExt,
-        SetWidthExt, UiStyleExt,
-    },
-    FluxInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::{
     layout::{

@@ -1,13 +1,14 @@
 use bevy::utils::default;
 
 use crate::{
+    flux_interaction::FluxInteraction,
     ui_style::{
-        AnimatedStyleAttribute, InteractiveStyleAttribute, LogicalEq, StaticStyleAttribute,
+        generated::{AnimatedStyleAttribute, InteractiveStyleAttribute, StaticStyleAttribute},
+        LogicalEq,
     },
-    FluxInteraction,
 };
 
-use super::{AnimationSettings, AnimationState, InteractionStyle};
+use super::style_animation::{AnimationSettings, AnimationState, InteractionStyle};
 
 #[derive(Clone, Debug)]
 pub enum DynamicStyleAttribute {

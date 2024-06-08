@@ -1,15 +1,6 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::UiBuilder,
-    ui_commands::ManagePseudoStateExt,
-    ui_style::{
-        AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityUncheckedExt,
-        StyleBuilder, UiStyleUncheckedExt,
-    },
-    FluxInteraction, TrackedInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::layout::{
     container::UiContainerExt,

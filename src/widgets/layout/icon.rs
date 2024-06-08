@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use sickle_ui_scaffold::{
     ui_builder::*,
-    ui_style::{ImageSource, SetImageExt},
+    ui_style::prelude::*,
 };
 
 #[derive(Component, Debug, Default, Reflect)]

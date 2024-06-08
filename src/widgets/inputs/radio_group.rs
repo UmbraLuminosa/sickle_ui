@@ -4,19 +4,18 @@ use bevy::{prelude::*, ui::FocusPolicy};
 
 use sickle_math::ease::Ease;
 use sickle_ui_scaffold::{
-    ui_builder::UiBuilder, FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
+    animated_interaction::{AnimatedInteraction, AnimationConfig},
+    flux_interaction::{FluxInteraction, FluxInteractionUpdate, TrackedInteraction},
+    interactions::InteractiveBackground,
+    ui_builder::UiBuilder,
 };
 
-use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
-    interactions::InteractiveBackground,
-    widgets::{
-        layout::{
-            container::UiContainerExt,
-            label::{LabelConfig, UiLabelExt},
-        },
-        menus::{context_menu::ContextMenuUpdate, menu::MenuUpdate, submenu::SubmenuUpdate},
+use crate::widgets::{
+    layout::{
+        container::UiContainerExt,
+        label::{LabelConfig, UiLabelExt},
     },
+    menus::{context_menu::ContextMenuUpdate, menu::MenuUpdate, submenu::SubmenuUpdate},
 };
 
 pub struct RadioGroupPlugin;

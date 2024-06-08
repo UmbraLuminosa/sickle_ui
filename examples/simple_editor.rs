@@ -13,7 +13,7 @@ use sickle_ui::{
     },
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
-    ui_style::{SetBackgroundColorExt, SetHeightExt, SetJustifyContentsExt, SetWidthExt},
+    ui_style::prelude::*,
     widgets::prelude::*,
     SickleUiPlugin,
 };

@@ -1,6 +1,3 @@
-use bevy::{prelude::*, ui::UiSystem};
-use std::marker::PhantomData;
-
 pub mod dynamic_style;
 pub mod dynamic_style_attribute;
 pub mod icons;
@@ -11,22 +8,33 @@ pub mod theme_data;
 pub mod theme_spacing;
 pub mod typography;
 
-use crate::{ui_commands::RefreshThemeExt, ui_style::StyleBuilder};
+use std::marker::PhantomData;
 
-use self::{
-    dynamic_style::*, dynamic_style_attribute::*, pseudo_state::*, style_animation::*,
-    theme_data::ThemeData,
-};
+use bevy::{prelude::*, ui::UiSystem};
+
+use dynamic_style::{DynamicStyle, DynamicStylePlugin};
+use pseudo_state::{AutoPseudoStatePlugin, PseudoState, PseudoStates};
+use theme_data::ThemeData;
+
+use crate::{ui_commands::RefreshThemeExt, ui_style::builder::StyleBuilder};
 
 pub mod prelude {
     pub use super::{
-        dynamic_style::DynamicStyle,
+        dynamic_style::{
+            ContextStyleAttribute, DynamicStyle, DynamicStyleEnterState, DynamicStyleUpdate,
+        },
+        dynamic_style_attribute::{DynamicStyleAttribute, DynamicStyleController},
         icons::IconData,
         pseudo_state::{PseudoState, PseudoStates},
+        style_animation::{
+            AnimationLoop, AnimationSettings, AnimationState, InteractionStyle,
+            LoopedAnimationConfig,
+        },
         theme_colors::{Accent, Container, On, Surface},
-        theme_data::ThemeData,
-        typography::{FontScale, FontStyle, FontType},
-        ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
+        theme_data::{Contrast, Scheme, ThemeData},
+        typography::{FontScale, FontStyle, FontType, SizedFont},
+        ComponentThemePlugin, CustomThemeUpdate, DefaultTheme, DynamicStyleBuilder, PseudoTheme,
+        Theme, ThemeUpdate, UiContext,
     };
 }
 

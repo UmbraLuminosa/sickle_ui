@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use sickle_ui_scaffold::{
     ui_builder::{UiBuilder, UiRoot},
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes},
+    ui_style::prelude::*,
 };
 
 use super::container::UiContainerExt;

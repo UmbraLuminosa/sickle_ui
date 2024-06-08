@@ -1,14 +1,15 @@
 use bevy::prelude::*;
+
 use sickle_math::ease::Ease;
 
-use crate::ui_style::StyleBuilder;
+use crate::ui_style::builder::StyleBuilder;
 
 use super::{
     icons::Icons,
+    style_animation::AnimationSettings,
     theme_colors::{SchemeColors, ThemeColors},
     theme_spacing::ThemeSpacing,
     typography::ThemeTypography,
-    AnimationSettings,
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Reflect)]

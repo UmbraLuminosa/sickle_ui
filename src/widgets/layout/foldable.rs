@@ -1,12 +1,6 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::*,
-    ui_commands::ManagePseudoStateExt,
-    ui_style::{AnimatedVals, SetNodeShowHideExt, StyleBuilder, UiStyleExt},
-    FluxInteraction, TrackedInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::{menus::menu_item::MenuItemUpdate, WidgetLibraryUpdate};
 

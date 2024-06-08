@@ -26,7 +26,6 @@ use self::{
     menus::toggle_menu_item::ToggleMenuItemPlugin,
 };
 
-// TODO: Re-organize prelude
 pub mod prelude {
     pub use super::{
         // TODO: Add missing system sets

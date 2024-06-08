@@ -1,11 +1,7 @@
 use bevy::prelude::*;
 
 use sickle_macros::UiContext;
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::StyleBuilder,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use super::{
     context_menu::{ContextMenu, UiContextMenuExt},
@@ -75,7 +71,6 @@ impl<'w, 's> UiMenuSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, (Entity, MenuB
     }
 }
 
-// TODO: add item separator to context menu as well
 #[derive(Component, Clone, Copy, Debug, Default, Reflect, UiContext)]
 #[reflect(Component)]
 pub struct MenuItemSeparator;

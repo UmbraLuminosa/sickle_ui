@@ -1,11 +1,7 @@
 use bevy::prelude::*;
 
 use sickle_macros::UiContext;
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-};
+use sickle_ui_scaffold::prelude::*;
 
 pub struct MenuBarPlugin;
 

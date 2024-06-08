@@ -1,9 +1,11 @@
+// TODO: Deprecated, remove file
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
+
 use sickle_math::ease::{Ease, ValueEasing};
 
-use crate::{FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate};
+use crate::flux_interaction::{FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate};
 
 pub struct AnimatedInteractionPlugin;
 
@@ -19,7 +21,6 @@ impl Plugin for AnimatedInteractionPlugin {
 #[derive(SystemSet, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AnimatedInteractionUpdate;
 
-// TODO: Add support for continous animations, i.e. loop, ping-pong
 #[derive(Clone, Copy, Debug, Default, Reflect)]
 pub enum AnimationProgress {
     #[default]

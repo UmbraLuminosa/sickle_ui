@@ -15,7 +15,7 @@ use sickle_ui::{
         ComponentThemePlugin, DefaultTheme, PseudoTheme, Theme, UiContext,
     },
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
-    ui_style::{AnimatedVals, SetWidthExt, StyleBuilder},
+    ui_style::prelude::*,
     widgets::prelude::*,
     SickleUiPlugin,
 };

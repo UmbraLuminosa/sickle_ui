@@ -1,11 +1,6 @@
 use bevy::{prelude::*, ui::UiSystem};
 
-use sickle_ui_scaffold::{
-    drag_interaction::{DragState, Draggable},
-    ui_builder::*,
-    ui_commands::LogHierarchyExt,
-    ui_style::{SetLeftExt, SetTopExt, SetVisibilityExt, UiStyleExt},
-};
+use sickle_ui_scaffold::{prelude::*, ui_commands::LogHierarchyExt};
 
 use super::{
     container::UiContainerExt,

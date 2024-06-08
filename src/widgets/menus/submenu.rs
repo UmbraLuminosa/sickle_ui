@@ -1,12 +1,6 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use sickle_ui_scaffold::{
-    theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_commands::ManagePseudoStateExt,
-    ui_style::{LockableStyleAttribute, LockedStyleAttributes, StyleBuilder},
-    FluxInteraction, FluxInteractionStopwatch, FluxInteractionUpdate, TrackedInteraction,
-};
+use sickle_ui_scaffold::prelude::*;
 
 use super::{
     context_menu::{ContextMenu, ContextMenuUpdate, UiContextMenuExt},
