@@ -17,12 +17,11 @@ use crate::{
         SetFocusPolicyUncheckedExt, SetHeightUncheckedExt, SetVisibilityUncheckedExt, StyleBuilder,
         TrackedStyleState, UiStyleUncheckedExt,
     },
+    widgets::prelude::{
+        LabelConfig, ScrollView, ScrollViewLayoutUpdate, UiContainerExt, UiLabelExt, UiPanelExt,
+        UiScrollViewExt,
+    },
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction, UiUtils,
-};
-
-use super::{
-    prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiScrollViewExt},
-    scroll_view::{ScrollView, ScrollViewLayoutUpdate},
 };
 
 const DROPDOWN_PANEL_Z_INDEX: usize = 11000;

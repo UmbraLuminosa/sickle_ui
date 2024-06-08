@@ -18,10 +18,9 @@ use crate::{
     },
     widgets::{
         prelude::{
-            Checkbox, RadioGroup, SliderConfig, UiCheckboxExt, UiColumnExt, UiRadioGroupExt,
-            UiRowExt, UiSliderExt,
+            Checkbox, RadioGroup, Slider, SliderAxis, SliderConfig, UiCheckboxExt, UiColumnExt,
+            UiRadioGroupExt, UiRowExt, UiSliderExt,
         },
-        slider::{Slider, SliderAxis},
         WidgetLibraryUpdate,
     },
 };

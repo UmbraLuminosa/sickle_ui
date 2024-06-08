@@ -27,9 +27,11 @@ use crate::{
 
 use super::{
     floating_panel::FloatingPanelTitle,
-    prelude::{SizedZoneConfig, UiSizedZoneExt, UiTabContainerExt},
-    sized_zone::{SizedZone, SizedZonePreUpdate, SizedZoneResizeHandleContainer},
-    tab_container::{TabBar, TabContainer, UiTabContainerSubExt},
+    sized_zone::{
+        SizedZone, SizedZoneConfig, SizedZonePreUpdate, SizedZoneResizeHandleContainer,
+        UiSizedZoneExt,
+    },
+    tab_container::{TabBar, TabContainer, UiTabContainerExt, UiTabContainerSubExt},
 };
 
 pub struct DockingZonePlugin;

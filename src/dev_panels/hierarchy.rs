@@ -7,12 +7,9 @@ use crate::{
         SetBackgroundColorExt, SetBorderColorExt, SetBorderExt, SetMarginExt, SetPaddingExt,
         SetWidthExt, UiStyleExt,
     },
-    widgets::{
-        foldable::{Foldable, UiFoldableExt},
-        prelude::{
-            MenuItem, MenuItemConfig, SizedZoneConfig, UiColumnExt, UiMenuItemExt, UiPanelExt,
-            UiRowExt, UiScrollViewExt, UiSizedZoneExt,
-        },
+    widgets::prelude::{
+        Foldable, MenuItem, MenuItemConfig, SizedZoneConfig, UiColumnExt, UiFoldableExt,
+        UiMenuItemExt, UiPanelExt, UiRowExt, UiScrollViewExt, UiSizedZoneExt,
     },
 };
 

@@ -5,7 +5,7 @@ use crate::{
     ui_style::{LockableStyleAttribute, LockedStyleAttributes},
 };
 
-use super::prelude::UiContainerExt;
+use super::container::UiContainerExt;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component)]

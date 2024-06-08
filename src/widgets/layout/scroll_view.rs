@@ -8,10 +8,9 @@ use crate::{
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
     ui_style::{SetPaddingExt, TrackedStyleState, UiStyleExt},
+    widgets::prelude::UiContainerExt,
     TrackedInteraction,
 };
-
-use super::prelude::UiContainerExt;
 
 pub struct ScrollViewPlugin;
 

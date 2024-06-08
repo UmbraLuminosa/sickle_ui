@@ -15,11 +15,10 @@ use sickle_ui_scaffold::{
 use crate::{
     ui_builder::*,
     ui_style::{SetNodeShowHideExt, UiStyleExt},
-};
-
-use super::{
-    prelude::{LabelConfig, MenuItemUpdate, UiContainerExt, UiLabelExt, UiPanelExt},
-    WidgetLibraryUpdate,
+    widgets::{
+        prelude::{LabelConfig, MenuItemUpdate, UiContainerExt, UiLabelExt, UiPanelExt},
+        WidgetLibraryUpdate,
+    },
 };
 
 pub struct FoldablePlugin;

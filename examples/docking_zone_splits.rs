@@ -16,7 +16,7 @@ use sickle_ui::{
         AnimatedVals, InteractiveVals, SetBackgroundColorExt, SetBorderExt, SetJustifyContentsExt,
         SetWidthExt, StyleBuilder,
     },
-    widgets::{prelude::*, tab_container::UiTabContainerSubExt},
+    widgets::prelude::*,
     FluxInteraction, FluxInteractionUpdate, SickleUiPlugin,
 };
 

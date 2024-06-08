@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::ui_builder::UiBuilder;
 
-use super::prelude::UiContainerExt;
+use crate::widgets::prelude::UiContainerExt;
 
 #[derive(Component, Clone, Debug, Reflect)]
 #[reflect(Component)]

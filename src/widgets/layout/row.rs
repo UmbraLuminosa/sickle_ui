@@ -3,9 +3,8 @@ use bevy::prelude::*;
 use crate::{
     ui_builder::*,
     ui_style::{LockableStyleAttribute, LockedStyleAttributes},
+    widgets::prelude::UiContainerExt,
 };
-
-use super::prelude::UiContainerExt;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component)]

@@ -7,10 +7,9 @@ use crate::{
     interactions::InteractiveBackground,
     scroll_interaction::{ScrollAxis, Scrollable, ScrollableUpdate},
     ui_builder::UiBuilder,
+    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     TrackedInteraction,
 };
-
-use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt};
 
 pub struct SliderPlugin;
 

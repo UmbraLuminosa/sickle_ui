@@ -14,12 +14,8 @@ use crate::{
         AnimatedVals, LockableStyleAttribute, LockedStyleAttributes, SetVisibilityUncheckedExt,
         StyleBuilder, UiStyleUncheckedExt,
     },
+    widgets::prelude::{LabelConfig, UiContainerExt, UiLabelExt},
     FluxInteraction, TrackedInteraction,
-};
-
-use super::{
-    label::LabelConfig,
-    prelude::{UiContainerExt, UiLabelExt},
 };
 
 pub struct CheckboxPlugin;

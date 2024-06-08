@@ -11,18 +11,18 @@ use crate::{
         SetBackgroundColorExt, SetFluxInteractionExt, SetLeftExt, SetNodeShowHideExt,
         SetOverflowExt, SetPositionTypeExt, SetZIndexExt, UiStyleExt,
     },
+    widgets::prelude::{
+        ContextMenu, ContextMenuGenerator, ContextMenuUpdate, FloatingPanelConfig,
+        FloatingPanelLayout, GenerateContextMenu, LabelConfig, MenuItem, MenuItemConfig,
+        MenuItemUpdate, ReflectContextMenuGenerator, UiContainerExt, UiFloatingPanelExt,
+        UiLabelExt, UiMenuItemExt, UiPanelExt, UiScrollViewExt,
+    },
     TrackedInteraction,
 };
 
 use super::{
     floating_panel::{FloatingPanel, FloatingPanelUpdate, UpdateFloatingPanelPanelId},
-    menus::context_menu::{ContextMenu, ContextMenuUpdate},
     panel::Panel,
-    prelude::{
-        ContextMenuGenerator, FloatingPanelConfig, FloatingPanelLayout, GenerateContextMenu,
-        LabelConfig, MenuItem, MenuItemConfig, MenuItemUpdate, ReflectContextMenuGenerator,
-        UiContainerExt, UiFloatingPanelExt, UiLabelExt, UiMenuItemExt, UiPanelExt, UiScrollViewExt,
-    },
     sized_zone::SizedZonePreUpdate,
 };
 

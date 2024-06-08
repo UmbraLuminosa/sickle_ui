@@ -5,12 +5,10 @@ use crate::{
     ui_builder::*,
     ui_commands::LogHierarchyExt,
     ui_style::{SetLeftExt, SetTopExt, SetVisibilityExt, UiStyleExt},
+    widgets::prelude::{ResizeDirection, ResizeHandle, UiContainerExt},
 };
 
-use super::{
-    docking_zone::DockingZoneUpdate,
-    prelude::{ResizeDirection, ResizeHandle, UiContainerExt},
-};
+use super::docking_zone::DockingZoneUpdate;
 
 const MIN_SIZED_ZONE_SIZE: f32 = 50.;
 

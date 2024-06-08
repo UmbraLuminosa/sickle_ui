@@ -4,8 +4,6 @@ use bevy::{prelude::*, window::WindowResized};
 
 use sickle_ui_scaffold::CardinalDirection;
 
-use super::prelude::{LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiResizeHandlesExt};
-use super::prelude::{SetLabelTextExt, UiScrollViewExt};
 use super::resize_handles::{ResizeDirection, ResizeHandle};
 use crate::drop_interaction::{Droppable, DroppableUpdate};
 use crate::theme::pseudo_state::{PseudoState, PseudoStates};
@@ -20,6 +18,10 @@ use crate::ui_style::{
     SetFluxInteractionExt, SetFocusPolicyExt, SetHeightExt, SetNodeShowHideExt, SetWidthExt,
     SetZIndexExt, StyleBuilder, UiStyleExt,
 };
+use crate::widgets::prelude::{
+    LabelConfig, UiContainerExt, UiLabelExt, UiPanelExt, UiResizeHandlesExt,
+};
+use crate::widgets::prelude::{SetLabelTextExt, UiScrollViewExt};
 use crate::FluxInteraction;
 use crate::{
     drag_interaction::{DragState, Draggable},

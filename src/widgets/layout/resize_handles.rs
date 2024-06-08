@@ -17,10 +17,9 @@ use crate::{
     drag_interaction::Draggable,
     interactions::InteractiveBackground,
     ui_commands::SetCursorExt,
+    widgets::prelude::UiContainerExt,
     FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
 };
-
-use super::prelude::UiContainerExt;
 
 const RESIZE_HANDLES_LOCAL_Z_INDEX: i32 = 100;
 const HANDLE_NORTH: &'static str = "HandleNorth";
