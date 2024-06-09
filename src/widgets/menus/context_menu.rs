@@ -360,7 +360,7 @@ impl ContextMenu {
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
-            .background_color(colors.container(Container::SurfaceHigh))
+            .background_color(colors.container(Container::SurfaceMid))
             .border_color(colors.accent(Accent::Shadow))
             .visibility(Visibility::Hidden);
     }
@@ -385,11 +385,11 @@ impl ContextMenu {
     }
 }
 
-pub trait UiContextMenuExt<'w, 's> {
+pub trait UiContextMenuExt<'w> {
     fn container(&self) -> Entity;
 }
 
-impl<'w, 's> UiContextMenuExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
+impl<'w> UiContextMenuExt<'w> for UiBuilder<'w, '_, ContextMenu> {
     fn container(&self) -> Entity {
         self.context().container
     }

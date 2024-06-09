@@ -192,7 +192,7 @@ fn update_hierarchy_node_style(
 fn spawn_hierarchy_level(
     hierarchy: Entity,
     entity: Entity,
-    container: &mut UiBuilder<'_, '_, '_, Entity>,
+    container: &mut UiBuilder<'_, '_, Entity>,
     q_name: &Query<&Name>,
 ) {
     let name = match q_name.get(entity) {
@@ -246,12 +246,12 @@ pub struct HierarchyContainer {
     component_list: Entity,
 }
 
-pub trait UiHierarchyExt<'w, 's> {
-    fn hierarchy_for<'a>(&'a mut self, root_entity: Entity) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiHierarchyExt<'w> {
+    fn hierarchy_for<'a>(&'a mut self, root_entity: Entity) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiHierarchyExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
-    fn hierarchy_for<'a>(&'a mut self, root_entity: Entity) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiHierarchyExt<'w> for UiBuilder<'w, '_, Entity> {
+    fn hierarchy_for<'a>(&'a mut self, root_entity: Entity) -> UiBuilder<'w, 'a, Entity> {
         self.column(|column| {
             column.style().width(Val::Percent(100.));
             let main_zone = column

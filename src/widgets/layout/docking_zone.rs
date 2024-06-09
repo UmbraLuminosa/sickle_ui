@@ -814,28 +814,28 @@ impl Default for RemoveEmptyDockingZone {
     }
 }
 
-pub trait UiDockingZoneExt<'w, 's> {
+pub trait UiDockingZoneExt<'w> {
     fn docking_zone<'a>(
         &'a mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 
     fn docking_zone_split<'a>(
         &'a mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiDockingZoneExt<'w> for UiBuilder<'w, '_, Entity> {
     fn docking_zone<'a>(
         &'a mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let mut tab_container = Entity::PLACEHOLDER;
         let mut zone_highlight = Entity::PLACEHOLDER;
 
@@ -877,7 +877,7 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
         &'a mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let new_id = self
             .sized_zone(config, spawn_children)
             .insert((Name::new("Docking Zone Split"), DockingZoneSplitContainer))

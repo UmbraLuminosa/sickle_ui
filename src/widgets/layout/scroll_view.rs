@@ -599,20 +599,20 @@ impl ScrollView {
     }
 }
 
-pub trait UiScrollViewExt<'w, 's> {
+pub trait UiScrollViewExt<'w> {
     fn scroll_view<'a>(
         &'a mut self,
         restrict_to: impl Into<Option<ScrollAxis>>,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiScrollViewExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiScrollViewExt<'w> for UiBuilder<'w, '_, Entity> {
     fn scroll_view<'a>(
         &'a mut self,
         restrict_to: impl Into<Option<ScrollAxis>>,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let restrict_to = restrict_to.into();
         let mut viewport = Entity::PLACEHOLDER;
         let mut content_container = Entity::PLACEHOLDER;

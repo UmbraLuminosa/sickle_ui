@@ -54,12 +54,12 @@ impl MenuSeparator {
     }
 }
 
-pub trait UiMenuSeparatorExt<'w, 's> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiMenuSeparatorExt<'w> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiMenuSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, (Entity, MenuBar)> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuSeparatorExt<'w> for UiBuilder<'w, '_, (Entity, MenuBar)> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.id();
         let id = self
             .commands()
@@ -103,12 +103,12 @@ impl MenuItemSeparator {
     }
 }
 
-pub trait UiMenuItemSeparatorExt<'w, 's> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiMenuItemSeparatorExt<'w> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Menu> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -120,8 +120,8 @@ impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
     }
 }
 
-impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Submenu> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -133,8 +133,8 @@ impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     }
 }
 
-impl<'w, 's> UiMenuItemSeparatorExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, ContextMenu> {
+    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()

@@ -345,7 +345,7 @@ fn setup(
         .hierarchy_for(root_entity);
 }
 
-fn spawn_test_content(container: &mut UiBuilder<'_, '_, '_, Entity>) {
+fn spawn_test_content(container: &mut UiBuilder<'_, '_, Entity>) {
     container.sized_zone(
         SizedZoneConfig {
             size: 10.,

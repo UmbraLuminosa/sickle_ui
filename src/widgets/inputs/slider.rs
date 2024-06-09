@@ -528,12 +528,12 @@ impl Slider {
     }
 }
 
-pub trait UiSliderExt<'w, 's> {
-    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiSliderExt<'w> {
+    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiSliderExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
-    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiSliderExt<'w> for UiBuilder<'w, '_, Entity> {
+    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 'a, Entity> {
         let mut drag_handle: Entity = Entity::PLACEHOLDER;
         let mut slider_bar: Entity = Entity::PLACEHOLDER;
         let mut readout_target: Option<Entity> = None;

@@ -360,12 +360,12 @@ impl MenuItem {
     }
 }
 
-pub trait UiMenuItemExt<'w, 's> {
-    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiMenuItemExt<'w> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
-    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemExt<'w> for UiBuilder<'w, '_, Entity> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 'a, Entity> {
         let (id, menu_item) = MenuItem::scaffold(self, config);
 
         self.commands().ui_builder(id).insert(menu_item);
@@ -373,8 +373,8 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     }
 }
 
-impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
-    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemExt<'w> for UiBuilder<'w, '_, Menu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -386,8 +386,8 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
     }
 }
 
-impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
-    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemExt<'w> for UiBuilder<'w, '_, Submenu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -399,8 +399,8 @@ impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     }
 }
 
-impl<'w, 's> UiMenuItemExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
-    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiMenuItemExt<'w> for UiBuilder<'w, '_, ContextMenu> {
+    fn menu_item<'a>(&'a mut self, config: MenuItemConfig) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()

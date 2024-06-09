@@ -238,24 +238,24 @@ impl Foldable {
     }
 }
 
-pub trait UiFoldableExt<'w, 's> {
+pub trait UiFoldableExt<'w> {
     fn foldable<'a>(
         &'a mut self,
         name: impl Into<String>,
         open: bool,
         empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiFoldableExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiFoldableExt<'w> for UiBuilder<'w, '_, Entity> {
     fn foldable<'a>(
         &'a mut self,
         name: impl Into<String>,
         open: bool,
         empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let name = name.into();
 
         let mut foldable = Foldable {

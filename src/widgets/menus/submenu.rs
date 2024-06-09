@@ -441,30 +441,30 @@ impl Submenu {
     }
 }
 
-pub trait UiSubmenuSubExt<'w, 's> {
+pub trait UiSubmenuSubExt<'w> {
     fn container(&self) -> Entity;
 }
 
-impl<'w, 's> UiSubmenuSubExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+impl<'w> UiSubmenuSubExt<'w> for UiBuilder<'w, '_, Submenu> {
     fn container(&self) -> Entity {
         self.context().container
     }
 }
 
-pub trait UiSubmenuExt<'w, 's> {
+pub trait UiSubmenuExt<'w> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiSubmenuExt<'w> for UiBuilder<'w, '_, Entity> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let external_container = self.id();
         let (id, menu_item) = MenuItem::scaffold(self, config.into());
         let container = self
@@ -487,12 +487,12 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     }
 }
 
-impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+impl<'w> UiSubmenuExt<'w> for UiBuilder<'w, '_, Menu> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -504,12 +504,12 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
     }
 }
 
-impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
+impl<'w> UiSubmenuExt<'w> for UiBuilder<'w, '_, Submenu> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -521,12 +521,12 @@ impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, Submenu> {
     }
 }
 
-impl<'w, 's> UiSubmenuExt<'w, 's> for UiBuilder<'w, 's, '_, ContextMenu> {
+impl<'w> UiSubmenuExt<'w> for UiBuilder<'w, '_, ContextMenu> {
     fn submenu<'a>(
         &'a mut self,
         config: SubmenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Submenu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let container_id = self.container();
         let id = self
             .commands()

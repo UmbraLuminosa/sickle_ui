@@ -301,20 +301,20 @@ impl Menu {
     }
 }
 
-pub trait UiMenuExt<'w, 's> {
+pub trait UiMenuExt<'w> {
     fn menu<'a>(
         &'a mut self,
         config: MenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Menu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiMenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiMenuExt<'w> for UiBuilder<'w, '_, Entity> {
     fn menu<'a>(
         &'a mut self,
         config: MenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Menu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let mut menu = Menu::default();
         let name = format!("Menu [{}]", config.name.clone());
 
@@ -338,12 +338,12 @@ impl<'w, 's> UiMenuExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
     }
 }
 
-impl<'w, 's> UiMenuExt<'w, 's> for UiBuilder<'w, 's, '_, (Entity, MenuBar)> {
+impl<'w> UiMenuExt<'w> for UiBuilder<'w, '_, (Entity, MenuBar)> {
     fn menu<'a>(
         &'a mut self,
         config: MenuConfig,
         spawn_items: impl FnOnce(&mut UiBuilder<Menu>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let own_id = self.id();
         let id = self
             .commands()
@@ -355,11 +355,11 @@ impl<'w, 's> UiMenuExt<'w, 's> for UiBuilder<'w, 's, '_, (Entity, MenuBar)> {
     }
 }
 
-pub trait UiMenuSubExt<'w, 's> {
+pub trait UiMenuSubExt<'w> {
     fn container(&self) -> Entity;
 }
 
-impl<'w, 's> UiMenuSubExt<'w, 's> for UiBuilder<'w, 's, '_, Menu> {
+impl<'w> UiMenuSubExt<'w> for UiBuilder<'w, '_, Menu> {
     fn container(&self) -> Entity {
         self.context().container
     }

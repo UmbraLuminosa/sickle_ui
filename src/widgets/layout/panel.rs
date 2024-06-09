@@ -42,20 +42,20 @@ impl Panel {
     }
 }
 
-pub trait UiPanelExt<'w, 's> {
+pub trait UiPanelExt<'w> {
     fn panel<'a>(
         &'a mut self,
         title: String,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiPanelExt<'w> for UiBuilder<'w, '_, Entity> {
     fn panel<'a>(
         &'a mut self,
         title: String,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let name = format!("Panel [{}]", title.clone());
         let mut container = self.container((Name::new(name), Panel::frame()), spawn_children);
         let own_id = container.id();

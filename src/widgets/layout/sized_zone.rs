@@ -598,20 +598,20 @@ impl SizedZone {
     }
 }
 
-pub trait UiSizedZoneExt<'w, 's> {
+pub trait UiSizedZoneExt<'w> {
     fn sized_zone<'a>(
         &'a mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiSizedZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiSizedZoneExt<'w> for UiBuilder<'w, '_, Entity> {
     fn sized_zone<'a>(
         &'a mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let size = config.size.clamp(0., 100.);
         let min_size = config.min_size.max(MIN_SIZED_ZONE_SIZE);
         let mut left_handle = Entity::PLACEHOLDER;

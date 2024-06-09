@@ -501,12 +501,12 @@ impl SceneView {
     }
 }
 
-pub trait UiSceneViewExt<'w, 's> {
-    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait UiSceneViewExt<'w> {
+    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiSceneViewExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
-    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w> UiSceneViewExt<'w> for UiBuilder<'w, '_, Entity> {
+    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 'a, Entity> {
         let column = self
             .column(|_| {})
             .insert((

@@ -29,27 +29,27 @@ impl Column {
     }
 }
 
-pub trait UiColumnExt<'w, 's> {
+pub trait UiColumnExt<'w> {
     fn column<'a>(
         &'a mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiColumnExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
+impl<'w> UiColumnExt<'w> for UiBuilder<'w, '_, UiRoot> {
     fn column<'a>(
         &'a mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         self.container((Column::frame(), Column), spawn_children)
     }
 }
 
-impl<'w, 's> UiColumnExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiColumnExt<'w> for UiBuilder<'w, '_, Entity> {
     fn column<'a>(
         &'a mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         self.container((Column::frame(), Column), spawn_children)
     }
 }

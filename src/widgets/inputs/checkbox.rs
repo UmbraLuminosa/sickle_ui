@@ -250,20 +250,20 @@ impl Checkbox {
     }
 }
 
-pub trait UiCheckboxExt<'w, 's> {
+pub trait UiCheckboxExt<'w> {
     fn checkbox<'a>(
         &'a mut self,
         label: Option<String>,
         checked: bool,
-    ) -> UiBuilder<'w, 's, 'a, Entity>;
+    ) -> UiBuilder<'w, 'a, Entity>;
 }
 
-impl<'w, 's> UiCheckboxExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
+impl<'w> UiCheckboxExt<'w> for UiBuilder<'w, '_, Entity> {
     fn checkbox<'a>(
         &'a mut self,
         label: Option<String>,
         checked: bool,
-    ) -> UiBuilder<'w, 's, 'a, Entity> {
+    ) -> UiBuilder<'w, 'a, Entity> {
         let mut checkbox = Checkbox {
             checked,
             ..default()
