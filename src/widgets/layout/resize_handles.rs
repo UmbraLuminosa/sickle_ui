@@ -432,7 +432,7 @@ impl ResizeHandles {
             ResizeHandles::resizable_north_west,
         );
 
-        Theme::<ResizeHandles>::new(vec![
+        Theme::new(vec![
             base_theme,
             theme_north,
             theme_north_north_west,
@@ -453,7 +453,12 @@ impl ResizeHandles {
         ])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+    fn primary_style(
+        style_builder: &mut StyleBuilder,
+        entity: Entity,
+        _: &ResizeHandles,
+        world: &mut World,
+    ) {
         let theme_data = world.resource::<ThemeData>();
         let resize_spacing = theme_data.spacing.resize_zone;
         let interaction_animation = theme_data.delayed_interaction_animation;

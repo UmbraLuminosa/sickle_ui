@@ -137,7 +137,7 @@ impl Foldable {
         let folded_theme = PseudoTheme::deferred(vec![PseudoState::Folded], Foldable::folded_style);
         let empty_theme = PseudoTheme::deferred(vec![PseudoState::Empty], Foldable::empty_style);
 
-        Theme::<Foldable>::new(vec![base_theme, folded_theme, empty_theme])
+        Theme::new(vec![base_theme, folded_theme, empty_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {

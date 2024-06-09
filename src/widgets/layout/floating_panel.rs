@@ -616,20 +616,20 @@ impl FloatingPanel {
     pub const CONTENT_VIEW: &'static str = "ContentView";
 
     pub fn theme() -> Theme<FloatingPanel> {
-        let base_theme = PseudoTheme::deferred_world(None, FloatingPanel::primary_style);
+        let base_theme = PseudoTheme::deferred_context(None, FloatingPanel::primary_style);
         let folded_theme =
-            PseudoTheme::deferred_world(vec![PseudoState::Folded], FloatingPanel::folded_style);
+            PseudoTheme::deferred_context(vec![PseudoState::Folded], FloatingPanel::folded_style);
 
-        Theme::<FloatingPanel>::new(vec![base_theme, folded_theme])
+        Theme::new(vec![base_theme, folded_theme])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let theme_data = world.resource::<ThemeData>().clone();
+    fn primary_style(
+        style_builder: &mut StyleBuilder,
+        panel: &FloatingPanel,
+        theme_data: &ThemeData,
+    ) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
-        let Some(panel) = world.get::<FloatingPanel>(entity) else {
-            return;
-        };
 
         style_builder
             .absolute_position(panel.position)
@@ -738,13 +738,13 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
     }
 
-    fn folded_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let theme_data = world.resource::<ThemeData>().clone();
+    fn folded_style(
+        style_builder: &mut StyleBuilder,
+        panel: &FloatingPanel,
+        theme_data: &ThemeData,
+    ) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
-        let Some(panel) = world.get::<FloatingPanel>(entity) else {
-            return;
-        };
 
         style_builder
             .height(Val::Auto)

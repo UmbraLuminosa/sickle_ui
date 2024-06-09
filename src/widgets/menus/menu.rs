@@ -209,7 +209,7 @@ impl Menu {
     pub fn theme() -> Theme<Menu> {
         let base_theme = PseudoTheme::deferred(None, Menu::primary_style);
         let open_theme = PseudoTheme::deferred(vec![PseudoState::Open], Menu::open_style);
-        Theme::<Menu>::new(vec![base_theme, open_theme])
+        Theme::new(vec![base_theme, open_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -232,36 +232,27 @@ impl Menu {
             .animated()
             .background_color(AnimatedVals {
                 idle: colors.container(Container::SurfaceMid),
-                hover: colors.container(Container::SurfaceHigh).into(),
+                hover: colors.container(Container::SurfaceHighest).into(),
                 ..default()
             });
 
         style_builder
             .switch_target(Menu::LABEL)
             .sized_font(font)
-            .animated()
-            .font_color(AnimatedVals {
-                idle: colors.on(On::SurfaceVariant),
-                hover: colors.on(On::Surface).into(),
-                ..default()
-            })
-            .copy_from(theme_data.interaction_animation);
+            .font_color(colors.on(On::Surface));
 
         style_builder
             .switch_target(Menu::CONTAINER)
-            .top(Val::Px(theme_spacing.areas.small))
+            .top(Val::Px(
+                theme_spacing.areas.small - theme_spacing.borders.extra_small,
+            ))
             .left(Val::Px(-theme_spacing.borders.extra_small))
             .position_type(PositionType::Absolute)
-            .border(UiRect::px(
-                theme_spacing.borders.extra_small,
-                theme_spacing.borders.extra_small,
-                0.,
-                theme_spacing.borders.extra_small,
-            ))
+            .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Global(MENU_CONTAINER_Z_INDEX))
-            .background_color(colors.container(Container::SurfaceHigh))
+            .background_color(colors.container(Container::SurfaceMid))
             .border_color(colors.accent(Accent::Shadow))
             .visibility(Visibility::Hidden);
     }
@@ -271,7 +262,7 @@ impl Menu {
 
         style_builder
             .border_color(colors.accent(Accent::Shadow))
-            .background_color(colors.container(Container::SurfaceHigh));
+            .background_color(colors.container(Container::SurfaceHighest));
 
         style_builder
             .switch_target(Menu::LABEL)

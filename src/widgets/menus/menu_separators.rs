@@ -34,7 +34,7 @@ impl DefaultTheme for MenuSeparator {
 impl MenuSeparator {
     pub fn theme() -> Theme<MenuSeparator> {
         let base_theme = PseudoTheme::deferred(None, MenuSeparator::primary_style);
-        Theme::<MenuSeparator>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -84,7 +84,7 @@ impl DefaultTheme for MenuItemSeparator {
 impl MenuItemSeparator {
     pub fn theme() -> Theme<MenuItemSeparator> {
         let base_theme = PseudoTheme::deferred(None, MenuItemSeparator::primary_style);
-        Theme::<MenuItemSeparator>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {

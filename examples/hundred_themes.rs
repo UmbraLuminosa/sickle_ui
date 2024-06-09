@@ -104,7 +104,7 @@ impl ThemeTestBox {
             PseudoTheme::deferred(vec![PseudoState::Disabled], ThemeTestBox::disabled_style);
         let selected_style =
             PseudoTheme::deferred(vec![PseudoState::Selected], ThemeTestBox::selected_style);
-        Theme::<ThemeTestBox>::new(vec![
+        Theme::new(vec![
             base_style,
             enabled_style,
             disabled_style,
@@ -120,7 +120,7 @@ impl ThemeTestBox {
             PseudoTheme::deferred(vec![PseudoState::Disabled], ThemeTestBox::disabled_style);
         let selected_style =
             PseudoTheme::deferred(vec![PseudoState::Selected], ThemeTestBox::selected_style);
-        Theme::<ThemeTestBox>::new(vec![
+        Theme::new(vec![
             base_style,
             enabled_style,
             disabled_style,
@@ -136,7 +136,7 @@ impl ThemeTestBox {
             PseudoTheme::deferred(vec![PseudoState::Disabled], ThemeTestBox::disabled_style);
         let selected_style =
             PseudoTheme::deferred(vec![PseudoState::Selected], ThemeTestBox::selected_style);
-        Theme::<ThemeTestBox>::new(vec![
+        Theme::new(vec![
             base_style,
             enabled_style,
             disabled_style,

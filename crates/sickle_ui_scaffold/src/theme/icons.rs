@@ -12,6 +12,18 @@ pub enum IconData {
 }
 
 impl IconData {
+    pub fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+
+    pub fn is_image(&self) -> bool {
+        matches!(self, Self::Image(_, _))
+    }
+
+    pub fn is_codepoint(&self) -> bool {
+        matches!(self, Self::FontCodepoint(_, _, _, _))
+    }
+
     pub fn with_color(&self, color: Color) -> Self {
         match self {
             IconData::None => IconData::None,

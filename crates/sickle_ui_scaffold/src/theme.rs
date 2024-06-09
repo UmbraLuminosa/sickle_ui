@@ -58,34 +58,35 @@ pub struct ThemeUpdate;
 pub struct CustomThemeUpdate;
 
 #[derive(Clone, Debug)]
-pub enum DynamicStyleBuilder {
+pub enum DynamicStyleBuilder<C> {
     Static(DynamicStyle),
     StyleBuilder(fn(&mut StyleBuilder, &ThemeData)),
-    WorldStyleBuilder(fn(&mut StyleBuilder, Entity, &mut World)),
+    ContextStyleBuilder(fn(&mut StyleBuilder, &C, &ThemeData)),
+    WorldStyleBuilder(fn(&mut StyleBuilder, Entity, &C, &mut World)),
 }
 
-impl From<StyleBuilder> for DynamicStyleBuilder {
+impl<C> From<StyleBuilder> for DynamicStyleBuilder<C> {
     fn from(value: StyleBuilder) -> Self {
         Self::Static(value.into())
     }
 }
 
-impl From<DynamicStyle> for DynamicStyleBuilder {
+impl<C> From<DynamicStyle> for DynamicStyleBuilder<C> {
     fn from(value: DynamicStyle) -> Self {
         Self::Static(value)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct PseudoTheme {
+pub struct PseudoTheme<C> {
     state: Option<Vec<PseudoState>>,
-    builder: DynamicStyleBuilder,
+    builder: DynamicStyleBuilder<C>,
 }
 
-impl PseudoTheme {
+impl<C> PseudoTheme<C> {
     pub fn new(
         state: impl Into<Option<Vec<PseudoState>>>,
-        theme: impl Into<DynamicStyleBuilder>,
+        theme: impl Into<DynamicStyleBuilder<C>>,
     ) -> Self {
         Self {
             state: state.into(),
@@ -93,7 +94,7 @@ impl PseudoTheme {
         }
     }
 
-    pub fn builder(&self) -> &DynamicStyleBuilder {
+    pub fn builder(&self) -> &DynamicStyleBuilder<C> {
         &self.builder
     }
 
@@ -120,9 +121,19 @@ impl PseudoTheme {
         }
     }
 
+    pub fn deferred_context(
+        state: impl Into<Option<Vec<PseudoState>>>,
+        builder: fn(&mut StyleBuilder, &C, &ThemeData),
+    ) -> Self {
+        Self {
+            state: state.into(),
+            builder: DynamicStyleBuilder::ContextStyleBuilder(builder),
+        }
+    }
+
     pub fn deferred_world(
         state: impl Into<Option<Vec<PseudoState>>>,
-        builder: fn(&mut StyleBuilder, Entity, &mut World),
+        builder: fn(&mut StyleBuilder, Entity, &C, &mut World),
     ) -> Self {
         Self {
             state: state.into(),
@@ -179,21 +190,21 @@ where
     C: DefaultTheme,
 {
     context: PhantomData<C>,
-    pseudo_themes: Vec<PseudoTheme>,
+    pseudo_themes: Vec<PseudoTheme<C>>,
 }
 
 impl<C> Theme<C>
 where
     C: DefaultTheme,
 {
-    pub fn new(pseudo_themes: impl Into<Vec<PseudoTheme>>) -> Self {
+    pub fn new(pseudo_themes: impl Into<Vec<PseudoTheme<C>>>) -> Self {
         Self {
             context: PhantomData,
             pseudo_themes: pseudo_themes.into(),
         }
     }
 
-    pub fn pseudo_themes(&self) -> &Vec<PseudoTheme> {
+    pub fn pseudo_themes(&self) -> &Vec<PseudoTheme<C>> {
         &self.pseudo_themes
     }
 

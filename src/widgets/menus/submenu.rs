@@ -362,24 +362,23 @@ impl Submenu {
     pub const MENU_CONTAINER: &'static str = "MenuContainer";
 
     pub fn theme() -> Theme<Submenu> {
-        let base_theme = PseudoTheme::deferred_world(None, Submenu::primary_style);
+        let base_theme = PseudoTheme::deferred_context(None, Submenu::primary_style);
         let open_theme = PseudoTheme::deferred_world(vec![PseudoState::Open], Submenu::open_style);
 
-        Theme::<Submenu>::new(vec![base_theme, open_theme])
+        Theme::new(vec![base_theme, open_theme])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let Some(menu_item) = world.get::<Submenu>(entity) else {
-            return;
-        };
-
-        let theme_data = world.resource::<ThemeData>().clone();
+    fn primary_style(
+        style_builder: &mut StyleBuilder,
+        menu_item: &Submenu,
+        theme_data: &ThemeData,
+    ) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
         let leading_icon = menu_item.leading_icon.clone();
-        let trailing_icon = theme_data.icons.arrow_right;
+        let trailing_icon = theme_data.icons.arrow_right.clone();
 
-        MenuItem::menu_item_style(style_builder, world, leading_icon, trailing_icon);
+        MenuItem::menu_item_style(style_builder, theme_data, leading_icon, trailing_icon);
 
         style_builder
             .switch_target(Submenu::MENU_CONTAINER)
@@ -389,17 +388,22 @@ impl Submenu {
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .flex_direction(FlexDirection::Column)
             .z_index(ZIndex::Local(1))
-            .background_color(colors.container(Container::SurfaceHigh))
+            .background_color(colors.container(Container::SurfaceMid))
             .border_color(colors.accent(Accent::Shadow))
             .display(Display::None)
             .visibility(Visibility::Hidden);
     }
 
-    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+    fn open_style(
+        style_builder: &mut StyleBuilder,
+        entity: Entity,
+        _: &Submenu,
+        world: &mut World,
+    ) {
         let theme_data = world.resource::<ThemeData>().clone();
         let colors = theme_data.colors();
 
-        style_builder.background_color(colors.accent(Accent::OutlineVariant));
+        style_builder.background_color(colors.container(Container::SurfaceHighest));
 
         // Unsafe unwrap: if the menu item doesn't have a node, panic!
         let node = world.get::<Node>(entity).unwrap();

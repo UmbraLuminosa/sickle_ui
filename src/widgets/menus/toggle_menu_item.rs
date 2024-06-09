@@ -168,22 +168,21 @@ impl UiContext for ToggleMenuItem {
 
 impl ToggleMenuItem {
     pub fn theme() -> Theme<ToggleMenuItem> {
-        let base_theme = PseudoTheme::deferred_world(None, ToggleMenuItem::primary_style);
+        let base_theme = PseudoTheme::deferred_context(None, ToggleMenuItem::primary_style);
         let checked_theme =
             PseudoTheme::deferred(vec![PseudoState::Checked], ToggleMenuItem::checked_style);
-        Theme::<ToggleMenuItem>::new(vec![base_theme, checked_theme])
+        Theme::new(vec![base_theme, checked_theme])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let Some(menu_item) = world.get::<ToggleMenuItem>(entity) else {
-            return;
-        };
-
-        let theme_data = world.resource::<ThemeData>().clone();
-        let leading_icon = theme_data.icons.checkmark;
+    fn primary_style(
+        style_builder: &mut StyleBuilder,
+        menu_item: &ToggleMenuItem,
+        theme_data: &ThemeData,
+    ) {
+        let leading_icon = theme_data.icons.checkmark.clone();
         let trailing_icon = menu_item.trailing_icon.clone();
 
-        MenuItem::menu_item_style(style_builder, world, leading_icon, trailing_icon);
+        MenuItem::menu_item_style(style_builder, theme_data, leading_icon, trailing_icon);
 
         style_builder
             .switch_target(MenuItem::LEADING_ICON)

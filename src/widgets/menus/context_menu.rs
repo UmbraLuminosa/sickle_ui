@@ -346,7 +346,7 @@ impl ContextMenu {
 
     pub fn theme() -> Theme<ContextMenu> {
         let base_theme = PseudoTheme::deferred(None, ContextMenu::container);
-        Theme::<ContextMenu>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn container(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {

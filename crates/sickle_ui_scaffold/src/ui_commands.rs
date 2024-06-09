@@ -382,7 +382,7 @@ where
 
         // Assuming we have a base style and two-three pseudo state style is a reasonable guess.
         // TODO: Cache most common pseudo theme count in theme data.
-        let mut pseudo_themes: Vec<&PseudoTheme> = Vec::with_capacity(themes.len() * 4);
+        let mut pseudo_themes: Vec<&PseudoTheme<C>> = Vec::with_capacity(themes.len() * 4);
 
         for theme in &themes {
             if let Some(base_theme) = theme.pseudo_themes().iter().find(|pt| pt.is_base_theme()) {
@@ -406,7 +406,7 @@ where
         let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
             .map(|pseudo_theme| pseudo_theme.builder().clone())
-            .collect::<Vec<DynamicStyleBuilder>>()
+            .collect::<Vec<DynamicStyleBuilder<C>>>()
             .iter()
             .map(|builder| match builder {
                 DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
@@ -416,9 +416,15 @@ where
 
                     style_builder.convert_with(&context)
                 }
+                DynamicStyleBuilder::ContextStyleBuilder(builder) => {
+                    let mut style_builder = StyleBuilder::new();
+                    builder(&mut style_builder, &context, &theme_data);
+
+                    style_builder.convert_with(&context)
+                }
                 DynamicStyleBuilder::WorldStyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, entity, world);
+                    builder(&mut style_builder, entity, &context, world);
 
                     style_builder.convert_with(&context)
                 }

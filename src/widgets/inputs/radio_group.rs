@@ -137,7 +137,7 @@ impl RadioGroup {
 
     pub fn theme() -> Theme<RadioGroup> {
         let base_theme = PseudoTheme::build(None, RadioGroup::primary_style);
-        Theme::<RadioGroup>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder) {
@@ -213,7 +213,7 @@ impl RadioButton {
         let base_theme = PseudoTheme::deferred(None, RadioButton::primary_style);
         let checked_theme =
             PseudoTheme::deferred(vec![PseudoState::Checked], RadioButton::checked_style);
-        Theme::<RadioButton>::new(vec![base_theme, checked_theme])
+        Theme::new(vec![base_theme, checked_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {

@@ -24,7 +24,7 @@ impl DefaultTheme for MenuBar {
 impl MenuBar {
     pub fn theme() -> Theme<MenuBar> {
         let base_theme = PseudoTheme::deferred(None, MenuBar::primary_style);
-        Theme::<MenuBar>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -34,7 +34,9 @@ impl MenuBar {
         style_builder
             .width(Val::Percent(100.))
             .height(Val::Px(theme_spacing.areas.medium))
+            .border(UiRect::bottom(Val::Px(theme_spacing.borders.extra_small)))
             .background_color(colors.container(Container::SurfaceMid))
+            .border_color(colors.accent(Accent::Shadow))
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)));
     }
 

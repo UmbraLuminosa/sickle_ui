@@ -107,7 +107,7 @@ impl Checkbox {
         let base_theme = PseudoTheme::deferred(None, Checkbox::primary_style);
         let checked_theme =
             PseudoTheme::deferred(vec![PseudoState::Checked], Checkbox::checked_style);
-        Theme::<Checkbox>::new(vec![base_theme, checked_theme])
+        Theme::new(vec![base_theme, checked_theme])
     }
 
     // TODO: bevy 0.14: Add border radius

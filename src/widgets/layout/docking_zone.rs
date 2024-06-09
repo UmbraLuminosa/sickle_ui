@@ -748,7 +748,7 @@ impl DockingZoneHighlight {
             vec![PseudoState::Visible],
             DockingZoneHighlight::visible_style,
         );
-        Theme::<DockingZoneHighlight>::new(vec![base_theme, visible_theme])
+        Theme::new(vec![base_theme, visible_theme])
     }
 
     fn bundle() -> impl Bundle {
@@ -848,14 +848,10 @@ impl<'w, 's> UiDockingZoneExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
             }
             tab_container = new_tab_container.id();
 
-            // TODO: remove initial style and rely on default theme instead
-            let zone_style: DynamicStyle =
-                ThemeData::with_default(DockingZoneHighlight::primary_style).into();
             zone_highlight = zone
                 .spawn((
                     DockingZoneHighlight::bundle(),
                     DockingZoneHighlight { zone: zone_id },
-                    zone_style,
                 ))
                 .id();
         });

@@ -190,28 +190,27 @@ impl MenuItem {
     }
 
     pub fn theme() -> Theme<MenuItem> {
-        let base_theme = PseudoTheme::deferred_world(None, MenuItem::primary_style);
-        Theme::<MenuItem>::new(vec![base_theme])
+        let base_theme = PseudoTheme::deferred_context(None, MenuItem::primary_style);
+        Theme::new(vec![base_theme])
     }
 
-    fn primary_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
-        let Some(menu_item) = world.get::<MenuItem>(entity) else {
-            return;
-        };
-
+    fn primary_style(
+        style_builder: &mut StyleBuilder,
+        menu_item: &MenuItem,
+        theme_data: &ThemeData,
+    ) {
         let leading_icon = menu_item.leading_icon.clone();
         let trailing_icon = menu_item.trailing_icon.clone();
 
-        MenuItem::menu_item_style(style_builder, world, leading_icon, trailing_icon);
+        MenuItem::menu_item_style(style_builder, theme_data, leading_icon, trailing_icon);
     }
 
     pub(crate) fn menu_item_style(
         style_builder: &mut StyleBuilder,
-        world: &mut World,
+        theme_data: &ThemeData,
         leading_icon: IconData,
         trailing_icon: IconData,
     ) {
-        let theme_data = world.resource::<ThemeData>().clone();
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
         let font = theme_data
@@ -226,8 +225,8 @@ impl MenuItem {
             .margin(UiRect::vertical(Val::Px(theme_spacing.gaps.tiny)))
             .animated()
             .background_color(AnimatedVals {
-                idle: colors.container(Container::SurfaceHigh),
-                hover: colors.accent(Accent::OutlineVariant).into(),
+                idle: colors.container(Container::SurfaceMid),
+                hover: colors.container(Container::SurfaceHighest).into(),
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
@@ -236,7 +235,7 @@ impl MenuItem {
             .switch_target(MenuItem::LEADING_ICON)
             .aspect_ratio(1.)
             .size(Val::Px(theme_spacing.icons.small))
-            .icon(leading_icon.with(colors.on(On::Surface), theme_spacing.icons.small));
+            .icon(leading_icon.with(colors.on(On::SurfaceVariant), theme_spacing.icons.small));
 
         style_builder
             .switch_target(MenuItem::LABEL)
@@ -254,14 +253,14 @@ impl MenuItem {
         style_builder
             .switch_target(MenuItem::SHORTCUT)
             .sized_font(font)
-            .font_color(colors.on(On::Surface));
+            .font_color(colors.on(On::SurfaceVariant));
 
         style_builder
             .switch_target(MenuItem::TRAILING_ICON)
             .aspect_ratio(1.)
             .margin(UiRect::left(Val::Px(theme_spacing.gaps.small)))
             .size(Val::Px(theme_spacing.icons.small))
-            .icon(trailing_icon.with(colors.on(On::Surface), theme_spacing.icons.small));
+            .icon(trailing_icon.with(colors.on(On::SurfaceVariant), theme_spacing.icons.small));
     }
 
     fn button(name: String) -> impl Bundle {

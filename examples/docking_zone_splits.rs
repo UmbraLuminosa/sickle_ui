@@ -118,7 +118,7 @@ impl ThemeTestBox {
             },
         );
 
-        Theme::<ThemeTestBox>::new(vec![
+        Theme::new(vec![
             base_style,
             checked_style,
             checked_empty_style,
@@ -128,7 +128,7 @@ impl ThemeTestBox {
 
     fn override_theme() -> Theme<ThemeTestBox> {
         let base_style = PseudoTheme::deferred(None, ThemeTestBox::style_builder);
-        Theme::<ThemeTestBox>::new(vec![base_style])
+        Theme::new(vec![base_style])
     }
 
     fn style_builder(builder: &mut StyleBuilder, data: &ThemeData) {

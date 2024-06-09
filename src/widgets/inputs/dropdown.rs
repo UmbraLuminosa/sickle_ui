@@ -225,7 +225,7 @@ impl DropdownOption {
     pub fn theme() -> Theme<DropdownOption> {
         let base_theme = PseudoTheme::deferred(None, DropdownOption::primary_style);
 
-        Theme::<DropdownOption>::new(vec![base_theme])
+        Theme::new(vec![base_theme])
     }
 
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -246,7 +246,7 @@ impl DropdownOption {
             .animated()
             .background_color(AnimatedVals {
                 idle: colors.container(Container::SurfaceMid),
-                hover: colors.accent(Accent::OutlineVariant).into(),
+                hover: colors.container(Container::SurfaceHighest).into(),
                 ..default()
             })
             .copy_from(theme_data.interaction_animation);
@@ -420,7 +420,12 @@ impl Dropdown {
             .max_height(Val::Px(theme_spacing.areas.extra_large));
     }
 
-    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, world: &mut World) {
+    fn open_style(
+        style_builder: &mut StyleBuilder,
+        entity: Entity,
+        _: &Dropdown,
+        world: &mut World,
+    ) {
         let placement = match Dropdown::panel_placement_for(entity, world) {
             Ok(placement) => placement,
             Err(msg) => {
