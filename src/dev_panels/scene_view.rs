@@ -10,10 +10,8 @@ use bevy::{
     utils::HashMap,
 };
 
-use sickle_ui_scaffold::{
-    ui_builder::{UiBuilder, UiBuilderExt},
-    ui_style::prelude::*,
-};
+use sickle_macros::UiContext;
+use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::{
     inputs::{
@@ -31,6 +29,7 @@ impl Plugin for SceneViewPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActiveSceneViews>()
             .configure_sets(Update, SpawnSceneViewUpdate.after(WidgetLibraryUpdate))
+            .add_plugins(ComponentThemePlugin::<SceneControls>::default())
             .add_systems(
                 PreUpdate,
                 (
@@ -158,24 +157,18 @@ fn spawn_scene_view(
             .remove::<SpawnSceneView>();
 
         commands.ui_builder(container).row(|scene_controls| {
-            scene_controls
-                .insert(SceneControls {
-                    scene_view: container,
-                })
-                .style()
-                .background_color(Color::rgba(0., 0., 0., 0.8))
-                .justify_self(JustifySelf::Start)
-                .height(Val::Px(30.))
-                .position_type(PositionType::Absolute);
+            scene_controls.insert(SceneControls {
+                scene_view: container,
+            });
 
             scene_controls
-                .checkbox(Some("Rotate Scene".into()), false)
+                .checkbox(String::from("Rotate Scene"), false)
                 .insert(SceneRotationControl {
                     scene_view: container,
                 });
             scene_controls
                 .slider(SliderConfig::new(
-                    "Rotation Speed".into(),
+                    String::from("Rotation Speed"),
                     -1.,
                     1.,
                     0.1,
@@ -420,10 +413,43 @@ impl Default for ActiveSceneViews {
     }
 }
 
-#[derive(Component, Debug, Reflect)]
+#[derive(Component, Clone, Debug, Reflect, UiContext)]
 #[reflect(Component)]
 struct SceneControls {
     scene_view: Entity,
+}
+
+impl Default for SceneControls {
+    fn default() -> Self {
+        Self {
+            scene_view: Entity::PLACEHOLDER,
+        }
+    }
+}
+
+impl DefaultTheme for SceneControls {
+    fn default_theme() -> Option<Theme<SceneControls>> {
+        SceneControls::theme().into()
+    }
+}
+
+impl SceneControls {
+    pub fn theme() -> Theme<SceneControls> {
+        let base_theme = PseudoTheme::deferred(None, SceneControls::primary_style);
+        Theme::new(vec![base_theme])
+    }
+
+    fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
+        let theme_spacing = theme_data.spacing;
+        let colors = theme_data.colors();
+
+        style_builder
+            .justify_self(JustifySelf::Start)
+            .height(Val::Px(theme_spacing.areas.small))
+            .position_type(PositionType::Absolute)
+            .background_color(colors.surface(Surface::Surface))
+            .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)));
+    }
 }
 
 #[derive(Component, Debug, Reflect)]

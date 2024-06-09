@@ -253,7 +253,7 @@ impl Checkbox {
 pub trait UiCheckboxExt<'w> {
     fn checkbox<'a>(
         &'a mut self,
-        label: Option<String>,
+        label: impl Into<Option<String>>,
         checked: bool,
     ) -> UiBuilder<'w, 'a, Entity>;
 }
@@ -261,7 +261,7 @@ pub trait UiCheckboxExt<'w> {
 impl<'w> UiCheckboxExt<'w> for UiBuilder<'w, '_, Entity> {
     fn checkbox<'a>(
         &'a mut self,
-        label: Option<String>,
+        label: impl Into<Option<String>>,
         checked: bool,
     ) -> UiBuilder<'w, 'a, Entity> {
         let mut checkbox = Checkbox {
@@ -269,8 +269,8 @@ impl<'w> UiCheckboxExt<'w> for UiBuilder<'w, '_, Entity> {
             ..default()
         };
 
-        let label = match label {
-            Some(into_string) => into_string,
+        let label = match label.into() {
+            Some(label) => label,
             None => "".into(),
         };
         let has_label = label.len() > 0;

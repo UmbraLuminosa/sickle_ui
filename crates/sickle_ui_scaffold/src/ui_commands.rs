@@ -95,6 +95,41 @@ impl<'a> SetTextExt<'a> for EntityCommands<'a> {
     }
 }
 
+struct UpdateText {
+    text: String,
+}
+
+impl EntityCommand for UpdateText {
+    fn apply(self, entity: Entity, world: &mut World) {
+        let Some(mut text) = world.get_mut::<Text>(entity) else {
+            warn!(
+                "Failed to set text on entity {:?}: No Text component found!",
+                entity
+            );
+            return;
+        };
+
+        let first_section = match text.sections.get(0) {
+            Some(section) => TextSection::new(self.text, section.style.clone()),
+            None => TextSection::new(self.text, TextStyle::default()),
+        };
+
+        text.sections = vec![first_section];
+    }
+}
+
+pub trait UpdateTextExt<'a> {
+    fn update_text(&'a mut self, text: impl Into<String>) -> &mut EntityCommands<'a>;
+}
+
+impl<'a> UpdateTextExt<'a> for EntityCommands<'a> {
+    fn update_text(&'a mut self, text: impl Into<String>) -> &mut EntityCommands<'a> {
+        self.add(UpdateText { text: text.into() });
+
+        self
+    }
+}
+
 // TODO: Move to style and apply to Node's window
 struct SetCursor {
     cursor: CursorIcon,

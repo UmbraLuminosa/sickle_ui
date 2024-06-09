@@ -10,7 +10,7 @@ use sickle_ui::{
     ui_builder::{UiBuilderExt, UiContextRoot, UiRoot},
     ui_commands::SetCursorExt,
     ui_style::prelude::*,
-    widgets::prelude::*,
+    widgets::{inputs::slider::SliderConfig, prelude::*},
     SickleUiPlugin,
 };
 
@@ -728,6 +728,61 @@ fn layout_showcase(root_node: Query<Entity, With<ShowcaseContainer>>, mut comman
                                         None,
                                     );
                                 });
+                            });
+
+                            tab_container.add_tab("Sliders".into(), |slider_tab| {
+                                slider_tab
+                                    .row(|row| {
+                                        row.slider(SliderConfig::vertical(
+                                            String::from("Slider"),
+                                            0.,
+                                            5.,
+                                            2.,
+                                            true,
+                                        ));
+
+                                        row.slider(SliderConfig::vertical(None, 0., 5., 2., true));
+
+                                        row.slider(SliderConfig::vertical(
+                                            String::from("Slider"),
+                                            0.,
+                                            5.,
+                                            2.,
+                                            false,
+                                        ));
+
+                                        row.slider(SliderConfig::vertical(None, 0., 5., 2., false));
+                                    })
+                                    .style()
+                                    .height(Val::Percent(50.));
+
+                                slider_tab
+                                    .column(|row| {
+                                        row.slider(SliderConfig::horizontal(
+                                            String::from("Slider"),
+                                            0.,
+                                            5.,
+                                            2.,
+                                            true,
+                                        ));
+                                        row.slider(SliderConfig::horizontal(
+                                            None, 0., 5., 2., true,
+                                        ));
+                                        row.slider(SliderConfig::horizontal(
+                                            String::from("Slider"),
+                                            0.,
+                                            5.,
+                                            2.,
+                                            false,
+                                        ));
+                                        row.slider(SliderConfig::horizontal(
+                                            None, 0., 5., 2., false,
+                                        ));
+                                    })
+                                    .style()
+                                    .justify_content(JustifyContent::End)
+                                    .height(Val::Percent(50.))
+                                    .width(Val::Percent(100.));
                             });
                         },
                     );
