@@ -91,8 +91,8 @@ pub trait UiBuilderExt {
     fn ui_builder<T>(&mut self, context: T) -> UiBuilder<T>;
 }
 
-impl<'w, 's> UiBuilderExt for Commands<'w, 's> {
-    fn ui_builder<'a, T>(&'a mut self, context: T) -> UiBuilder<'a, T> {
+impl UiBuilderExt for Commands<'_, '_> {
+    fn ui_builder<T>(&mut self, context: T) -> UiBuilder<T> {
         UiBuilder {
             commands: self.reborrow(),
             context,
