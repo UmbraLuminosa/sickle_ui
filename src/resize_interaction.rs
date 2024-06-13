@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_reflect::Reflect;
+use bevy::ui::RelativeCursorPosition;
 use sickle_math::ease::Ease;
 
 use crate::{
@@ -184,6 +185,7 @@ impl ResizeHandle {
                 ..default()
             },
             Draggable::default(),
+            RelativeCursorPosition::default(),
             ResizeHandle { direction },
         )
     }

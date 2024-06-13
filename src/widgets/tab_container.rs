@@ -1,4 +1,4 @@
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{ecs::system::Command, ui::RelativeCursorPosition, prelude::*};
 use sickle_math::ease::Ease;
 
 use crate::{
@@ -794,6 +794,7 @@ impl TabContainer {
                 ..default()
             },
             Draggable::default(),
+            RelativeCursorPosition::default(),
             GenerateContextMenu::default(),
         )
     }

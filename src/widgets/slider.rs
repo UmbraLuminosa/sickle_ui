@@ -1,4 +1,4 @@
-use bevy::{input::mouse::MouseScrollUnit, prelude::*};
+use bevy::{input::mouse::MouseScrollUnit, ui::RelativeCursorPosition, prelude::*};
 use sickle_math::ease::Ease;
 
 use crate::{
@@ -519,6 +519,7 @@ impl Slider {
             },
             SliderDragHandle { slider },
             Draggable::default(),
+            RelativeCursorPosition::default(),
             Scrollable::default(),
         )
     }

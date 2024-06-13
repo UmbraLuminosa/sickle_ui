@@ -1,4 +1,4 @@
-use bevy::ui::FocusPolicy;
+use bevy::ui::{FocusPolicy, RelativeCursorPosition};
 use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, window::WindowResized};
 use sickle_math::ease::Ease;
@@ -640,6 +640,7 @@ impl FloatingPanel {
             },
             TrackedInteraction::default(),
             Draggable::default(),
+            RelativeCursorPosition::default(),
         )
     }
 
@@ -834,6 +835,7 @@ impl<'w, 's> UiFloatingPanelExt<'w, 's> for UiBuilder<'w, 's, '_, Entity> {
                     FloatingPanelTitle { panel },
                     TrackedInteraction::default(),
                     Draggable::default(),
+                    RelativeCursorPosition::default(),
                 ),
                 |container| {
                     fold_button = container

@@ -1,4 +1,4 @@
-use bevy::{input::mouse::MouseScrollUnit, prelude::*, ui::FocusPolicy};
+use bevy::{input::mouse::MouseScrollUnit, prelude::*, ui::{FocusPolicy, RelativeCursorPosition}};
 use sickle_math::ease::Ease;
 
 use crate::{
@@ -573,6 +573,7 @@ impl ScrollView {
                 ..default()
             },
             Draggable::default(),
+            RelativeCursorPosition::default(),
             Scrollable::default(),
         )
     }

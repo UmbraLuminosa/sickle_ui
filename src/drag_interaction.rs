@@ -1,7 +1,5 @@
-use bevy::{
-    prelude::*,
-    window::{CursorGrabMode, PrimaryWindow},
-};
+use bevy::prelude::*;
+use bevy::ui::RelativeCursorPosition;
 use bevy_reflect::Reflect;
 
 use crate::{FluxInteraction, FluxInteractionUpdate};
@@ -15,8 +13,7 @@ impl Plugin for DragInteractionPlugin {
                 Update,
                 (
                     update_drag_progress,
-                    update_drag_state,
-                    update_cursor_confinement_from_drag,
+                    update_drag_state
                 )
                     .chain()
                     .in_set(DraggableUpdate),
@@ -65,39 +62,19 @@ pub enum DragSource {
     Touch(u64),
 }
 
-fn update_cursor_confinement_from_drag(
-    q_draggable: Query<&Draggable, Changed<Draggable>>,
-    mut q_window: Query<&mut Window, With<PrimaryWindow>>,
-) {
-    let Ok(mut window) = q_window.get_single_mut() else {
-        return;
-    };
-
-    if let Some(_) = q_draggable
-        .iter()
-        .find(|&draggable| draggable.state == DragState::DragStart)
-    {
-        window.cursor.grab_mode = CursorGrabMode::Confined;
-    } else if let Some(_) = q_draggable.iter().find(|&draggable| {
-        draggable.state == DragState::DragEnd || draggable.state == DragState::DragCanceled
-    }) {
-        window.cursor.grab_mode = CursorGrabMode::None;
-    }
-}
-
 // TODO: Consider using MouseMotion and TouchInput events directly
-// TODO: Remove dependency on PrimaryWindow
 fn update_drag_progress(
-    mut q_draggable: Query<(&mut Draggable, &FluxInteraction)>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
+    mut q_draggable: Query<(&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform)>,
     r_touches: Res<Touches>,
     r_keys: Res<ButtonInput<KeyCode>>,
 ) {
-    let Ok(window) = q_window.get_single() else {
-        return;
-    };
-
-    for (mut draggable, flux_interaction) in &mut q_draggable {
+    for (
+        mut draggable, 
+        flux_interaction, 
+        relcurpos, 
+        node, 
+        global_trans
+    ) in &mut q_draggable {
         if draggable.state == DragState::DragEnd {
             draggable.state = DragState::Inactive;
             draggable.clear();
@@ -121,16 +98,24 @@ fn update_drag_progress(
                 draggable.state = DragState::Dragging;
             }
 
-            let position: Option<Vec2> = match draggable.source {
-                DragSource::Mouse => window.cursor_position(),
+            let new_position: Option<Vec2> = match draggable.source {
+                DragSource::Mouse => {
+                    if let Some(relative_cursor_pos) = relcurpos.normalized {
+                        let node_rect = node.logical_rect(global_trans);
+                        Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
+                    }
+                    else {
+                        None
+                    }
+                }
                 DragSource::Touch(id) => match r_touches.get_pressed(id) {
                     Some(touch) => touch.position().into(),
                     None => None,
                 },
             };
 
-            if let (Some(current_position), Some(new_position)) = (draggable.position, position) {
-                let diff = new_position - current_position;
+            if let (Some(old_position), Some(updated_position)) = (draggable.position, new_position) {
+                let diff = updated_position - old_position;
 
                 // No tolerance threshold, just move
                 if diff.length_squared() > 0. {
@@ -138,8 +123,8 @@ fn update_drag_progress(
                         draggable.state = DragState::DragStart;
                     }
 
-                    draggable.position = new_position.into();
-                    draggable.diff = (new_position - current_position).into();
+                    draggable.position = updated_position.into();
+                    draggable.diff = diff.into();
                 }
             }
         }
@@ -147,25 +132,44 @@ fn update_drag_progress(
 }
 
 fn update_drag_state(
-    mut q_draggable: Query<(&mut Draggable, &FluxInteraction), Changed<FluxInteraction>>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    r_touches: Res<Touches>,
+    mut q_draggable: Query<
+        (&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform),
+        Changed<FluxInteraction>
+    >,
+    r_touches: Res<Touches>
 ) {
-    for (mut draggable, flux_interaction) in &mut q_draggable {
+    for (
+        mut draggable, 
+        flux_interaction, 
+        relcurpos,
+        node,
+        global_trans
+    ) in &mut q_draggable {
         if *flux_interaction == FluxInteraction::Pressed
             && draggable.state != DragState::MaybeDragged
         {
             let mut drag_source = DragSource::Mouse;
-            let mut position = q_window.single().cursor_position();
-            if position.is_none() {
-                position = r_touches.first_pressed_position();
+
+            // No window method: Cursor is at the Node's top left screenspace rect.min, 
+            // plus the relative screenspace position in the Node, which is relcurpos times the node rect's size
+            let mut initial_position;
+            if let Some(relative_cursor_pos) = relcurpos.normalized {
+                let node_rect = node.logical_rect(global_trans);
+                initial_position = Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
+            }
+            else {
+                initial_position = None;
+            }
+
+            if initial_position.is_none() {
+                initial_position = r_touches.first_pressed_position();
                 drag_source = DragSource::Touch(r_touches.iter().next().unwrap().id());
             }
 
             draggable.state = DragState::MaybeDragged;
             draggable.source = drag_source;
-            draggable.origin = position;
-            draggable.position = position;
+            draggable.origin = initial_position;
+            draggable.position = initial_position;
             draggable.diff = Vec2::default().into();
         } else if *flux_interaction == FluxInteraction::Released
             || *flux_interaction == FluxInteraction::PressCanceled
