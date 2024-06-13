@@ -157,9 +157,16 @@ fn spawn_scene_view(
             .remove::<SpawnSceneView>();
 
         commands.ui_builder(container).row(|scene_controls| {
-            scene_controls.insert(SceneControls {
-                scene_view: container,
+            let radio_group_theme = PseudoTheme::build(None, |style_builder| {
+                style_builder.flex_wrap(FlexWrap::NoWrap);
             });
+
+            scene_controls.insert((
+                SceneControls {
+                    scene_view: container,
+                },
+                Theme::<RadioGroup>::new(vec![radio_group_theme]),
+            ));
 
             scene_controls
                 .checkbox(String::from("Rotate Scene"), false)
@@ -185,8 +192,7 @@ fn spawn_scene_view(
                     row.radio_group(vec!["Natural", "Dim", "Night"], 1, true)
                         .insert(SceneLightControl {
                             scene_view: container,
-                        })
-                        .style();
+                        });
                 })
                 .style()
                 .min_width(Val::Px(150.));

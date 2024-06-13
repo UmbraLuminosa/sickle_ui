@@ -179,6 +179,8 @@ impl Foldable {
 
         style_builder
             .switch_target(Foldable::CONTAINER)
+            .height(Val::Auto)
+            .flex_shrink(0.)
             .display(Display::Flex)
             .visibility(Visibility::Inherited);
     }

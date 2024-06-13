@@ -316,19 +316,14 @@ impl<'w> UiHierarchyExt<'w> for UiBuilder<'w, '_, Entity> {
                 },
             );
 
-            column
-                .commands()
-                .ui_builder(main_zone)
-                .insert((
-                    Name::new(format!("Hierarchy of [{:?}]", root_entity)),
-                    HierarchyContainer {
-                        root: root_entity,
-                        selected: None,
-                        component_list,
-                    },
-                ))
-                .style()
-                .padding(UiRect::all(Val::Px(5.)));
+            column.commands().ui_builder(main_zone).insert((
+                Name::new(format!("Hierarchy of [{:?}]", root_entity)),
+                HierarchyContainer {
+                    root: root_entity,
+                    selected: None,
+                    component_list,
+                },
+            ));
         })
     }
 }

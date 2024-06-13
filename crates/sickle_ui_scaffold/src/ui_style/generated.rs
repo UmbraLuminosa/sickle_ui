@@ -89,7 +89,7 @@ enum _StyleAttributes {
     AlignContent {
         align_content: AlignContent,
     },
-    JustifyContents {
+    JustifyContent {
         justify_content: JustifyContent,
     },
     #[animatable]

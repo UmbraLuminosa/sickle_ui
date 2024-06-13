@@ -69,6 +69,7 @@ pub struct ThemeSpacing {
     pub icons: IconSizes,
     pub inputs: InputSizes,
     pub resize_zone: ResizeZone,
+    pub scroll_bar_size: f32,
 }
 
 impl Default for ThemeSpacing {
@@ -127,6 +128,7 @@ impl Default for ThemeSpacing {
                 pullback: 2.,
                 handle_gap: 1.,
             },
+            scroll_bar_size: 12.,
         }
     }
 }

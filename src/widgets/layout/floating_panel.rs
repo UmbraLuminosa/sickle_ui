@@ -656,10 +656,6 @@ impl FloatingPanel {
             .copy_from(theme_data.enter_animation);
 
         style_builder
-            .switch_target(FloatingPanel::CONTENT_VIEW)
-            .height(Val::Percent(100.));
-
-        style_builder
             .switch_target(FloatingPanel::TITLE_CONTAINER)
             .width(Val::Percent(100.))
             .align_items(AlignItems::Center)
