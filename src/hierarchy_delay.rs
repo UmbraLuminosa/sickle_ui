@@ -34,12 +34,12 @@ fn update_ui_surface(
 #[component(storage = "SparseSet")]
 struct DelayResetChildrenInUiSurface;
 
-pub trait DelayActions<'a> {
-    fn reset_children_in_ui_surface(&'a mut self) -> &mut EntityCommands<'a>;
+pub trait DelayActions {
+    fn reset_children_in_ui_surface(&mut self) -> &mut Self;
 }
 
-impl<'a> DelayActions<'a> for EntityCommands<'a> {
-    fn reset_children_in_ui_surface(&'a mut self) -> &mut EntityCommands<'a> {
+impl DelayActions for EntityCommands<'_> {
+    fn reset_children_in_ui_surface(&mut self) -> &mut Self {
         self.insert(DelayResetChildrenInUiSurface);
 
         self

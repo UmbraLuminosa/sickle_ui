@@ -214,12 +214,12 @@ pub(crate) fn derive_style_command_macro(ast: &syn::DeriveInput) -> TokenStream 
             }
         }
 
-        pub trait #extension_ident<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyle<'a>;
+        pub trait #extension_ident {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self;
         }
 
-        impl<'a> #extension_ident<'a> for UiStyle<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyle<'a> {
+        impl #extension_ident for UiStyle<'_> {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self {
                 self.commands.add(#name_ident {
                     #target_attr,
                 });
@@ -237,12 +237,12 @@ pub(crate) fn derive_style_command_macro(ast: &syn::DeriveInput) -> TokenStream 
             }
         }
 
-        pub trait #extension_unchecked_ident<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyleUnchecked<'a>;
+        pub trait #extension_unchecked_ident {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self;
         }
 
-        impl<'a> #extension_unchecked_ident<'a> for UiStyleUnchecked<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyleUnchecked<'a> {
+        impl #extension_unchecked_ident for UiStyleUnchecked<'_> {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self {
                 self.commands.add(#name_unchecked_ident {
                     #target_attr,
                 });

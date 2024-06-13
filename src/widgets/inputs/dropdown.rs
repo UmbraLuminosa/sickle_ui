@@ -623,20 +623,20 @@ impl Dropdown {
     }
 }
 
-pub trait UiDropdownExt<'w> {
-    fn dropdown<'a>(
-        &'a mut self,
+pub trait UiDropdownExt {
+    fn dropdown(
+        &mut self,
         options: Vec<impl Into<String>>,
         value: impl Into<Option<usize>>,
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiDropdownExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn dropdown<'a>(
-        &'a mut self,
+impl UiDropdownExt for UiBuilder<'_, Entity> {
+    fn dropdown(
+        &mut self,
         options: Vec<impl Into<String>>,
         value: impl Into<Option<usize>>,
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut label_id = Entity::PLACEHOLDER;
         let mut icon_id = Entity::PLACEHOLDER;
         let mut panel_id = Entity::PLACEHOLDER;

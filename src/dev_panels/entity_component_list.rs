@@ -102,16 +102,12 @@ pub struct EntityComponentList {
     pub entity: Option<Entity>,
 }
 
-pub trait UiEntityComponentListExt<'w> {
-    fn entity_component_list<'a>(&'a mut self, entity: Option<Entity>)
-        -> UiBuilder<'w, 'a, Entity>;
+pub trait UiEntityComponentListExt {
+    fn entity_component_list(&mut self, entity: Option<Entity>) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiEntityComponentListExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn entity_component_list<'a>(
-        &'a mut self,
-        entity: Option<Entity>,
-    ) -> UiBuilder<'w, 'a, Entity> {
+impl UiEntityComponentListExt for UiBuilder<'_, Entity> {
+    fn entity_component_list(&mut self, entity: Option<Entity>) -> UiBuilder<Entity> {
         self.row(|row| {
             row.insert((
                 Name::new("Entity Component List"),

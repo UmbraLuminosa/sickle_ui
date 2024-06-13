@@ -2,20 +2,20 @@ use bevy::prelude::*;
 
 use sickle_ui_scaffold::ui_builder::{UiBuilder, UiRoot};
 
-pub trait UiContainerExt<'w> {
-    fn container<'a>(
-        &'a mut self,
+pub trait UiContainerExt {
+    fn container(
+        &mut self,
         bundle: impl Bundle,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiContainerExt<'w> for UiBuilder<'w, '_, UiRoot> {
-    fn container<'a>(
-        &'a mut self,
+impl UiContainerExt for UiBuilder<'_, UiRoot> {
+    fn container(
+        &mut self,
         bundle: impl Bundle,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut new_builder = self.spawn(bundle);
         spawn_children(&mut new_builder);
 
@@ -23,12 +23,12 @@ impl<'w> UiContainerExt<'w> for UiBuilder<'w, '_, UiRoot> {
     }
 }
 
-impl<'w> UiContainerExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn container<'a>(
-        &'a mut self,
+impl UiContainerExt for UiBuilder<'_, Entity> {
+    fn container(
+        &mut self,
         bundle: impl Bundle,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut new_builder = self.spawn(bundle);
         spawn_children(&mut new_builder);
 

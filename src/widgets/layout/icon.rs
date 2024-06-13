@@ -19,12 +19,12 @@ impl Icon {
     }
 }
 
-pub trait UiIconExt<'w> {
-    fn icon<'a>(&'a mut self, path: impl Into<String>) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiIconExt {
+    fn icon(&mut self, path: impl Into<String>) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiIconExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn icon<'a>(&'a mut self, path: impl Into<String>) -> UiBuilder<'w, 'a, Entity> {
+impl UiIconExt for UiBuilder<'_, Entity> {
+    fn icon(&mut self, path: impl Into<String>) -> UiBuilder<Entity> {
         let mut icon = self.spawn((Name::new("Icon"), Icon::bundle(), Icon));
 
         icon.style().image(ImageSource::Path(path.into()));

@@ -27,18 +27,18 @@ impl ExtraMenu {
     }
 }
 
-pub trait UiExtraMenuExt<'w> {
-    fn extra_menu<'a>(
-        &'a mut self,
+pub trait UiExtraMenuExt {
+    fn extra_menu(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiExtraMenuExt<'w> for UiBuilder<'w, '_, (Entity, MenuBar)> {
-    fn extra_menu<'a>(
-        &'a mut self,
+impl UiExtraMenuExt for UiBuilder<'_, (Entity, MenuBar)> {
+    fn extra_menu(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let own_id = self.id();
         let id = self
             .commands()

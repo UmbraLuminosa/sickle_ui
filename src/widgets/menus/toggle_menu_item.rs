@@ -196,18 +196,12 @@ impl ToggleMenuItem {
     }
 }
 
-pub trait UiToggleMenuItemExt<'w> {
-    fn toggle_menu_item<'a>(
-        &'a mut self,
-        config: ToggleMenuItemConfig,
-    ) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiToggleMenuItemExt {
+    fn toggle_menu_item(&mut self, config: ToggleMenuItemConfig) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn toggle_menu_item<'a>(
-        &'a mut self,
-        config: ToggleMenuItemConfig,
-    ) -> UiBuilder<'w, 'a, Entity> {
+impl UiToggleMenuItemExt for UiBuilder<'_, Entity> {
+    fn toggle_menu_item(&mut self, config: ToggleMenuItemConfig) -> UiBuilder<Entity> {
         let checked = config.initially_checked;
         let (id, menu_item) = MenuItem::scaffold(self, config.into());
         let toggle_item = ToggleMenuItem {
@@ -220,11 +214,8 @@ impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Entity> {
     }
 }
 
-impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Menu> {
-    fn toggle_menu_item<'a>(
-        &'a mut self,
-        config: ToggleMenuItemConfig,
-    ) -> UiBuilder<'w, 'a, Entity> {
+impl UiToggleMenuItemExt for UiBuilder<'_, Menu> {
+    fn toggle_menu_item(&mut self, config: ToggleMenuItemConfig) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -236,11 +227,8 @@ impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Menu> {
     }
 }
 
-impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Submenu> {
-    fn toggle_menu_item<'a>(
-        &'a mut self,
-        config: ToggleMenuItemConfig,
-    ) -> UiBuilder<'w, 'a, Entity> {
+impl UiToggleMenuItemExt for UiBuilder<'_, Submenu> {
+    fn toggle_menu_item(&mut self, config: ToggleMenuItemConfig) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -252,11 +240,8 @@ impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, Submenu> {
     }
 }
 
-impl<'w> UiToggleMenuItemExt<'w> for UiBuilder<'w, '_, ContextMenu> {
-    fn toggle_menu_item<'a>(
-        &'a mut self,
-        config: ToggleMenuItemConfig,
-    ) -> UiBuilder<'w, 'a, Entity> {
+impl UiToggleMenuItemExt for UiBuilder<'_, ContextMenu> {
+    fn toggle_menu_item(&mut self, config: ToggleMenuItemConfig) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()

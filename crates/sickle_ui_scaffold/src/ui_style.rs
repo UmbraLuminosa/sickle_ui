@@ -24,7 +24,7 @@ pub struct UiStyle<'a> {
     commands: EntityCommands<'a>,
 }
 
-impl<'a> UiStyle<'a> {
+impl UiStyle<'_> {
     pub fn id(&self) -> Entity {
         self.commands.id()
     }
@@ -34,12 +34,12 @@ impl<'a> UiStyle<'a> {
     }
 }
 
-pub trait UiStyleExt<'a> {
-    fn style(&'a mut self, entity: Entity) -> UiStyle<'a>;
+pub trait UiStyleExt {
+    fn style(&mut self, entity: Entity) -> UiStyle;
 }
 
-impl<'a> UiStyleExt<'a> for Commands<'_, '_> {
-    fn style(&'a mut self, entity: Entity) -> UiStyle<'a> {
+impl UiStyleExt for Commands<'_, '_> {
+    fn style(&mut self, entity: Entity) -> UiStyle {
         UiStyle {
             commands: self.entity(entity),
         }
@@ -50,7 +50,7 @@ pub struct UiStyleUnchecked<'a> {
     commands: EntityCommands<'a>,
 }
 
-impl<'a> UiStyleUnchecked<'a> {
+impl UiStyleUnchecked<'_> {
     pub fn id(&self) -> Entity {
         self.commands.id()
     }
@@ -60,12 +60,12 @@ impl<'a> UiStyleUnchecked<'a> {
     }
 }
 
-pub trait UiStyleUncheckedExt<'a> {
-    fn style_unchecked(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a>;
+pub trait UiStyleUncheckedExt {
+    fn style_unchecked(&mut self, entity: Entity) -> UiStyleUnchecked;
 }
 
-impl<'a> UiStyleUncheckedExt<'a> for Commands<'_, '_> {
-    fn style_unchecked(&'a mut self, entity: Entity) -> UiStyleUnchecked<'a> {
+impl UiStyleUncheckedExt for Commands<'_, '_> {
+    fn style_unchecked(&mut self, entity: Entity) -> UiStyleUnchecked {
         UiStyleUnchecked {
             commands: self.entity(entity),
         }

@@ -207,7 +207,7 @@ fn generate_context_menu(world: &mut World) {
 
     commands.entity(container_id).insert(context_menu);
 
-    let builder = &mut commands.ui_builder(context_menu);
+    let mut builder = commands.ui_builder(context_menu);
     let mut last_index = 0;
     for generator in generators {
         if generator.placement_index() > last_index + 1 {
@@ -215,7 +215,7 @@ fn generate_context_menu(world: &mut World) {
         }
         last_index = generator.placement_index();
 
-        generator.build_context_menu(entity, builder);
+        generator.build_context_menu(entity, &mut builder);
     }
 
     queue.apply(world);
@@ -385,11 +385,11 @@ impl ContextMenu {
     }
 }
 
-pub trait UiContextMenuExt<'w> {
+pub trait UiContextMenuExt {
     fn container(&self) -> Entity;
 }
 
-impl<'w> UiContextMenuExt<'w> for UiBuilder<'w, '_, ContextMenu> {
+impl UiContextMenuExt for UiBuilder<'_, ContextMenu> {
     fn container(&self) -> Entity {
         self.context().container
     }

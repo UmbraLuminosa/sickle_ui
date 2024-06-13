@@ -11,10 +11,7 @@ impl Plugin for DragInteractionPlugin {
         app.configure_sets(Update, DraggableUpdate.after(FluxInteractionUpdate))
             .add_systems(
                 Update,
-                (
-                    update_drag_progress,
-                    update_drag_state
-                )
+                (update_drag_progress, update_drag_state)
                     .chain()
                     .in_set(DraggableUpdate),
             );
@@ -64,17 +61,17 @@ pub enum DragSource {
 
 // TODO: Consider using MouseMotion and TouchInput events directly
 fn update_drag_progress(
-    mut q_draggable: Query<(&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform)>,
+    mut q_draggable: Query<(
+        &mut Draggable,
+        &FluxInteraction,
+        &RelativeCursorPosition,
+        &Node,
+        &GlobalTransform,
+    )>,
     r_touches: Res<Touches>,
     r_keys: Res<ButtonInput<KeyCode>>,
 ) {
-    for (
-        mut draggable, 
-        flux_interaction, 
-        relcurpos, 
-        node, 
-        global_trans
-    ) in &mut q_draggable {
+    for (mut draggable, flux_interaction, relcurpos, node, global_trans) in &mut q_draggable {
         if draggable.state == DragState::DragEnd {
             draggable.state = DragState::Inactive;
             draggable.clear();
@@ -103,8 +100,7 @@ fn update_drag_progress(
                     if let Some(relative_cursor_pos) = relcurpos.normalized {
                         let node_rect = node.logical_rect(global_trans);
                         Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
-                    }
-                    else {
+                    } else {
                         None
                     }
                 }
@@ -114,7 +110,8 @@ fn update_drag_progress(
                 },
             };
 
-            if let (Some(old_position), Some(updated_position)) = (draggable.position, new_position) {
+            if let (Some(old_position), Some(updated_position)) = (draggable.position, new_position)
+            {
                 let diff = updated_position - old_position;
 
                 // No tolerance threshold, just move
@@ -133,31 +130,30 @@ fn update_drag_progress(
 
 fn update_drag_state(
     mut q_draggable: Query<
-        (&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform),
-        Changed<FluxInteraction>
+        (
+            &mut Draggable,
+            &FluxInteraction,
+            &RelativeCursorPosition,
+            &Node,
+            &GlobalTransform,
+        ),
+        Changed<FluxInteraction>,
     >,
-    r_touches: Res<Touches>
+    r_touches: Res<Touches>,
 ) {
-    for (
-        mut draggable, 
-        flux_interaction, 
-        relcurpos,
-        node,
-        global_trans
-    ) in &mut q_draggable {
+    for (mut draggable, flux_interaction, relcurpos, node, global_trans) in &mut q_draggable {
         if *flux_interaction == FluxInteraction::Pressed
             && draggable.state != DragState::MaybeDragged
         {
             let mut drag_source = DragSource::Mouse;
 
-            // No window method: Cursor is at the Node's top left screenspace rect.min, 
+            // No window method: Cursor is at the Node's top left screenspace rect.min,
             // plus the relative screenspace position in the Node, which is relcurpos times the node rect's size
             let mut initial_position;
             if let Some(relative_cursor_pos) = relcurpos.normalized {
                 let node_rect = node.logical_rect(global_trans);
                 initial_position = Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
-            }
-            else {
+            } else {
                 initial_position = None;
             }
 

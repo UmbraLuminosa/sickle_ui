@@ -578,12 +578,12 @@ impl Slider {
     }
 }
 
-pub trait UiSliderExt<'w> {
-    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiSliderExt {
+    fn slider(&mut self, config: SliderConfig) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiSliderExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn slider<'a>(&'a mut self, config: SliderConfig) -> UiBuilder<'w, 'a, Entity> {
+impl UiSliderExt for UiBuilder<'_, Entity> {
+    fn slider(&mut self, config: SliderConfig) -> UiBuilder<Entity> {
         let mut slider = Slider {
             ratio: (config.initial_value - config.min) / (config.max + (0. - config.min)),
             config: config.clone(),

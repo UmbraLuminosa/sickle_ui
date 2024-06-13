@@ -22,50 +22,50 @@ pub struct UiRoot;
 #[reflect(Component)]
 pub struct UiContextRoot;
 
-pub struct UiBuilder<'w, 's, T> {
-    commands: Commands<'w, 's>,
+pub struct UiBuilder<'a, T> {
+    commands: Commands<'a, 'a>,
     context: T,
 }
 
-impl<'w, 's, T> UiBuilder<'w, 's, T> {
+impl<'a, T> UiBuilder<'a, T> {
     pub fn context(&self) -> &T {
         &self.context
     }
 
-    pub fn commands(&mut self) -> &mut Commands<'w, 's> {
+    pub fn commands(&mut self) -> &mut Commands<'a, 'a> {
         &mut self.commands
     }
 }
 
-impl<'w> UiBuilder<'w, '_, UiRoot> {
-    pub fn spawn<'a>(&'a mut self, bundle: impl Bundle) -> UiBuilder<'w, 'a, Entity> {
+impl UiBuilder<'_, UiRoot> {
+    pub fn spawn(&mut self, bundle: impl Bundle) -> UiBuilder<Entity> {
         let new_entity = self.commands().spawn(bundle).id();
 
         self.commands().ui_builder(new_entity)
     }
 }
 
-impl<'w> UiBuilder<'w, '_, Entity> {
+impl UiBuilder<'_, Entity> {
     pub fn id(&self) -> Entity {
         *self.context()
     }
 
-    pub fn entity_commands(&mut self) -> EntityCommands<'_> {
+    pub fn entity_commands(&mut self) -> EntityCommands {
         let entity = self.id();
         self.commands().entity(entity)
     }
 
-    pub fn style(&mut self) -> UiStyle<'_> {
+    pub fn style(&mut self) -> UiStyle {
         let entity = self.id();
         self.commands().style(entity)
     }
 
-    pub fn style_unchecked(&mut self) -> UiStyleUnchecked<'_> {
+    pub fn style_unchecked(&mut self) -> UiStyleUnchecked {
         let entity = self.id();
         self.commands().style_unchecked(entity)
     }
 
-    pub fn spawn<'a>(&'a mut self, bundle: impl Bundle) -> UiBuilder<'w, 'a, Entity> {
+    pub fn spawn(&mut self, bundle: impl Bundle) -> UiBuilder<Entity> {
         let mut new_entity = Entity::PLACEHOLDER;
 
         let entity = self.id();
@@ -87,12 +87,12 @@ impl<'w> UiBuilder<'w, '_, Entity> {
     }
 }
 
-pub trait UiBuilderExt<'w> {
-    fn ui_builder<'a,T>(&'a mut self, context: T) -> UiBuilder<'w, 'a, T>;
+pub trait UiBuilderExt {
+    fn ui_builder<T>(&mut self, context: T) -> UiBuilder<T>;
 }
 
-impl<'w> UiBuilderExt<'w> for Commands<'w, '_> {
-    fn ui_builder<'a, T>(&'a mut self, context: T) -> UiBuilder<'w, 'a, T> {
+impl<'w, 's> UiBuilderExt for Commands<'w, 's> {
+    fn ui_builder<'a, T>(&'a mut self, context: T) -> UiBuilder<'a, T> {
         UiBuilder {
             commands: self.reborrow(),
             context,

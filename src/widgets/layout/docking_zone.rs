@@ -814,28 +814,28 @@ impl Default for RemoveEmptyDockingZone {
     }
 }
 
-pub trait UiDockingZoneExt<'w> {
-    fn docking_zone<'a>(
-        &'a mut self,
+pub trait UiDockingZoneExt {
+    fn docking_zone(
+        &mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 
-    fn docking_zone_split<'a>(
-        &'a mut self,
+    fn docking_zone_split(
+        &mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiDockingZoneExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn docking_zone<'a>(
-        &'a mut self,
+impl UiDockingZoneExt for UiBuilder<'_, Entity> {
+    fn docking_zone(
+        &mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut tab_container = Entity::PLACEHOLDER;
         let mut zone_highlight = Entity::PLACEHOLDER;
 
@@ -873,11 +873,11 @@ impl<'w> UiDockingZoneExt<'w> for UiBuilder<'w, '_, Entity> {
     /// Create a sized zone dedicated to holding docking zones. These are the same as what
     /// `DockingZone`s generate when a FloatingPanel is dropped on their sides
     /// NOTE: Custom content will be removed on cleanup.
-    fn docking_zone_split<'a>(
-        &'a mut self,
+    fn docking_zone_split(
+        &mut self,
         config: SizedZoneConfig,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let new_id = self
             .sized_zone(config, spawn_children)
             .insert((Name::new("Docking Zone Split"), DockingZoneSplitContainer))

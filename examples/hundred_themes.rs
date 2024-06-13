@@ -318,7 +318,7 @@ fn setup(
     );
 }
 
-fn spawn_test_content(container: &mut UiBuilder<'_, '_, Entity>) {
+fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
     container.container((NodeBundle::default(), ThemeTestBox), |main_box| {
         main_box.spawn((
             NodeBundle::default(),

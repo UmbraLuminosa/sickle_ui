@@ -345,22 +345,22 @@ impl RadioButton {
     }
 }
 
-pub trait UiRadioGroupExt<'w> {
-    fn radio_group<'a>(
-        &'a mut self,
+pub trait UiRadioGroupExt {
+    fn radio_group(
+        &mut self,
         options: Vec<impl Into<String>>,
         selected: impl Into<Option<usize>>,
         unselectable: bool,
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiRadioGroupExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn radio_group<'a>(
-        &'a mut self,
+impl UiRadioGroupExt for UiBuilder<'_, Entity> {
+    fn radio_group(
+        &mut self,
         options: Vec<impl Into<String>>,
         selected: impl Into<Option<usize>>,
         unselectable: bool,
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut radio_group = self.spawn((
             RadioGroup::container(),
             RadioGroup {

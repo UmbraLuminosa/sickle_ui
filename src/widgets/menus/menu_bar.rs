@@ -55,18 +55,18 @@ impl MenuBar {
     }
 }
 
-pub trait UiMenuBarExt<'w> {
-    fn menu_bar<'a>(
-        &'a mut self,
+pub trait UiMenuBarExt {
+    fn menu_bar(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<(Entity, MenuBar)>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiMenuBarExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn menu_bar<'a>(
-        &'a mut self,
+impl UiMenuBarExt for UiBuilder<'_, Entity> {
+    fn menu_bar(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<(Entity, MenuBar)>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let id = self.spawn((MenuBar::frame(), MenuBar)).id();
 
         let mut builder = self.commands().ui_builder((id, MenuBar));
@@ -76,11 +76,11 @@ impl<'w> UiMenuBarExt<'w> for UiBuilder<'w, '_, Entity> {
     }
 }
 
-pub trait UiMenuBarSubExt<'w> {
+pub trait UiMenuBarSubExt {
     fn id(&self) -> Entity;
 }
 
-impl<'w> UiMenuBarSubExt<'w> for UiBuilder<'w, '_, (Entity, MenuBar)> {
+impl UiMenuBarSubExt for UiBuilder<'_, (Entity, MenuBar)> {
     fn id(&self) -> Entity {
         self.context().0
     }

@@ -805,18 +805,18 @@ impl TabContainer {
     }
 }
 
-pub trait UiTabContainerExt<'w> {
-    fn tab_container<'a>(
-        &'a mut self,
+pub trait UiTabContainerExt {
+    fn tab_container(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiTabContainerExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn tab_container<'a>(
-        &'a mut self,
+impl UiTabContainerExt for UiBuilder<'_, Entity> {
+    fn tab_container(
+        &mut self,
         spawn_children: impl FnOnce(&mut UiBuilder<TabContainer>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let mut bar = Entity::PLACEHOLDER;
         let mut viewport = Entity::PLACEHOLDER;
 
@@ -857,28 +857,28 @@ impl<'w> UiTabContainerExt<'w> for UiBuilder<'w, '_, Entity> {
     }
 }
 
-pub trait UiTabContainerSubExt<'w> {
+pub trait UiTabContainerSubExt {
     fn id(&self) -> Entity;
 
-    fn add_tab<'a>(
-        &'a mut self,
+    fn add_tab(
+        &mut self,
         title: String,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, TabContainer>;
+    ) -> UiBuilder<TabContainer>;
 
-    fn dock_panel<'a>(&'a mut self, floating_panel: Entity) -> UiBuilder<'w, 'a, TabContainer>;
+    fn dock_panel(&mut self, floating_panel: Entity) -> UiBuilder<TabContainer>;
 }
 
-impl<'w> UiTabContainerSubExt<'w> for UiBuilder<'w, '_, TabContainer> {
+impl UiTabContainerSubExt for UiBuilder<'_, TabContainer> {
     fn id(&self) -> Entity {
         self.context().own_id
     }
 
-    fn add_tab<'a>(
-        &'a mut self,
+    fn add_tab(
+        &mut self,
         title: String,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, TabContainer> {
+    ) -> UiBuilder<TabContainer> {
         let context = self.context().clone();
         let container_id = context.own_id;
         let bar_id = context.bar;
@@ -914,7 +914,7 @@ impl<'w> UiTabContainerSubExt<'w> for UiBuilder<'w, '_, TabContainer> {
         self.commands().ui_builder(context)
     }
 
-    fn dock_panel<'a>(&'a mut self, floating_panel: Entity) -> UiBuilder<'w, 'a, TabContainer> {
+    fn dock_panel(&mut self, floating_panel: Entity) -> UiBuilder<TabContainer> {
         let context = self.context().clone();
         self.commands()
             .entity(context.own_id)

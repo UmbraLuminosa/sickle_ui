@@ -54,12 +54,12 @@ impl MenuSeparator {
     }
 }
 
-pub trait UiMenuSeparatorExt<'w> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiMenuSeparatorExt {
+    fn separator(&mut self) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiMenuSeparatorExt<'w> for UiBuilder<'w, '_, (Entity, MenuBar)> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
+impl UiMenuSeparatorExt for UiBuilder<'_, (Entity, MenuBar)> {
+    fn separator(&mut self) -> UiBuilder<Entity> {
         let container_id = self.id();
         let id = self
             .commands()
@@ -103,12 +103,12 @@ impl MenuItemSeparator {
     }
 }
 
-pub trait UiMenuItemSeparatorExt<'w> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiMenuItemSeparatorExt {
+    fn separator(&mut self) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Menu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
+impl UiMenuItemSeparatorExt for UiBuilder<'_, Menu> {
+    fn separator(&mut self) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -120,8 +120,8 @@ impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Menu> {
     }
 }
 
-impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Submenu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
+impl UiMenuItemSeparatorExt for UiBuilder<'_, Submenu> {
+    fn separator(&mut self) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()
@@ -133,8 +133,8 @@ impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, Submenu> {
     }
 }
 
-impl<'w> UiMenuItemSeparatorExt<'w> for UiBuilder<'w, '_, ContextMenu> {
-    fn separator<'a>(&'a mut self) -> UiBuilder<'w, 'a, Entity> {
+impl UiMenuItemSeparatorExt for UiBuilder<'_, ContextMenu> {
+    fn separator(&mut self) -> UiBuilder<Entity> {
         let container_id = self.container();
         let id = self
             .commands()

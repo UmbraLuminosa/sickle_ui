@@ -533,12 +533,12 @@ impl SceneView {
     }
 }
 
-pub trait UiSceneViewExt<'w> {
-    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiSceneViewExt {
+    fn scene_view(&mut self, asset: impl Into<String>) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiSceneViewExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn scene_view<'a>(&'a mut self, asset: impl Into<String>) -> UiBuilder<'w, 'a, Entity> {
+impl UiSceneViewExt for UiBuilder<'_, Entity> {
+    fn scene_view(&mut self, asset: impl Into<String>) -> UiBuilder<Entity> {
         let column = self
             .column(|_| {})
             .insert((

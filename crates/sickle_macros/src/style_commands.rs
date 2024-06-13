@@ -272,7 +272,7 @@ fn prepare_static_style_attribute(
         }
 
         impl StaticStyleAttribute {
-            pub fn apply<'a>(&self, ui_style: &'a mut UiStyle<'a>) {
+            pub fn apply(&self, ui_style: &mut UiStyle) {
                 match self {
                     #(#apply_variants)*
                     Self::Custom(callback) => {
@@ -330,7 +330,7 @@ fn prepare_interactive_style_attribute(
                 }
             }
 
-            pub fn apply<'a>(&self, flux_interaction: FluxInteraction, ui_style: &'a mut UiStyle<'a>) {
+            pub fn apply(&self, flux_interaction: FluxInteraction, ui_style: &mut UiStyle) {
                 match self {
                     Self::Custom(callback) => {
                         ui_style
@@ -347,7 +347,7 @@ fn prepare_interactive_style_attribute(
             }
         }
 
-        impl<'a> InteractiveStyleBuilder<'a> {
+        impl InteractiveStyleBuilder<'_> {
             #(#builder_fns)*
         }
     }
@@ -396,10 +396,10 @@ fn prepare_animated_style_attribute(
                 }
             }
 
-            pub fn apply<'a>(
+            pub fn apply(
                 &self,
                 current_state: &AnimationState,
-                ui_style: &'a mut UiStyle<'a>,
+                ui_style: &mut UiStyle,
             ) {
                 match self {
                     Self::Custom(callback) => {
@@ -419,7 +419,7 @@ fn prepare_animated_style_attribute(
             }
         }
 
-        impl<'a> AnimatedStyleBuilder<'a> {
+        impl AnimatedStyleBuilder<'_> {
             #(#builder_fns)*
         }
     }
@@ -653,9 +653,9 @@ fn to_animated_style_builder_fn(style_attribute: &StyleAttribute) -> proc_macro2
     let command = &style_attribute.command;
     quote! {
         pub fn  #command(
-            &'a mut self,
+            &mut self,
             bundle: impl Into<AnimatedVals<#type_path>>,
-        ) -> &'a mut AnimationSettings {
+        ) -> &mut AnimationSettings {
             let attribute = DynamicStyleAttribute::Animated {
                 attribute: AnimatedStyleAttribute::#ident(bundle.into()),
                 controller: DynamicStyleController::default(),
@@ -686,12 +686,12 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
             pub check_lock: bool,
         }
 
-        pub trait #extension_ident<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyle<'a>;
+        pub trait #extension_ident {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self;
         }
 
-        impl<'a> #extension_ident<'a> for UiStyle<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyle<'a> {
+        impl #extension_ident for UiStyle<'_> {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self {
                 self.entity_commands().add(#cmd_struct_ident {
                     #target_attr,
                     check_lock: true
@@ -700,12 +700,12 @@ fn to_ui_style_extensions(style_attribute: &StyleAttribute) -> proc_macro2::Toke
             }
         }
 
-        pub trait #extension_unchecked_ident<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyleUnchecked<'a>;
+        pub trait #extension_unchecked_ident {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self;
         }
 
-        impl<'a> #extension_unchecked_ident<'a> for UiStyleUnchecked<'a> {
-            fn #target_attr(&'a mut self, #target_attr: #target_type) -> &mut UiStyleUnchecked<'a> {
+        impl #extension_unchecked_ident for UiStyleUnchecked<'_> {
+            fn #target_attr(&mut self, #target_attr: #target_type) -> &mut Self {
                 self.entity_commands().add(#cmd_struct_ident {
                     #target_attr,
                     check_lock: false

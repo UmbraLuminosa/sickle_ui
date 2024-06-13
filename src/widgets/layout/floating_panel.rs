@@ -899,22 +899,22 @@ pub struct UpdateFloatingPanelPanelId {
     pub panel_id: Entity,
 }
 
-pub trait UiFloatingPanelExt<'w> {
-    fn floating_panel<'a>(
-        &'a mut self,
+pub trait UiFloatingPanelExt {
+    fn floating_panel(
+        &mut self,
         config: FloatingPanelConfig,
         layout: FloatingPanelLayout,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity>;
+    ) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiFloatingPanelExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn floating_panel<'a>(
-        &'a mut self,
+impl UiFloatingPanelExt for UiBuilder<'_, Entity> {
+    fn floating_panel(
+        &mut self,
         config: FloatingPanelConfig,
         layout: FloatingPanelLayout,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
-    ) -> UiBuilder<'w, 'a, Entity> {
+    ) -> UiBuilder<Entity> {
         let restrict_to = config.restrict_scroll;
         let title_text = if let Some(text) = config.title.clone() {
             text

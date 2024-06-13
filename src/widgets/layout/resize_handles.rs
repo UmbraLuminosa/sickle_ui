@@ -775,12 +775,12 @@ impl ResizeHandles {
     }
 }
 
-pub trait UiResizeHandlesExt<'w> {
-    fn resize_handles<'a>(&'a mut self, marker: impl Bundle + Clone) -> UiBuilder<'w, 'a, Entity>;
+pub trait UiResizeHandlesExt {
+    fn resize_handles(&mut self, marker: impl Bundle + Clone) -> UiBuilder<Entity>;
 }
 
-impl<'w> UiResizeHandlesExt<'w> for UiBuilder<'w, '_, Entity> {
-    fn resize_handles<'a>(&'a mut self, marker: impl Bundle + Clone) -> UiBuilder<'w, 'a, Entity> {
+impl UiResizeHandlesExt for UiBuilder<'_, Entity> {
+    fn resize_handles(&mut self, marker: impl Bundle + Clone) -> UiBuilder<Entity> {
         let mut resize_handles = ResizeHandles::default();
         let container = self
             .container(ResizeHandles::container(), |resize_container| {

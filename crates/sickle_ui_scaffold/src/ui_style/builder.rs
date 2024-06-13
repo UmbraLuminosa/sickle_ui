@@ -12,11 +12,11 @@ pub struct AnimatedStyleBuilder<'a> {
     pub style_builder: &'a mut StyleBuilder,
 }
 
-impl<'a> AnimatedStyleBuilder<'a> {
+impl AnimatedStyleBuilder<'_> {
     pub fn add_and_extract_animation(
-        &'a mut self,
+        &mut self,
         attribute: DynamicStyleAttribute,
-    ) -> &'a mut AnimationSettings {
+    ) -> &mut AnimationSettings {
         let index = self.style_builder.add(attribute.clone());
 
         let DynamicStyleAttribute::Animated {
@@ -33,9 +33,9 @@ impl<'a> AnimatedStyleBuilder<'a> {
     }
 
     pub fn custom(
-        &'a mut self,
+        &mut self,
         callback: impl Fn(Entity, AnimationState, &mut World) + Send + Sync + 'static,
-    ) -> &'a mut AnimationSettings {
+    ) -> &mut AnimationSettings {
         let attribute = DynamicStyleAttribute::Animated {
             attribute: AnimatedStyleAttribute::Custom(CustomAnimatedStyleAttribute::new(callback)),
             controller: DynamicStyleController::default(),
@@ -128,13 +128,13 @@ impl StyleBuilder {
         }
     }
 
-    pub fn interactive<'a>(&'a mut self) -> InteractiveStyleBuilder<'a> {
+    pub fn interactive(&mut self) -> InteractiveStyleBuilder {
         InteractiveStyleBuilder {
             style_builder: self,
         }
     }
 
-    pub fn animated<'a>(&'a mut self) -> AnimatedStyleBuilder<'a> {
+    pub fn animated(&mut self) -> AnimatedStyleBuilder {
         AnimatedStyleBuilder {
             style_builder: self,
         }
