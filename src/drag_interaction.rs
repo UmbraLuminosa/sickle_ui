@@ -52,6 +52,8 @@ pub enum DragState {
     Dragging,
     DragEnd,
     DragCanceled,
+    /// For cases in which the cursor leaves the window while dragging. 
+    DragOnHold
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Reflect)]
@@ -75,6 +77,19 @@ fn update_drag_progress(
         node, 
         global_trans
     ) in &mut q_draggable {
+
+        if draggable.state == DragState::DragOnHold {
+            // If the node's drag is On Hold, has the cursor come back to the window yet?
+            let cursor_not_detected_in_window = relcurpos.normalized.is_none();
+            if cursor_not_detected_in_window { continue; }
+            else {
+                // ?? This doesn't do anything!
+                draggable.state = DragState::DragStart;
+            }
+
+
+        }
+
         if draggable.state == DragState::DragEnd {
             draggable.state = DragState::Inactive;
             draggable.clear();
@@ -145,6 +160,8 @@ fn update_drag_state(
         node,
         global_trans
     ) in &mut q_draggable {
+        if draggable.state == DragState::DragOnHold { continue; }
+
         if *flux_interaction == FluxInteraction::Pressed
             && draggable.state != DragState::MaybeDragged
         {
@@ -174,6 +191,18 @@ fn update_drag_state(
         } else if *flux_interaction == FluxInteraction::Released
             || *flux_interaction == FluxInteraction::PressCanceled
         {
+            // If flux reports a PressCanceled while we're dragging, 
+            // was it because the cursor left the node or left the window?
+            let cursor_not_detected_in_window = relcurpos.normalized.is_none();
+            if *flux_interaction == FluxInteraction::PressCanceled
+            && draggable.state == DragState::Dragging 
+            && cursor_not_detected_in_window {
+                // One way entrance. This entity won't visit this system again 
+                // until this state is cleared by update_drag_progress
+                draggable.state = DragState::DragOnHold;
+                continue;
+            }
+
             if draggable.state == DragState::DragStart || draggable.state == DragState::Dragging {
                 draggable.state = DragState::DragEnd;
             } else if draggable.state == DragState::MaybeDragged {
@@ -181,5 +210,6 @@ fn update_drag_state(
                 draggable.clear();
             }
         }
+        
     }
 }
