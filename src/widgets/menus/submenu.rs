@@ -394,12 +394,7 @@ impl Submenu {
             .visibility(Visibility::Hidden);
     }
 
-    fn open_style(
-        style_builder: &mut StyleBuilder,
-        entity: Entity,
-        _: &Submenu,
-        world: &mut World,
-    ) {
+    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, _: &Submenu, world: &World) {
         let theme_data = world.resource::<ThemeData>().clone();
         let colors = theme_data.colors();
 

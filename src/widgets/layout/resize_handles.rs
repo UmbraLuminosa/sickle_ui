@@ -457,7 +457,7 @@ impl ResizeHandles {
         style_builder: &mut StyleBuilder,
         entity: Entity,
         _: &ResizeHandles,
-        world: &mut World,
+        world: &World,
     ) {
         let theme_data = world.resource::<ThemeData>();
         let resize_spacing = theme_data.spacing.resize_zone;

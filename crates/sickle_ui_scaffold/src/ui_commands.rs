@@ -426,10 +426,7 @@ where
         // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
         let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
-            .map(|pseudo_theme| pseudo_theme.builder().clone())
-            .collect::<Vec<DynamicStyleBuilder<C>>>()
-            .iter()
-            .map(|builder| match builder {
+            .map(|pseudo_theme| match pseudo_theme.builder().clone() {
                 DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
                 DynamicStyleBuilder::StyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
@@ -446,6 +443,18 @@ where
                 DynamicStyleBuilder::WorldStyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
                     builder(&mut style_builder, entity, &context, world);
+
+                    style_builder.convert_with(&context)
+                }
+                DynamicStyleBuilder::PseudoWorldStyleBuilder(builder) => {
+                    let mut style_builder = StyleBuilder::new();
+                    builder(
+                        &mut style_builder,
+                        pseudo_theme.state(),
+                        entity,
+                        &context,
+                        world,
+                    );
 
                     style_builder.convert_with(&context)
                 }

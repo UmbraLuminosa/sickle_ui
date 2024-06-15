@@ -8,7 +8,7 @@ pub struct UiUtils;
 
 impl UiUtils {
     /// Gets the nearest clipped container, useful for absolutely positioned elements to find a maximum size
-    pub fn container_size_and_offset(entity: Entity, world: &mut World) -> (Vec2, Vec2) {
+    pub fn container_size_and_offset(entity: Entity, world: &World) -> (Vec2, Vec2) {
         let mut container_size = Vec2::ZERO;
 
         // Unsafe unwarp: If a dropdown doesn't have a GT, we should panic!
@@ -67,7 +67,7 @@ impl UiUtils {
 
     /// Returns the calculated padding based on viewport (either based on TargetCamera or the Primary Window).
     /// Vec4 contains sizes in the order: Top, Right, Bottom, Left
-    pub fn padding_as_px(entity: Entity, world: &mut World) -> Vec4 {
+    pub fn padding_as_px(entity: Entity, world: &World) -> Vec4 {
         // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
         let style = world.get::<Style>(entity).unwrap();
         UiUtils::ui_rect_to_px(style.padding, entity, world)
@@ -75,7 +75,7 @@ impl UiUtils {
 
     /// Returns the calculated border based on viewport (either based on TargetCamera or the Primary Window).
     /// Vec4 contains sizes in the order: Top, Right, Bottom, Left
-    pub fn border_as_px(entity: Entity, world: &mut World) -> Vec4 {
+    pub fn border_as_px(entity: Entity, world: &World) -> Vec4 {
         // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
         let style = world.get::<Style>(entity).unwrap();
         UiUtils::ui_rect_to_px(style.border, entity, world)
@@ -83,7 +83,7 @@ impl UiUtils {
 
     /// Returns the calculated margin based on viewport (either based on TargetCamera or the Primary Window).
     /// Vec4 contains sizes in the order: Top, Right, Bottom, Left
-    pub fn margin_as_px(entity: Entity, world: &mut World) -> Vec4 {
+    pub fn margin_as_px(entity: Entity, world: &World) -> Vec4 {
         // Unsafe unwrap: If a UI element doesn't have a Style, we should panic!
         let style = world.get::<Style>(entity).unwrap();
         UiUtils::ui_rect_to_px(style.margin, entity, world)
@@ -91,7 +91,7 @@ impl UiUtils {
 
     /// Returns the calculated edge sizes based on viewport (either based on TargetCamera or the Primary Window).
     /// Vec4 contains sizes in the order: Top, Right, Bottom, Left
-    pub fn ui_rect_to_px(rect: UiRect, entity: Entity, world: &mut World) -> Vec4 {
+    pub fn ui_rect_to_px(rect: UiRect, entity: Entity, world: &World) -> Vec4 {
         let viewport_size = if let Some(render_target) = UiUtils::find_render_target(entity, world)
         {
             UiUtils::render_target_size(render_target, world)
@@ -132,7 +132,7 @@ impl UiUtils {
         }
     }
 
-    pub fn find_render_target(entity: Entity, world: &mut World) -> Option<RenderTarget> {
+    pub fn find_render_target(entity: Entity, world: &World) -> Option<RenderTarget> {
         let mut current_ancestor = entity;
         while let Some(parent) = world.get::<Parent>(current_ancestor) {
             current_ancestor = parent.get();
@@ -147,7 +147,7 @@ impl UiUtils {
         None
     }
 
-    pub fn render_target_size(render_target: RenderTarget, world: &mut World) -> Vec2 {
+    pub fn render_target_size(render_target: RenderTarget, world: &World) -> Vec2 {
         match render_target {
             RenderTarget::Window(window) => match window {
                 WindowRef::Primary => {
@@ -185,11 +185,17 @@ impl UiUtils {
         }
     }
 
-    pub fn get_primary_window(world: &mut World) -> &Window {
+    pub fn get_primary_window(world: &World) -> &Window {
         // Unsafe single: don't ask for a primary window if it doesn't exists pls.
-        world
-            .query_filtered::<&Window, With<PrimaryWindow>>()
-            .single(world)
+        //todo: use resource to store primary window entity
+        let primary_window = world.component_id::<PrimaryWindow>().unwrap();
+        let window_arch = world
+            .archetypes()
+            .iter()
+            .find(|a| a.len() == 1 && a.contains(primary_window))
+            .unwrap();
+        let entity = window_arch.entities()[0].id();
+        world.get::<Window>(entity).unwrap()
     }
 
     pub fn resolution_to_vec2(resolution: &WindowResolution) -> Vec2 {

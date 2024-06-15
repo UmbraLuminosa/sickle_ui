@@ -432,12 +432,7 @@ impl Dropdown {
             ));
     }
 
-    fn open_style(
-        style_builder: &mut StyleBuilder,
-        entity: Entity,
-        _: &Dropdown,
-        world: &mut World,
-    ) {
+    fn open_style(style_builder: &mut StyleBuilder, entity: Entity, _: &Dropdown, world: &World) {
         let placement = match Dropdown::panel_placement_for(entity, world) {
             Ok(placement) => placement,
             Err(msg) => {
@@ -472,7 +467,7 @@ impl Dropdown {
 
     pub fn panel_placement_for(
         entity: Entity,
-        world: &mut World,
+        world: &World,
     ) -> Result<DropdownPanelPlacement, String> {
         let Some(dropdown) = world.get::<Dropdown>(entity) else {
             return Err("Entity has no Dropdown component".into());
