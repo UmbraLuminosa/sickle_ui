@@ -8,7 +8,11 @@ pub mod theme_data;
 pub mod theme_spacing;
 pub mod typography;
 
-use std::marker::PhantomData;
+use std::{
+    fmt::{Debug, Formatter},
+    marker::PhantomData,
+    sync::Arc,
+};
 
 use bevy::{prelude::*, ui::UiSystem};
 
@@ -57,12 +61,97 @@ pub struct ThemeUpdate;
 #[derive(SystemSet, Clone, Eq, Debug, Hash, PartialEq)]
 pub struct CustomThemeUpdate;
 
+#[derive(Clone)]
+pub struct StyleBuilderFn {
+    pub callback: Arc<dyn Fn(&mut StyleBuilder, &ThemeData) + Send + Sync + 'static>,
+}
+
+impl StyleBuilderFn {
+    pub fn new(callback: impl Fn(&mut StyleBuilder, &ThemeData) + Send + Sync + 'static) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl Debug for StyleBuilderFn {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StyleBuilderFn").finish()
+    }
+}
+
+#[derive(Clone)]
+pub struct ContextStyleBuilderFn<C> {
+    pub callback: Arc<dyn Fn(&mut StyleBuilder, &C, &ThemeData) + Send + Sync + 'static>,
+}
+
+impl<C> ContextStyleBuilderFn<C> {
+    pub fn new(
+        callback: impl Fn(&mut StyleBuilder, &C, &ThemeData) + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl<C> Debug for ContextStyleBuilderFn<C> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ContextStyleBuilderFn").finish()
+    }
+}
+
+#[derive(Clone)]
+pub struct WorldStyleBuilderFn<C> {
+    pub callback: Arc<dyn Fn(&mut StyleBuilder, Entity, &C, &mut World) + Send + Sync + 'static>,
+}
+
+impl<C> WorldStyleBuilderFn<C> {
+    pub fn new(
+        callback: impl Fn(&mut StyleBuilder, Entity, &C, &mut World) + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            callback: Arc::new(callback),
+        }
+    }
+}
+
+impl<C> Debug for WorldStyleBuilderFn<C> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WorldStyleBuilderFn").finish()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum DynamicStyleBuilder<C> {
     Static(DynamicStyle),
-    StyleBuilder(fn(&mut StyleBuilder, &ThemeData)),
-    ContextStyleBuilder(fn(&mut StyleBuilder, &C, &ThemeData)),
-    WorldStyleBuilder(fn(&mut StyleBuilder, Entity, &C, &mut World)),
+    StyleBuilder(StyleBuilderFn),
+    ContextStyleBuilder(ContextStyleBuilderFn<C>),
+    WorldStyleBuilder(WorldStyleBuilderFn<C>),
+}
+
+impl<C> DynamicStyleBuilder<C> {
+    pub fn static_style(style: DynamicStyle) -> Self {
+        Self::Static(style)
+    }
+
+    pub fn style_builder(
+        builder: impl Fn(&mut StyleBuilder, &ThemeData) + Send + Sync + 'static,
+    ) -> Self {
+        Self::StyleBuilder(StyleBuilderFn::new(builder))
+    }
+
+    pub fn context_builder(
+        builder: impl Fn(&mut StyleBuilder, &C, &ThemeData) + Send + Sync + 'static,
+    ) -> Self {
+        Self::ContextStyleBuilder(ContextStyleBuilderFn::new(builder))
+    }
+
+    pub fn world_builder(
+        builder: impl Fn(&mut StyleBuilder, Entity, &C, &mut World) + Send + Sync + 'static,
+    ) -> Self {
+        Self::WorldStyleBuilder(WorldStyleBuilderFn::new(builder))
+    }
 }
 
 impl<C> From<StyleBuilder> for DynamicStyleBuilder<C> {
@@ -83,7 +172,7 @@ pub struct PseudoTheme<C> {
     builder: DynamicStyleBuilder<C>,
 }
 
-impl<C> PseudoTheme<C> {
+impl<C: 'static> PseudoTheme<C> {
     pub fn new(
         state: impl Into<Option<Vec<PseudoState>>>,
         theme: impl Into<DynamicStyleBuilder<C>>,
@@ -117,7 +206,7 @@ impl<C> PseudoTheme<C> {
     ) -> Self {
         Self {
             state: state.into(),
-            builder: DynamicStyleBuilder::StyleBuilder(builder),
+            builder: DynamicStyleBuilder::style_builder(builder),
         }
     }
 
@@ -127,7 +216,7 @@ impl<C> PseudoTheme<C> {
     ) -> Self {
         Self {
             state: state.into(),
-            builder: DynamicStyleBuilder::ContextStyleBuilder(builder),
+            builder: DynamicStyleBuilder::context_builder(builder),
         }
     }
 
@@ -137,7 +226,7 @@ impl<C> PseudoTheme<C> {
     ) -> Self {
         Self {
             state: state.into(),
-            builder: DynamicStyleBuilder::WorldStyleBuilder(builder),
+            builder: DynamicStyleBuilder::world_builder(builder),
         }
     }
 

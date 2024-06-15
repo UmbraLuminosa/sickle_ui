@@ -433,19 +433,19 @@ where
                 DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
                 DynamicStyleBuilder::StyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, &theme_data);
+                    (builder.callback)(&mut style_builder, &theme_data);
 
                     style_builder.convert_with(&context)
                 }
                 DynamicStyleBuilder::ContextStyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, &context, &theme_data);
+                    (builder.callback)(&mut style_builder, &context, &theme_data);
 
                     style_builder.convert_with(&context)
                 }
                 DynamicStyleBuilder::WorldStyleBuilder(builder) => {
                     let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, entity, &context, world);
+                    (builder.callback)(&mut style_builder, entity, &context, world);
 
                     style_builder.convert_with(&context)
                 }
