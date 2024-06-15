@@ -421,7 +421,7 @@ impl Slider {
                     .margin(UiRect::left(Val::Px(theme_spacing.gaps.medium)));
 
                 style_builder
-                    .switch_context(Slider::HANDLE.to_string(), None)
+                    .switch_context(Slider::HANDLE, None)
                     .margin(UiRect::top(Val::Px(
                         -theme_spacing.gaps.medium + theme_spacing.borders.extra_small,
                     )));
@@ -467,7 +467,7 @@ impl Slider {
                     .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)));
 
                 style_builder
-                    .switch_context(Slider::HANDLE.to_string(), None)
+                    .switch_context(Slider::HANDLE, None)
                     .margin(UiRect::left(Val::Px(
                         -theme_spacing.gaps.medium + theme_spacing.borders.extra_small,
                     )));
@@ -522,7 +522,7 @@ impl Slider {
             .border_color(colors.accent(Accent::Shadow));
 
         style_builder
-            .switch_context(Slider::HANDLE.to_string(), None)
+            .switch_context(Slider::HANDLE, None)
             .size(Val::Px(theme_spacing.icons.small))
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
             .animated()

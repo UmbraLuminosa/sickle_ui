@@ -695,7 +695,7 @@ impl FloatingPanel {
             .height(Val::Percent(100.));
 
         style_builder
-            .switch_context(FloatingPanel::DRAG_HANDLE.to_string(), None)
+            .switch_context(FloatingPanel::DRAG_HANDLE, None)
             .width(Val::Percent(100.))
             .height(Val::Px(theme_spacing.borders.small * 2.))
             .border(UiRect::bottom(Val::Px(theme_spacing.borders.small)))
@@ -709,7 +709,7 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(FloatingPanel::FOLD_BUTTON.to_string(), None)
+            .switch_context(FloatingPanel::FOLD_BUTTON, None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(
@@ -727,7 +727,7 @@ impl FloatingPanel {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(FloatingPanel::CLOSE_BUTTON.to_string(), None)
+            .switch_context(FloatingPanel::CLOSE_BUTTON, None)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(

@@ -47,8 +47,8 @@ impl AnimatedStyleBuilder<'_> {
 
 #[derive(Clone, Debug)]
 pub struct ContextStyleAttributeConfig {
-    placement: Option<String>,
-    target: Option<String>,
+    placement: Option<&'static str>,
+    target: Option<&'static str>,
     attribute: DynamicStyleAttribute,
 }
 
@@ -62,8 +62,8 @@ impl LogicalEq for ContextStyleAttributeConfig {
 
 #[derive(Debug)]
 pub struct StyleBuilder {
-    placement: Option<String>,
-    target: Option<String>,
+    placement: Option<&'static str>,
+    target: Option<&'static str>,
     attributes: Vec<ContextStyleAttributeConfig>,
 }
 
@@ -100,6 +100,14 @@ impl StyleBuilder {
         }
     }
 
+    pub fn new_with_capacity(num_attributes: usize) -> Self {
+        Self {
+            placement: None,
+            target: None,
+            attributes: Vec::with_capacity(num_attributes),
+        }
+    }
+
     pub fn add(&mut self, attribute: DynamicStyleAttribute) -> usize {
         let index = self.attributes.iter().position(|csac| {
             csac.placement == self.placement
@@ -119,8 +127,8 @@ impl StyleBuilder {
             }
             None => {
                 self.attributes.push(ContextStyleAttributeConfig {
-                    placement: self.placement.clone(),
-                    target: self.target.clone(),
+                    placement: self.placement,
+                    target: self.target,
                     attribute,
                 });
                 self.attributes.len() - 1
@@ -145,8 +153,8 @@ impl StyleBuilder {
     /// `None` target refers to the current placement entity.
     pub fn switch_context(
         &mut self,
-        placement: impl Into<Option<String>>,
-        target: impl Into<Option<String>>,
+        placement: impl Into<Option<&'static str>>,
+        target: impl Into<Option<&'static str>>,
     ) -> &mut Self {
         self.placement = placement.into();
         self.target = target.into();
@@ -178,7 +186,7 @@ impl StyleBuilder {
     /// detected on it. This allows styling sub-components directly. It also allows detecting interactions
     /// on a sub-component and proxying it to the main entity or other sub-components.
     pub fn switch_placement(&mut self, placement: &'static str) -> &mut Self {
-        self.placement = Some(placement.into());
+        self.placement = Some(placement);
         self
     }
 
@@ -186,22 +194,23 @@ impl StyleBuilder {
     /// NOTE: The DynamicStyle will still be set on the main entity and interactions will be
     /// detected on it. This allows styling sub-components by proxy from the current placement.
     pub fn switch_target(&mut self, target: &'static str) -> &mut Self {
-        self.target = Some(target.into());
+        self.target = Some(target);
         self
     }
 
     pub fn convert_with(self, context: &impl UiContext) -> Vec<(Option<Entity>, DynamicStyle)> {
-        let mut placements: Vec<Option<String>> = Vec::with_capacity(context.contexts().len() + 1);
+        let mut placements: Vec<Option<&'static str>> =
+            Vec::with_capacity(context.contexts().len() + 1);
         for attribute in self.attributes.iter() {
             if !placements.contains(&attribute.placement) {
-                placements.push(attribute.placement.clone());
+                placements.push(attribute.placement);
             }
         }
 
         let mut result: Vec<(Option<Entity>, DynamicStyle)> = Vec::with_capacity(placements.len());
         for placement in placements {
             let placement_entity = match &placement {
-                Some(target_placement) => match context.get(target_placement.as_str()) {
+                Some(target_placement) => match context.get(target_placement) {
                     Ok(target_entity) => Some(target_entity),
                     Err(msg) => {
                         warn!("{}", msg);
@@ -219,7 +228,7 @@ impl StyleBuilder {
                         .filter(|csac| csac.placement == placement)
                         .fold(Vec::new(), |mut acc: Vec<ContextStyleAttribute>, csac| {
                             let new_entry: ContextStyleAttribute = match &csac.target {
-                                Some(target) => match context.get(target.as_str()) {
+                                Some(target) => match context.get(target) {
                                     Ok(target_entity) => ContextStyleAttribute::new(
                                         target_entity,
                                         csac.attribute.clone(),

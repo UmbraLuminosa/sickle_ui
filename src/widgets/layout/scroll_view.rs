@@ -500,7 +500,7 @@ impl ScrollView {
             .padding(UiRect::all(Val::Auto));
 
         style_builder
-            .switch_context(ScrollView::HORIZONTAL_SCROLL_HANDLE.to_string(), None)
+            .switch_context(ScrollView::HORIZONTAL_SCROLL_HANDLE, None)
             .border(UiRect::horizontal(Val::Px(
                 theme_spacing.borders.extra_small,
             )))
@@ -515,7 +515,7 @@ impl ScrollView {
             .copy_from(theme_data.interaction_animation);
 
         style_builder
-            .switch_context(ScrollView::VERTICAL_SCROLL_HANDLE.to_string(), None)
+            .switch_context(ScrollView::VERTICAL_SCROLL_HANDLE, None)
             .border(UiRect::vertical(Val::Px(theme_spacing.borders.extra_small)))
             .border_color(colors.accent(Accent::Shadow))
             .animated()
