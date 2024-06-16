@@ -8,7 +8,11 @@ pub mod theme_data;
 pub mod theme_spacing;
 pub mod typography;
 
-use std::marker::PhantomData;
+use std::{
+    any::{type_name, TypeId},
+    collections::HashSet,
+    marker::PhantomData,
+};
 
 use bevy::{prelude::*, ui::UiSystem};
 
@@ -16,7 +20,7 @@ use dynamic_style::{DynamicStyle, DynamicStylePlugin};
 use pseudo_state::{AutoPseudoStatePlugin, PseudoState, PseudoStates};
 use theme_data::ThemeData;
 
-use crate::{ui_commands::RefreshThemeExt, ui_style::builder::StyleBuilder};
+use crate::{prelude::UiBuilder, ui_commands::RefreshThemeExt, ui_style::builder::StyleBuilder};
 
 pub mod prelude {
     pub use super::{
@@ -50,6 +54,7 @@ impl Plugin for ThemePlugin {
             (ThemeUpdate, CustomThemeUpdate.after(ThemeUpdate)).before(UiSystem::Layout),
         )
         .init_resource::<ThemeData>()
+        .init_resource::<ThemeRegistry>()
         .add_plugins((AutoPseudoStatePlugin, DynamicStylePlugin));
     }
 }
@@ -291,6 +296,54 @@ where
     }
 }
 
+pub trait InsertThemeComponentExt {
+    /// Inserts `C` as a component to the entity and checks if [`ComponentThemePlugin<C>`](ComponentThemePlugin)
+    /// was added to the app.
+    fn insert_theme_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self;
+}
+
+impl InsertThemeComponentExt for UiBuilder<'_, Entity> {
+    fn insert_theme_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self {
+        self.insert(component);
+        self.commands().add(|world: &mut World| {
+            if !world.resource::<ThemeRegistry>().contains_by_id(TypeId::of::<C>()) {
+                warn!("theme component {} was not registered; add its ComponentThemePlugin to your app", type_name::<C>());
+            }
+        });
+        self
+    }
+}
+
+/// Tracks all the themes that have been registered with [`ComponentThemePlugin`].
+///
+/// This can be used to check if a theme's plugin is missing.
+#[derive(Resource, Default, Debug)]
+pub struct ThemeRegistry {
+    themes: HashSet<TypeId>,
+}
+
+impl ThemeRegistry {
+    fn new_with<C: 'static>() -> Self {
+        let mut registry = Self::default();
+        registry.add::<C>();
+        registry
+    }
+
+    fn add<C: 'static>(&mut self) {
+        self.themes.insert(TypeId::of::<C>());
+    }
+
+    /// Returns `true` if the theme `C` has been registered.
+    pub fn contains<C: 'static>(&self) -> bool {
+        self.contains_by_id(TypeId::of::<C>())
+    }
+
+    /// Returns `true` if the theme `id` has been registered.
+    pub fn contains_by_id(&self, id: TypeId) -> bool {
+        self.themes.contains(&id)
+    }
+}
+
 #[derive(Default)]
 pub struct ComponentThemePlugin<C>
 where
@@ -325,6 +378,12 @@ where
     C: DefaultTheme,
 {
     fn build(&self, app: &mut App) {
+        if let Some(mut registry) = app.world.get_resource_mut::<ThemeRegistry>() {
+            registry.add::<C>();
+        } else {
+            app.insert_resource(ThemeRegistry::new_with::<C>());
+        }
+
         match self.is_custom {
             true => app.add_systems(PostUpdate, Theme::<C>::custom_post_update()),
             false => app.add_systems(PostUpdate, Theme::<C>::post_update()),
