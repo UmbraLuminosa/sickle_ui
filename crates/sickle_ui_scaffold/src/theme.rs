@@ -296,18 +296,18 @@ where
     }
 }
 
-pub trait InsertThemeComponentExt {
+pub trait InsertThemedComponentExt {
     /// Inserts `C` as a component to the entity and checks if [`ComponentThemePlugin<C>`](ComponentThemePlugin)
     /// was added to the app.
-    fn insert_theme_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self;
+    fn insert_themed_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self;
 }
 
-impl InsertThemeComponentExt for UiBuilder<'_, Entity> {
-    fn insert_theme_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self {
+impl InsertThemedComponentExt for UiBuilder<'_, Entity> {
+    fn insert_themed_component<C: DefaultTheme + Component>(&mut self, component: C) -> &mut Self {
         self.insert(component);
         self.commands().add(|world: &mut World| {
             if !world.resource::<ThemeRegistry>().contains_by_id(TypeId::of::<C>()) {
-                warn!("theme component {} was not registered; add its ComponentThemePlugin to your app", type_name::<C>());
+                warn!("themed component {} was not registered; add its ComponentThemePlugin to your app", type_name::<C>());
             }
         });
         self
