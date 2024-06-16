@@ -369,10 +369,10 @@ where
         // Default -> General (App-wide) -> Specialized (Screen) theming is a reasonable guess.
         // Round to 4, which is the first growth step.
         // TODO: Cache most common theme count in theme data.
-        let mut themes: Vec<(&Theme<C>, Entity)> = Vec::with_capacity(4);
+        let mut themes: Vec<(&Theme<C>, Option<Entity>)> = Vec::with_capacity(4);
         // Add own theme
         if let Some(own_theme) = world.get::<Theme<C>>(entity) {
-            themes.push((own_theme, entity));
+            themes.push((own_theme, Some(entity)));
         }
 
         // Add all ancestor themes
@@ -380,13 +380,13 @@ where
         while let Some(parent) = world.get::<Parent>(current_ancestor) {
             current_ancestor = parent.get();
             if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
-                themes.push((ancestor_theme, current_ancestor));
+                themes.push((ancestor_theme, Some(current_ancestor)));
             }
         }
 
         let default_theme = C::default_theme();
         if let Some(ref default_theme) = default_theme {
-            themes.push((default_theme, entity));
+            themes.push((default_theme, None));
         }
 
         if themes.len() == 0 {
@@ -403,7 +403,7 @@ where
 
         // Assuming we have a base style and two-three pseudo state style is a reasonable guess.
         // TODO: Cache most common pseudo theme count in theme data.
-        let mut pseudo_themes: Vec<(&PseudoTheme<C>, Entity)> =
+        let mut pseudo_themes: Vec<(&PseudoTheme<C>, Option<Entity>)> =
             Vec::with_capacity(themes.len() * 4);
 
         for (theme, source_entity) in &themes {
