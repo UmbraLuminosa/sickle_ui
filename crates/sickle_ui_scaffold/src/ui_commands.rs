@@ -369,10 +369,10 @@ where
         // Default -> General (App-wide) -> Specialized (Screen) theming is a reasonable guess.
         // Round to 4, which is the first growth step.
         // TODO: Cache most common theme count in theme data.
-        let mut themes: Vec<&Theme<C>> = Vec::with_capacity(4);
+        let mut themes: Vec<(&Theme<C>, Entity)> = Vec::with_capacity(4);
         // Add own theme
         if let Some(own_theme) = world.get::<Theme<C>>(entity) {
-            themes.push(own_theme);
+            themes.push((own_theme, entity));
         }
 
         // Add all ancestor themes
@@ -380,13 +380,13 @@ where
         while let Some(parent) = world.get::<Parent>(current_ancestor) {
             current_ancestor = parent.get();
             if let Some(ancestor_theme) = world.get::<Theme<C>>(current_ancestor) {
-                themes.push(ancestor_theme);
+                themes.push((ancestor_theme, current_ancestor));
             }
         }
 
         let default_theme = C::default_theme();
         if let Some(ref default_theme) = default_theme {
-            themes.push(default_theme);
+            themes.push((default_theme, entity));
         }
 
         if themes.len() == 0 {
@@ -403,22 +403,23 @@ where
 
         // Assuming we have a base style and two-three pseudo state style is a reasonable guess.
         // TODO: Cache most common pseudo theme count in theme data.
-        let mut pseudo_themes: Vec<&PseudoTheme<C>> = Vec::with_capacity(themes.len() * 4);
+        let mut pseudo_themes: Vec<(&PseudoTheme<C>, Entity)> =
+            Vec::with_capacity(themes.len() * 4);
 
-        for theme in &themes {
+        for (theme, source_entity) in &themes {
             if let Some(base_theme) = theme.pseudo_themes().iter().find(|pt| pt.is_base_theme()) {
-                pseudo_themes.push(base_theme);
+                pseudo_themes.push((base_theme, *source_entity));
             }
         }
 
         if pseudo_states.len() > 0 {
             for i in 0..pseudo_states.len() {
-                for theme in &themes {
+                for (theme, source_entity) in &themes {
                     theme
                         .pseudo_themes()
                         .iter()
                         .filter(|pt| pt.count_match(pseudo_states) == i + 1)
-                        .for_each(|pt| pseudo_themes.push(pt));
+                        .for_each(|pt| pseudo_themes.push((pt, *source_entity)));
                 }
             }
         }
@@ -426,39 +427,42 @@ where
         // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
         let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
-            .map(|pseudo_theme| match pseudo_theme.builder().clone() {
-                DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
-                DynamicStyleBuilder::StyleBuilder(builder) => {
-                    let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, &theme_data);
+            .map(
+                |(pseudo_theme, source_entity)| match pseudo_theme.builder().clone() {
+                    DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
+                    DynamicStyleBuilder::StyleBuilder(builder) => {
+                        let mut style_builder = StyleBuilder::new();
+                        builder(&mut style_builder, &theme_data);
 
-                    style_builder.convert_with(&context)
-                }
-                DynamicStyleBuilder::ContextStyleBuilder(builder) => {
-                    let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, &context, &theme_data);
+                        style_builder.convert_with(&context)
+                    }
+                    DynamicStyleBuilder::ContextStyleBuilder(builder) => {
+                        let mut style_builder = StyleBuilder::new();
+                        builder(&mut style_builder, &context, &theme_data);
 
-                    style_builder.convert_with(&context)
-                }
-                DynamicStyleBuilder::WorldStyleBuilder(builder) => {
-                    let mut style_builder = StyleBuilder::new();
-                    builder(&mut style_builder, entity, &context, world);
+                        style_builder.convert_with(&context)
+                    }
+                    DynamicStyleBuilder::WorldStyleBuilder(builder) => {
+                        let mut style_builder = StyleBuilder::new();
+                        builder(&mut style_builder, entity, &context, world);
 
-                    style_builder.convert_with(&context)
-                }
-                DynamicStyleBuilder::PseudoWorldStyleBuilder(builder) => {
-                    let mut style_builder = StyleBuilder::new();
-                    builder(
-                        &mut style_builder,
-                        pseudo_theme.state(),
-                        entity,
-                        &context,
-                        world,
-                    );
+                        style_builder.convert_with(&context)
+                    }
+                    DynamicStyleBuilder::InfoWorldStyleBuilder(builder) => {
+                        let mut style_builder = StyleBuilder::new();
+                        builder(
+                            &mut style_builder,
+                            *source_entity,
+                            pseudo_theme.state(),
+                            entity,
+                            &context,
+                            world,
+                        );
 
-                    style_builder.convert_with(&context)
-                }
-            })
+                        style_builder.convert_with(&context)
+                    }
+                },
+            )
             .filter(|e_to_dys| e_to_dys.len() > 0)
             .fold(
                 Vec::with_capacity(context.contexts().len() + 1),

@@ -66,7 +66,9 @@ pub enum DynamicStyleBuilder<C> {
     StyleBuilder(fn(&mut StyleBuilder, &ThemeData)),
     ContextStyleBuilder(fn(&mut StyleBuilder, &C, &ThemeData)),
     WorldStyleBuilder(fn(&mut StyleBuilder, Entity, &C, &World)),
-    PseudoWorldStyleBuilder(fn(&mut StyleBuilder, &Option<Vec<PseudoState>>, Entity, &C, &World)),
+    InfoWorldStyleBuilder(
+        fn(&mut StyleBuilder, Entity, &Option<Vec<PseudoState>>, Entity, &C, &World),
+    ),
 }
 
 impl<C> From<StyleBuilder> for DynamicStyleBuilder<C> {
@@ -149,13 +151,13 @@ impl<C> PseudoTheme<C> {
         }
     }
 
-    pub fn deferred_pseudo_world(
+    pub fn deferred_info_world(
         state: impl Into<Option<Vec<PseudoState>>>,
-        builder: fn(&mut StyleBuilder, &Option<Vec<PseudoState>>, Entity, &C, &World),
+        builder: fn(&mut StyleBuilder, Entity, &Option<Vec<PseudoState>>, Entity, &C, &World),
     ) -> Self {
         Self {
             state: state.into(),
-            builder: DynamicStyleBuilder::PseudoWorldStyleBuilder(builder),
+            builder: DynamicStyleBuilder::InfoWorldStyleBuilder(builder),
         }
     }
 
