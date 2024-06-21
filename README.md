@@ -211,7 +211,7 @@ As mentioned, all builder function have a context.
 - The root one is `UiRoot`. The entity spawned in the `UiRoot` context does not have a `Parent` entity,
 hence it will be a root `Node`.
 - The most common regular context is `Entity`, which can be acquired by calling `commands.ui_builder(entity)`.
-Where `entity` is an entity - ID - acquired by some other means, such as spawing or querying.
+Where `entity` is an entity - ID - acquired by some other means, such as spawning or querying.
 
 > [!TIP]
 > Other contexts are specific for use cases, such as the tab container's or that of the menu system. You'll
@@ -1273,24 +1273,163 @@ Any `sickle_ui` widget that has variable values will depend on the default theme
 
 ## Utilities
 
+There are a number of utilities that form the foundation of `sickle_ui` widgets and can be resused for
+new widgets just as well.
+
+
 ### FluxInteraction & FluxInteractionStopwatch
+
+`FluxInteraction` is the basis of all interactivity in `sickle_ui`. It is a wrapper around the built-in
+`Interaction` but instead of tracking current _state_ it tracks _transitions_ from one state to another.
+
+`FluxInteractionStopwatch` keeps track of the time elapsed since the last change to the `FluxInteraction`
+of an entity. This stopwatch by default is available for 1 second after every change for performance reasons.
+The resource `FluxInteractionConfig` can be used to control the time it is available, though it is not
+recommended to change this. Instead, `FluxInteractionStopwatchLock`s can be used to extend or precise the
+time the stopwatch needs to be available.
+
+The recommended way of adding `FluxInteraction` to an entity is by using the provided `TrackedInteraction`
+bundle.
+
+> [!NOTE]
+> `FluxInteraction` relies on `Interaction`, but will not add it to entities. It has to be added as needed.
+> This is because the various built-in `bevy` bundles may or may not add `Interaction` themselves.
+
 
 ### ScrollInteraction
 
+Scroll interactions can be intercepted by the `Scrollable` component attached to an entity. Systems relying
+on it can use `Changed<Scrollable>` as a filter to optimize updates.
+
+> [!NOTE]
+> Currently only mouse scrolls are supported and the `shift` key is used to alter the scroll axis.
+
+
 ### DragInteraction
+
+The `Draggable` component is built around `FluxInteraction` and `RelativeCursorPosition` to translate 
+interactions to drag intents. The component itself doesn't do anything besides tracking the drag intents.
+Developers wishing to utilize it can rely on change detection and use the provided values to update aspects
+of their widgets, i.e. scroll bars can be dragged to scroll content, resize handles can be dragged to change
+the size of their parent, etc.
+
 
 ### DropInteraction
 
+`Draggable`, `Droppable`, and `DropZone` together forms the drop interactions. When a `Droppable` is being
+dragged over a `DropZone`, the zone will hold a reference to the entity being dragged. It is up to the developer
+to check if the source entity is acceptable and to indicate the drop action status.
+
+> [!NOTE]
+> `DropZone`s rely on `Interaction` to detect when something is over them.
+
+
 ### ResizeInteraction
+
+Resize handles can be easily added to any widget, however these are just pre-styled draggables. They don't
+automatically update the size of their container.
+
+`PseudoState::Resizable(_)` states can be added to the outermost container to control which handle is interactible.
+
 
 ### UiContextRoot
 
+The `UiContextRoot` is a marker component intended to signal _logical_ UI roots. The component is used by
+context menus and tab container to find mounting points for spawned entites. In the case of context menus,
+the menu itself will be mounted at this root. In the case of the tab container the floating panel that is
+opened when a tab is "popped out" is mounted at the context root.
+
+> [!TIP]
+> Add a `UiContextRoot` to root parts of the UI that could be dynamically replaced, like screen roots.
+> Switching screens then will clean up all context menus and floating panels that may have been dynamically
+> spawned by the user without extra logic.
+
+
 ### UiUtils
 
-### UiCommands
+`UiUtils` is a collection of useful UI logic, such as converting between variants of `Val` or finding UI viewports.
+
+
+### Ui commands
+
+A number of `Commands` extension is available to make life easier, such as managing `PseudoStates`,
+`FluxInteractionStopwatchLock`s, or loggin an entity's hierarchy and components.
+
 
 ### Context Menu
 
-### Locked attributes
+The context menu system in `sickle_ui` relies on reflection to allow any component to generate its own
+entires to the context menu.
+
+To implement a context menu for a widget two steps are necessary:
+- An `Interaction` entity needs to be tagged with the `GenerateContextMenu` component to signal support.
+- At least one component on the entity needs to implement `ContextMenuGenerator` and register its type.
+
+```rust
+impl Plugin for MyContextMenuPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<MyComponent>();
+    }
+}
+
+#[derive(Component, Clone, Debug, Reflect)]
+#[reflect(Component, ContextMenuGenerator)]
+pub struct MyComponent;
+
+
+impl ContextMenuGenerator for MyComponent {
+    fn build_context_menu(&self, context: Entity, container: &mut UiBuilder<ContextMenu>) {
+        // Add menu items as needed to the container.
+        
+        container
+            .menu_item(MenuItemConfig {
+                name: "Open in new".into(),
+                trailing_icon: icons.open_in_new,
+                ..default()
+            })
+            // OpenInNewFromContextMenu is an examle component that another system could track
+            // and execute the operation when the menu item is interacted.
+            .insert(OpenInNewFromContextMenu { context });
+    }
+
+    fn placement_index(&self) -> usize {
+        0
+    }
+}
+
+```
+
+The above example is the preparation for filling a context menu, but the menu item will only show up in
+a context menu if the entity has `Interaction` and `GenerateContextMenu::default()` attached to it.
+
+> [!NOTE]
+> If the entity has multiple components with `ContextMenuGenerator` implementations, all of them will be
+> used to generate the final context menu.
+
+> [!TIP]
+> Gaps in the placement indicies result in separators added to the menu.
+
+
+### Locked style attributes
+
+Style attributes can sometimes be locked. This is to prevent accidental styling of parts that have a
+function and are driven by a widget's own system. Attempting to style or theme a locked attribute
+results in a warning being emitted (and no change applied to the attribute).
+
+> [!NOTE]
+> Of course, changing `Style` (or any other style-related component) directly will bypass the checks.
+
+> [!TIP]
+> If a widget would still want to use the styling API while locking attributes, a `style_unchecked`
+> line of commands is provided that skip the lock check.
+
 
 ### Tracked style state
+
+Sometimes it is useful to track the overall state of styling application. `sickle_ui` provides a "meta"
+style attribute called `TrackedStyleState` that can be used to drive other widgets from `DynamicStyle`s.
+It does not actually style anything.
+
+> [!NOTE]
+> `TrackedStyleState` is `Lerp`able so it can be animated. Dropdowns use this to control The scroll view
+> in their options panel to disable it while in transition to avoid visual pops.
