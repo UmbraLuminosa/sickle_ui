@@ -578,11 +578,11 @@ impl Plugin for MyWidgetPlugin {
 }
 ```
 
-The `ComponentThemePlugin` handles theme calculation and reloading for the component is is added for.
+The `ComponentThemePlugin` handles theme calculation and reloading for the component is added for.
 In this case we added it for `MyWidget`, which is the example component.
 
 > [!IMPORTANT]
-> `MyWidget` now ***must*** derives `UiContext`. This derive provides default implementation for the context
+> `MyWidget` now ***must*** derive `UiContext`. This derive provides default implementation for the context
 > we will look at later in [Contextually themed widgets](#contextually-themed-widgets).
 
 Next, we have the implementation of `DefaultTheme`:
@@ -632,7 +632,7 @@ The two function above define the theme itself and the styling that is applied a
 to any new entities that are added to the widget tree. It is also the basis of any overrides.
 
 In the simplest use case, defining the style is just a matter of calling style function on the
-provided `style_builder`. The methods availbale here are the same as the ones provided by the `UiStyle`
+provided `style_builder`. The methods available here are the same as the ones provided by the `UiStyle`
 extensions outlined in [Did I mention style?](#did-i-mention-style) with a few additions.
 
 > [!TIP]
@@ -752,7 +752,7 @@ impl UiMyWidgetExt for UiBuilder<'_, Entity> {
 ```
 
 > [!TIP]
-> The snippets also supports tab points, so you can quickly name the widget and plugin in a consistent manner.
+> The snippet also supports tab points, so you can quickly name the widget and plugin in a consistent manner.
 
 Now, our widget component is no longer just a tag. It now has a reference to a label sub-widget:
 
@@ -795,7 +795,7 @@ alright as long as we make sure we always assign an actual entity to it (otherwi
 
 #### The UiContext
 
-But this isnt't the only addition. Now our sippet defined an implementation for `UiContext` we previously
+But this isnt't the only addition. Now our snippet defined an implementation for `UiContext` we previously
 got from a simple `derive`:
 
 ```rust
@@ -818,7 +818,7 @@ impl UiContext for MyWidget {
 ```
 
 This tells the theming system that `MyWidget` has a single additional context (besides the main entity).
-The additional context can be accessed by the `MyWidget::LABEL` constant, which was added to the `ìmpl` block:
+The additional context can be accessed by the `MyWidget::LABEL` constant, which was added to the `impl` block:
 
 ```rust
 impl MyWidget {
@@ -918,7 +918,7 @@ defined for `None`, `[Checked]`, `[Disabled]`, `[FirstChild]`, `[Checked, Disabl
 and `[Checked, Disabled, FirstChild]` will be considered, in this order.
 
 If the entity only has the `[Checked]` state, then [PseudoTheme](#pseudo-theme)s defined for `None`, and
-`[Checked]` will be applied, but none of the others because they are either defiend for a disjoint set or
+`[Checked]` will be applied, but none of the others because they are either defined for a disjoint set or
 they are not a complete subset of the entity's state.
 
 > [!IMPORTANT]
@@ -1012,7 +1012,7 @@ exposed function:
 #### `build`
 
 `build` requires a simple callback that accepts a `StyleBuilder` instance to setup the entity style.
-This style builder is immediatelly evaluated to generate the `DynamicStyle` that will be cloned to
+This style builder is immediately evaluated to generate the `DynamicStyle` that will be cloned to
 entities. Switching context on the style builder emits a warning. This is because the target context
 cannot be known at compile time.
 
@@ -1068,7 +1068,7 @@ Most build-in widgets will also set `PseudoState`s based on user interaction, su
 
 #### Oh no! I don't have a pseudo state I can abuse!
 
-Don't you worry, there is a `PseudoState::Custom(String)` specfifically for such use cases.
+Don't you worry, there is a `PseudoState::Custom(String)` specifically for such use cases.
 
 
 ### Style builder
@@ -1079,7 +1079,7 @@ the style builder also adds `interactive` and `animated` properties. These prope
 from the user, such as hover, press, etc. to change styled attributes.
 
 The distinction between `interactive` and `animated` is that `interactive` styles apply immediately when an
-interaction occures. `animated` attributes perform some eased interpolation between start and end values to
+interaction occurs. `animated` attributes perform some eased interpolation between start and end values to
 apply the final style.
 
 > [!NOTE]
@@ -1177,7 +1177,7 @@ manually implement [The UiContext](#the-uicontext) to provide additional styling
 
 Switching target on the style builder configures subsequent calls to target an entity other than the main one.
 The string labels used to identify targets are mapped to entities during the theme building process. The
-targets can only be entity properties of the widget component. To rever back to styling the main widget, call
+targets can only be entity properties of the widget component. To revert back to styling the main widget, call
 `reset_target` on the style builder. Internally, the target is an `Option` and `None` always means "target the
 entity the `DynamicStyle` component is on".
 
@@ -1199,7 +1199,7 @@ interacted.
 Switching placement, as opposed to switching the `target` of styling, changes where the `DynamicStyle`
 component will be injected. This means that interactions will be detected on the placement and thus can
 narrow down interactive area to sub-entities. Calling `reset_placement` reverts the builder to add
-attributes to the `DynamicStyle` of the main entity. Interanlly `placement` is an `Option`, and `None`
+attributes to the `DynamicStyle` of the main entity. Internally `placement` is an `Option`, and `None`
 means that new attributes are collected for the main entity being styled.
 
 > [!CAUTION]
@@ -1273,7 +1273,7 @@ Any `sickle_ui` widget that has variable values will depend on the default theme
 
 ## Utilities
 
-There are a number of utilities that form the foundation of `sickle_ui` widgets and can be resused for
+There are a number of utilities that form the foundation of `sickle_ui` widgets and can be reused for
 new widgets just as well.
 
 
@@ -1353,7 +1353,7 @@ opened when a tab is "popped out" is mounted at the context root.
 ### Ui commands
 
 A number of `Commands` extension is available to make life easier, such as managing `PseudoStates`,
-`FluxInteractionStopwatchLock`s, or loggin an entity's hierarchy and components.
+`FluxInteractionStopwatchLock`s, or logging an entity's hierarchy and components.
 
 
 ### Context Menu
@@ -1431,5 +1431,5 @@ style attribute called `TrackedStyleState` that can be used to drive other widge
 It does not actually style anything.
 
 > [!NOTE]
-> `TrackedStyleState` is `Lerp`able so it can be animated. Dropdowns use this to control The scroll view
+> `TrackedStyleState` is `Lerp`able so it can be animated. Dropdowns use this to control the scroll view
 > in their options panel to disable it while in transition to avoid visual pops.
