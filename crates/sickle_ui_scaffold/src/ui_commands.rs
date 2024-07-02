@@ -339,7 +339,7 @@ where
     C: DefaultTheme,
 {
     fn apply(self, entity: Entity, world: &mut World) {
-        let context = world.get::<C>(entity).unwrap().clone();
+        let context = world.get::<C>(entity).unwrap();
         let theme_data = world.resource::<ThemeData>().clone();
         let pseudo_states = world.get::<PseudoStates>(entity);
         let empty_pseudo_state = Vec::new();
@@ -411,25 +411,25 @@ where
         let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
             .map(
-                |(pseudo_theme, source_entity)| match pseudo_theme.builder().clone() {
+                |(pseudo_theme, source_entity)| match pseudo_theme.builder() {
                     DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
                     DynamicStyleBuilder::StyleBuilder(builder) => {
                         let mut style_builder = StyleBuilder::new();
                         builder(&mut style_builder, &theme_data);
 
-                        style_builder.convert_with(&context)
+                        style_builder.convert_with(context)
                     }
                     DynamicStyleBuilder::ContextStyleBuilder(builder) => {
                         let mut style_builder = StyleBuilder::new();
                         builder(&mut style_builder, &context, &theme_data);
 
-                        style_builder.convert_with(&context)
+                        style_builder.convert_with(context)
                     }
                     DynamicStyleBuilder::WorldStyleBuilder(builder) => {
                         let mut style_builder = StyleBuilder::new();
                         builder(&mut style_builder, entity, &context, world);
 
-                        style_builder.convert_with(&context)
+                        style_builder.convert_with(context)
                     }
                     DynamicStyleBuilder::InfoWorldStyleBuilder(builder) => {
                         let mut style_builder = StyleBuilder::new();
@@ -442,7 +442,7 @@ where
                             world,
                         );
 
-                        style_builder.convert_with(&context)
+                        style_builder.convert_with(context)
                     }
                 },
             )

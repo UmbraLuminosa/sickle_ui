@@ -223,7 +223,7 @@ pub trait UiContext {
     }
 }
 
-pub trait DefaultTheme: Clone + Component + UiContext {
+pub trait DefaultTheme: Sized + Component + UiContext {
     fn default_theme() -> Option<Theme<Self>> {
         None
     }
