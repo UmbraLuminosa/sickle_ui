@@ -63,6 +63,18 @@ impl Default for ImageSource {
     }
 }
 
+impl From<&str> for ImageSource {
+    fn from(path: &str) -> Self {
+        Self::Path(path.to_string())
+    }
+}
+
+impl From<String> for ImageSource {
+    fn from(path: String) -> Self {
+        Self::Path(path)
+    }
+}
+
 pub struct SetImage {
     source: ImageSource,
     check_lock: bool,
