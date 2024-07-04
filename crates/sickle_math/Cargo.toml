@@ -11,5 +11,5 @@ dev = [
 ]
 
 [dependencies]
-bevy = { path = "../../../../bevy" }
+bevy = { version = "0.14" }
 serde = { version = "1.0", features = ["derive"] }
