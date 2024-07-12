@@ -480,7 +480,6 @@ where
             }
 
             if style.is_interactive() || style.is_animated() {
-                world.entity_mut(placement_entity).insert(style);
                 if world.get::<Interaction>(placement_entity).is_none() {
                     world
                         .entity_mut(placement_entity)
@@ -492,9 +491,9 @@ where
                         .entity_mut(placement_entity)
                         .insert(TrackedInteraction::default());
                 }
-            } else {
-                world.entity_mut(placement_entity).insert(style);
             }
+
+            world.entity_mut(placement_entity).insert(style);
         }
 
         for unstyled_context in unstyled_entities {

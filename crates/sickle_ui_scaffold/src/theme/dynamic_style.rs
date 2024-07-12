@@ -77,12 +77,9 @@ fn update_dynamic_style_static_attributes(
 
         if had_static {
             let style = style.bypass_change_detection();
-            style.attributes = style
+            style
                 .attributes
-                .iter()
-                .filter(|csa| !csa.attribute.is_static())
-                .cloned()
-                .collect();
+                .retain(|csa| !csa.attribute.is_static());
 
             if style.attributes.len() == 0 {
                 commands.entity(entity).remove::<DynamicStyle>();
@@ -219,10 +216,9 @@ fn update_dynamic_style_on_stopwatch_change(
             }
 
             if filter_entered {
-                style.attributes = style
+                style
                     .attributes
-                    .iter()
-                    .filter(|csa| {
+                    .retain(|csa| {
                         let ContextStyleAttribute {
                             attribute: DynamicStyleAttribute::Animated { controller, .. },
                             ..
@@ -232,9 +228,7 @@ fn update_dynamic_style_on_stopwatch_change(
                         };
 
                         !(controller.animation.delete_on_entered && !controller.entering())
-                    })
-                    .cloned()
-                    .collect();
+                    });
 
                 if style.attributes.len() == 0 {
                     par_commands.command_scope(|mut commands| {
