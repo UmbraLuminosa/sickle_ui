@@ -229,9 +229,7 @@ impl Menu {
                 theme_spacing.borders.extra_small,
             )))
             .border_color(Color::NONE)
-            .border_radius(BorderRadius::all(Val::Px(
-                theme_spacing.corners.medium,
-            )))
+            .border_radius(BorderRadius::all(Val::Px(theme_spacing.corners.medium)))
             .animated()
             .background_color(AnimatedVals {
                 idle: colors.container(Container::SurfaceMid),

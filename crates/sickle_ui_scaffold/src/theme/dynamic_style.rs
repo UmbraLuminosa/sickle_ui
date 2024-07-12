@@ -11,8 +11,7 @@ pub struct DynamicStylePlugin;
 
 impl Plugin for DynamicStylePlugin {
     fn build(&self, app: &mut App) {
-        app
-        .configure_sets(
+        app.configure_sets(
             PostUpdate,
             DynamicStylePostUpdate
                 .after(CustomThemeUpdate)
@@ -77,9 +76,7 @@ fn update_dynamic_style_static_attributes(
 
         if had_static {
             let style = style.bypass_change_detection();
-            style
-                .attributes
-                .retain(|csa| !csa.attribute.is_static());
+            style.attributes.retain(|csa| !csa.attribute.is_static());
 
             if style.attributes.len() == 0 {
                 commands.entity(entity).remove::<DynamicStyle>();
@@ -216,19 +213,17 @@ fn update_dynamic_style_on_stopwatch_change(
             }
 
             if filter_entered {
-                style
-                    .attributes
-                    .retain(|csa| {
-                        let ContextStyleAttribute {
-                            attribute: DynamicStyleAttribute::Animated { controller, .. },
-                            ..
-                        } = csa
-                        else {
-                            return true;
-                        };
+                style.attributes.retain(|csa| {
+                    let ContextStyleAttribute {
+                        attribute: DynamicStyleAttribute::Animated { controller, .. },
+                        ..
+                    } = csa
+                    else {
+                        return true;
+                    };
 
-                        !(controller.animation.delete_on_entered && !controller.entering())
-                    });
+                    !(controller.animation.delete_on_entered && !controller.entering())
+                });
 
                 if style.attributes.len() == 0 {
                     par_commands.command_scope(|mut commands| {
