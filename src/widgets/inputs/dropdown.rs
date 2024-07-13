@@ -172,6 +172,12 @@ pub struct DropdownPanelPlacement {
 #[reflect(Component)]
 pub struct DropdownOptions(Vec<String>);
 
+impl DropdownOptions {
+    pub fn labels(&self) -> &Vec<String> {
+        &self.0
+    }
+}
+
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct DropdownOption {
@@ -215,6 +221,14 @@ impl DefaultTheme for DropdownOption {
 
 impl DropdownOption {
     pub const LABEL: &'static str = "Label";
+
+    pub fn dropdown(&self) -> Entity {
+        self.dropdown
+    }
+
+    pub fn option(&self) -> usize {
+        self.option
+    }
 
     pub fn theme() -> Theme<DropdownOption> {
         let base_theme = PseudoTheme::deferred(None, DropdownOption::primary_style);
@@ -347,6 +361,10 @@ impl Dropdown {
         if self.value != value {
             self.value = value;
         }
+    }
+
+    pub fn options_container(&self) -> Entity {
+        self.scroll_view_content
     }
 
     pub fn theme() -> Theme<Dropdown> {
