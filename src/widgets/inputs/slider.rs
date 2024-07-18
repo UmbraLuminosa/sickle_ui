@@ -296,15 +296,15 @@ impl Default for SliderConfig {
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Slider {
-    ratio: f32,
-    config: SliderConfig,
-    label: Entity,
-    bar_container: Entity,
-    bar: Entity,
-    handle: Entity,
-    readout_container: Entity,
-    readout: Entity,
-    base_ratio: Option<f32>,
+    pub ratio: f32,
+    pub config: SliderConfig,
+    pub label: Entity,
+    pub bar_container: Entity,
+    pub bar: Entity,
+    pub handle: Entity,
+    pub readout_container: Entity,
+    pub readout: Entity,
+    pub base_ratio: Option<f32>,
 }
 
 impl Default for Slider {
