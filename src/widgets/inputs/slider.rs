@@ -200,12 +200,12 @@ impl Default for SliderBar {
 
 #[derive(Component, Clone, Debug, Reflect)]
 pub struct SliderConfig {
-    label: Option<String>,
-    min: f32,
-    max: f32,
-    initial_value: f32,
-    show_current: bool,
-    axis: SliderAxis,
+    pub label: Option<String>,
+    pub min: f32,
+    pub max: f32,
+    pub initial_value: f32,
+    pub show_current: bool,
+    pub axis: SliderAxis,
 }
 
 impl SliderConfig {
