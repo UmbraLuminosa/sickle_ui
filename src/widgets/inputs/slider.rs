@@ -296,15 +296,15 @@ impl Default for SliderConfig {
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 pub struct Slider {
-    pub ratio: f32,
-    pub config: SliderConfig,
-    pub label: Entity,
-    pub bar_container: Entity,
-    pub bar: Entity,
-    pub handle: Entity,
-    pub readout_container: Entity,
-    pub readout: Entity,
-    pub base_ratio: Option<f32>,
+    ratio: f32,
+    config: SliderConfig,
+    label: Entity,
+    bar_container: Entity,
+    bar: Entity,
+    handle: Entity,
+    readout_container: Entity,
+    readout: Entity,
+    base_ratio: Option<f32>,
 }
 
 impl Default for Slider {
@@ -370,6 +370,10 @@ impl Slider {
         self.config.min.lerp(self.config.max, self.ratio)
     }
 
+    pub fn config(&self) -> &SliderConfig {
+        &self.config
+    }
+
     pub fn set_value(&mut self, value: f32) {
         if value > self.config.max || value < self.config.min {
             warn!("Tried to set slider value outside of range");
@@ -391,7 +395,7 @@ impl Slider {
             .text
             .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
-        match slider.config.axis {
+        match slider.config().axis {
             SliderAxis::Horizontal => {
                 style_builder
                     .justify_content(JustifyContent::SpaceBetween)
@@ -480,7 +484,7 @@ impl Slider {
             .sized_font(font.clone())
             .font_color(colors.on(On::Surface));
 
-        if slider.config.label.is_none() {
+        if slider.config().label.is_none() {
             style_builder
                 .switch_target(Slider::LABEL)
                 .display(Display::None)
@@ -492,7 +496,7 @@ impl Slider {
                 .visibility(Visibility::Inherited);
         }
 
-        if !slider.config.show_current {
+        if !slider.config().show_current {
             style_builder
                 .switch_target(Slider::READOUT_CONTAINER)
                 .display(Display::None)
