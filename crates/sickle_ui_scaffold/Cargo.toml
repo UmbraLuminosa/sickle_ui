@@ -2,6 +2,10 @@
 name = "sickle_ui_scaffold"
 version = "0.2.1"
 edition = "2021"
+description = "Scaffolding framework for sickle_ui"
+keywords = ["sickle_ui"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/UmbraLuminosa/sickle_ui"
 
 [features]
 dev = ["bevy/dynamic_linking"]

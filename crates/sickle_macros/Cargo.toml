@@ -2,6 +2,10 @@
 name = "sickle_macros"
 version = "0.2.1"
 edition = "2021"
+description = "Macros for sickle_ui"
+keywords = ["sickle_ui"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/UmbraLuminosa/sickle_ui"
 
 [lib]
 proc-macro = true
