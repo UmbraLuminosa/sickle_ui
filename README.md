@@ -1,5 +1,8 @@
 # Sickle UI
 
+[![Crates.io](https://img.shields.io/crates/v/sickle_ui.svg)](https://crates.io/crates/sickle_ui)
+[![Downloads](https://img.shields.io/crates/d/sickle_ui.svg)](https://crates.io/crates/sickle_ui)
+
 A widget library built on top of `bevy`'s internal `bevy_ui`.
 
 ![Screenshot of the simple_editor example](/assets/images/Screenshot_Simple_Editor.png)
@@ -14,10 +17,7 @@ cargo run --example simple_editor
 ```
 
 > [!WARNING]
-> THIS IS CURRENTLY IN HEAVY DEVELOPMENT
-
-The project has no crate release yet. If you still want to try it locally from
-within your project, add a dependency on the repository directly.
+> `sickle_ui` is still in development. The framework is stable to the extend listed below.
 
 Main missing features:
 - Centralized focus management
