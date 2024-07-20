@@ -9,6 +9,9 @@ keywords = ["bevy", "gui", "sickle", "sickle_ui"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/UmbraLuminosa/sickle_ui"
 
+[workspace]
+members = ["crates/*"]
+
 [features]
 dev = ["bevy/dynamic_linking"]
 
