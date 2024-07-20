@@ -55,6 +55,28 @@ impl UiBuilder<'_, Entity> {
         self.commands().entity(entity)
     }
 
+    /// Styling commands for UI Nodes
+    ///
+    /// `sickle_ui` exposes functions for all standard bevy styleable attributes.
+    /// Manual extension can be done for custom styling needs via extension traits:
+    ///
+    /// ```rust
+    /// pub trait SetMyPropExt {
+    ///     fn my_prop(&mut self, value: f32) -> &mut Self;
+    /// }
+    ///
+    /// impl SetMyPropExt for UiStyle<'_> {
+    ///     fn my_prop(&mut self, value: f32) -> &mut Self {
+    ///         // SetMyProp is assumed to be an EntityCommand
+    ///         // Alternatively a closure can be supplied as per a standard bevy command
+    ///         // NOTE: All built-in commands structs are public and can be re-used in extensions
+    ///         self.entity_commands().add(SetMyProp {
+    ///             value
+    ///         });
+    ///         self
+    ///     }
+    /// }
+    /// ```
     pub fn style(&mut self) -> UiStyle {
         let entity = self.id();
         self.commands().style(entity)
