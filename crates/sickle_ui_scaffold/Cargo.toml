@@ -7,8 +7,8 @@ edition = "2021"
 dev = ["bevy/dynamic_linking"]
 
 [dependencies]
-sickle_math = { path = "../sickle_math" }
-sickle_macros = { path = "../sickle_macros" }
+sickle_math = { path = "../sickle_math", version = "0.2.1" }
+sickle_macros = { path = "../sickle_macros", version = "0.2.1" }
 
 bevy = { version = "0.14" }
 bevy_reflect = { version = "0.14" }

@@ -4,6 +4,7 @@ version = "0.2.1"
 edition = "2021"
 categories = ["gui"]
 description = "A widget library built on top of bevy."
+exclude = ["assets/examples/"]
 keywords = ["bevy", "gui", "sickle", "sickle_ui"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/UmbraLuminosa/sickle_ui"
@@ -12,9 +13,9 @@ repository = "https://github.com/UmbraLuminosa/sickle_ui"
 dev = ["bevy/dynamic_linking"]
 
 [dependencies]
-sickle_math = { path = "crates/sickle_math" }
-sickle_macros = { path = "crates/sickle_macros" }
-sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold" }
+sickle_math = { path = "crates/sickle_math", version = "0.2.1" }
+sickle_macros = { path = "crates/sickle_macros", version = "0.2.1" }
+sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold", version = "0.2.1" }
 
 bevy = { version = "0.14" }
 bevy_reflect = { version = "0.14" }
