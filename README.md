@@ -66,11 +66,13 @@ First you need to add `sickle_ui` as a dependency to your project:
 
 ```toml
 [dependencies]
-sickle_ui = { rev = "a548517", git = "https://github.com/UmbraLuminosa/sickle_ui" }
+sickle_ui = "0.2.1"
+# sickle_ui = { rev = "a548517", git = "https://github.com/UmbraLuminosa/sickle_ui" }
 ```
 
 > [!NOTE]
-> change `rev = "..."` to a version of your chosing. Major versions are marked with a git tag.
+> Use the commented out line and change `rev = "..."` to a version of your chosing if you want
+> to depend on the repository directly. Major versions are marked with a git tag.
 
 Once you have the new dependency, `cargo build` to download it. Now you are ready to use it,
 so add it to your app as a plugin:
