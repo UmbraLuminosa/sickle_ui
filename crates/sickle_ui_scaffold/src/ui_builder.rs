@@ -27,6 +27,16 @@ pub struct UiBuilder<'a, T> {
     context: T,
 }
 
+pub trait UiBuilderCmdsExt<'a> {
+    fn commands(&mut self) -> &mut Commands<'a, 'a>;
+}
+
+impl<'a, T> UiBuilderCmdsExt<'a> for UiBuilder<'a, T> {
+    fn commands(&mut self) -> &mut Commands<'a, 'a> {
+        &mut self.commands
+    }
+}
+
 impl<'a, T> UiBuilder<'a, T> {
     pub fn context(&self) -> &T {
         &self.context

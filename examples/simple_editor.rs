@@ -398,6 +398,22 @@ fn setup(mut commands: Commands) {
         },
     );
 
+    commands
+        .ui_builder(UiRoot)
+        .floating_panel(
+            FloatingPanelConfig {
+                title: Some("Root floating panel".into()),
+                ..default()
+            },
+            FloatingPanelLayout {
+                size: Vec2::new(200., 300.),
+                position: Vec2::new(100., 100.).into(),
+                droppable: true,
+            },
+            |_| {},
+        )
+        .insert(TargetCamera(main_camera));
+
     // Use the UI builder of the root entity with styling applied via commands
     commands.ui_builder(root_entity).column(|column| {
         column

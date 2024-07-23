@@ -923,23 +923,23 @@ pub struct UpdateFloatingPanelPanelId {
     pub panel_id: Entity,
 }
 
-pub trait UiFloatingPanelExt {
+pub trait UiFloatingPanelExt<'a> {
     fn floating_panel(
-        &mut self,
+        &'a mut self,
         config: FloatingPanelConfig,
         layout: FloatingPanelLayout,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
     ) -> UiBuilder<Entity>;
 }
 
-impl UiFloatingPanelExt for UiBuilder<'_, Entity> {
+impl<'a, T: UiContainerExt + UiBuilderCmdsExt<'a>> UiFloatingPanelExt<'a> for T {
     /// A floating panel that can be optionally dragable, foldable, and closable.
     ///
     /// ### PseudoState usage
     /// - `PseudoState::Folded` is used when the panel is folded
     /// - `PseudoState::Resizable(_)` is transiently used by its resize handles
     fn floating_panel(
-        &mut self,
+        &'a mut self,
         config: FloatingPanelConfig,
         layout: FloatingPanelLayout,
         spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
