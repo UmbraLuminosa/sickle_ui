@@ -440,7 +440,7 @@ impl Dropdown {
             .top(Val::Px(theme_spacing.areas.medium))
             .z_index(ZIndex::Global(DROPDOWN_PANEL_Z_INDEX as i32))
             .border(UiRect::all(Val::Px(theme_spacing.gaps.tiny)))
-            .border_color(colors.accent(Accent::Shadow))
+            .border_color(Color::NONE)
             .background_color(colors.container(Container::Primary));
 
         style_builder
@@ -534,6 +534,7 @@ impl Dropdown {
             .bottom(placement.bottom)
             .left(placement.left)
             .width(placement.width)
+            .border_color(colors.accent(Accent::Shadow))
             .animated()
             .height(AnimatedVals {
                 idle: placement.height,
@@ -622,37 +623,7 @@ impl Dropdown {
         let dropdown_borders = UiUtils::border_as_px(entity, world);
         let panel_borders = UiUtils::border_as_px(dropdown_panel, world);
 
-        let (container_size, dropdown_position) = UiUtils::container_size_and_offset(entity, world);
-        let tl_corner = dropdown_position - dropdown_size / 2.;
-        let halfway_point = container_size / 2.;
-        let anchor = if tl_corner.x > halfway_point.x {
-            if tl_corner.y > halfway_point.y {
-                DropdownPanelAnchor::TopRight
-            } else {
-                DropdownPanelAnchor::BottomRight
-            }
-        } else {
-            if tl_corner.y > halfway_point.y {
-                DropdownPanelAnchor::TopLeft
-            } else {
-                DropdownPanelAnchor::BottomLeft
-            }
-        };
-
-        let panel_size_limit = match anchor {
-            DropdownPanelAnchor::TopLeft => Vec2::new(container_size.x - tl_corner.x, tl_corner.y),
-            DropdownPanelAnchor::TopRight => Vec2::new(tl_corner.x + dropdown_size.x, tl_corner.y),
-            DropdownPanelAnchor::BottomLeft => Vec2::new(
-                container_size.x - tl_corner.x,
-                container_size.y - (tl_corner.y + dropdown_size.y),
-            ),
-            DropdownPanelAnchor::BottomRight => Vec2::new(
-                tl_corner.x + dropdown_size.x,
-                container_size.y - (tl_corner.y + dropdown_size.y),
-            ),
-        }
-        .max(Vec2::ZERO);
-
+        // Calculate height for five options (opinionated soft height limit)
         let Some(option_list) = world.get::<Children>(scroll_view_content) else {
             return Err("Dropdown has no options".into());
         };
@@ -673,6 +644,38 @@ impl Dropdown {
                 counted += 1;
             }
         }
+
+        let (container_size, tl_corner) = UiUtils::container_size_and_offset(entity, world);
+        let halfway_point = container_size / 2.;
+        let space_below = (container_size - tl_corner - dropdown_size).y;
+
+        let anchor = if tl_corner.x > halfway_point.x {
+            if space_below < five_children_height {
+                DropdownPanelAnchor::TopRight
+            } else {
+                DropdownPanelAnchor::BottomRight
+            }
+        } else {
+            if space_below < five_children_height {
+                DropdownPanelAnchor::TopLeft
+            } else {
+                DropdownPanelAnchor::BottomLeft
+            }
+        };
+
+        let panel_size_limit = match anchor {
+            DropdownPanelAnchor::TopLeft => Vec2::new(container_size.x - tl_corner.x, tl_corner.y),
+            DropdownPanelAnchor::TopRight => Vec2::new(tl_corner.x + dropdown_size.x, tl_corner.y),
+            DropdownPanelAnchor::BottomLeft => Vec2::new(
+                container_size.x - tl_corner.x,
+                container_size.y - (tl_corner.y + dropdown_size.y),
+            ),
+            DropdownPanelAnchor::BottomRight => Vec2::new(
+                tl_corner.x + dropdown_size.x,
+                container_size.y - (tl_corner.y + dropdown_size.y),
+            ),
+        }
+        .max(Vec2::ZERO);
 
         // Unsafe unwrap: If a ScrollView's content doesn't have a Node, we should panic!
         let panel_width = (world
@@ -720,7 +723,7 @@ impl Dropdown {
             left,
             width: Val::Px(panel_width),
             height: Val::Px(idle_height),
-            panel_width: panel_width,
+            panel_width,
             button_width: dropdown_size.x,
             wider_than_button: panel_width > dropdown_size.x,
         })

@@ -31,11 +31,16 @@ impl UiUtils {
         simple_name
     }
 
-    /// Gets the nearest clipped container, useful for absolutely positioned elements to find a maximum size
+    /// Gets the nearest clipped container.
+    ///
+    /// Useful for absolutely positioned elements to find a maximum size they can be visible in.
+    /// Offset is from the container top left corner to the element's top left corner.
+    ///
+    /// WARNING: Works only for Ui Nodes, panics if required components are missing!
     pub fn container_size_and_offset(entity: Entity, world: &World) -> (Vec2, Vec2) {
         let mut container_size = Vec2::ZERO;
 
-        // Unsafe unwarp: If a dropdown doesn't have a GT, we should panic!
+        // Unsafe unwarp: If a Ui element doesn't have a GT, we should panic!
         let mut offset = world
             .get::<GlobalTransform>(entity)
             .unwrap()
