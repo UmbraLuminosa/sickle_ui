@@ -105,6 +105,35 @@ fn setup(mut commands: Commands) {
 }
 
 fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
+    container.commands().ui_builder(UiRoot).floating_panel(
+        FloatingPanelConfig {
+            title: Some("Root floating panel".into()),
+            ..default()
+        },
+        FloatingPanelLayout {
+            size: Vec2::new(200., 300.),
+            position: Vec2::new(100., 100.).into(),
+            droppable: true,
+        },
+        |panel| {
+            panel.docking_zone(
+                SizedZoneConfig {
+                    size: 60.,
+                    ..default()
+                },
+                false,
+                |tab_container| {
+                    tab_container.add_tab("Floating docking zone".into(), |panel| {
+                        panel.label(LabelConfig {
+                            label: "Floating docking zone".into(),
+                            ..default()
+                        });
+                    });
+                },
+            );
+        },
+    );
+
     container.sized_zone(
         SizedZoneConfig {
             size: 10.,
