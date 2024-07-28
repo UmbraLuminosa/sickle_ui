@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use bevy::{input::mouse::MouseScrollUnit, prelude::*, ui::RelativeCursorPosition};
 
 use sickle_ui_scaffold::{prelude::*, ui_commands::UpdateTextExt};
@@ -17,6 +19,7 @@ impl Plugin for SliderPlugin {
                 (
                     update_slider_on_scroll.after(ScrollableUpdate),
                     update_slider_on_drag.after(DraggableUpdate),
+                    update_slider_on_bar_change,
                     update_slider_handle,
                     update_slider_readout,
                 )
@@ -115,6 +118,19 @@ fn update_slider_on_drag(
         };
 
         slider.ratio = (slider.ratio + fraction).clamp(0., 1.);
+    }
+}
+
+fn update_slider_on_bar_change(
+    q_slider_bars: Query<&SliderBar, Changed<Node>>,
+    mut q_slider: Query<&mut Slider>,
+) {
+    for bar in &q_slider_bars {
+        let Ok(mut slider) = q_slider.get_mut(bar.slider) else {
+            continue;
+        };
+
+        slider.deref_mut();
     }
 }
 
