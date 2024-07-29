@@ -7,9 +7,8 @@ keywords = ["sickle_ui"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/UmbraLuminosa/sickle_ui"
 
-[features]
-dev = ["bevy/dynamic_linking"]
-
 [dependencies]
-bevy = { version = "0.14" }
+bevy_color = "0.14.0"
+bevy_reflect = "0.14.0"
+bevy_ui = "0.14.0"
 serde = { version = "1.0", features = ["derive"] }

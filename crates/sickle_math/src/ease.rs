@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::reflect::Reflect;
+use bevy_reflect::Reflect;
 use serde::{Deserialize, Serialize};
 
 const C1_F32: f32 = 1.70158;

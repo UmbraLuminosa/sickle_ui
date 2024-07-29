@@ -1,7 +1,5 @@
-use bevy::{
-    color::{Color, Mix},
-    ui::{BorderRadius, Outline, UiRect, Val},
-};
+use bevy_color::{Color, Mix};
+use bevy_ui::{BorderRadius, Outline, UiRect, Val};
 
 pub trait Lerp {
     fn lerp(&self, to: Self, t: f32) -> Self;
