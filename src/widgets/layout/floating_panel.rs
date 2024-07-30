@@ -341,15 +341,6 @@ fn update_panel_layout(
 
             if let Some(title) = config.title.clone() {
                 commands.entity(panel.title).set_label_text(title);
-                if config.draggable {
-                    commands
-                        .style(panel.title_container)
-                        .enable_flux_interaction();
-                } else {
-                    commands
-                        .style(panel.title_container)
-                        .disable_flux_interaction();
-                }
             } else {
                 commands.style(panel.drag_handle).render(config.draggable);
             }
@@ -391,11 +382,11 @@ fn update_panel_layout(
         commands
             .style(panel.title_container)
             .focus_policy(policy)
-            .flux_interaction_enabled(!panel.resizing);
+            .flux_interaction_enabled(!panel.resizing && config.draggable);
         commands
             .style(panel.drag_handle)
             .focus_policy(policy)
-            .flux_interaction_enabled(!panel.resizing);
+            .flux_interaction_enabled(!panel.resizing && config.draggable);
 
         commands
             .style(panel.fold_button)
