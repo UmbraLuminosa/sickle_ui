@@ -1,11 +1,30 @@
 use bevy::prelude::*;
 
-use crate::theme::prelude::*;
+use crate::{prelude::FluxInteraction, theme::prelude::*};
 
-use super::{attribute::CustomAnimatedStyleAttribute, generated::*, LogicalEq};
+use super::{
+    attribute::{
+        CustomAnimatedStyleAttribute, CustomInteractiveStyleAttribute, CustomStaticStyleAttribute,
+    },
+    generated::*,
+    LogicalEq,
+};
 
 pub struct InteractiveStyleBuilder<'a> {
     pub style_builder: &'a mut StyleBuilder,
+}
+
+impl<'a> InteractiveStyleBuilder<'a> {
+    pub fn custom(
+        &mut self,
+        callback: impl Fn(Entity, FluxInteraction, &mut World) + Send + Sync + 'static,
+    ) -> &mut Self {
+        self.style_builder.add(DynamicStyleAttribute::Interactive(
+            InteractiveStyleAttribute::Custom(CustomInteractiveStyleAttribute::new(callback)),
+        ));
+
+        self
+    }
 }
 
 pub struct AnimatedStyleBuilder<'a> {
@@ -134,6 +153,17 @@ impl StyleBuilder {
                 self.attributes.len() - 1
             }
         }
+    }
+
+    pub fn custom(
+        &mut self,
+        callback: impl Fn(Entity, &mut World) + Send + Sync + 'static,
+    ) -> &mut Self {
+        self.add(DynamicStyleAttribute::Static(StaticStyleAttribute::Custom(
+            CustomStaticStyleAttribute::new(callback),
+        )));
+
+        self
     }
 
     pub fn interactive(&mut self) -> InteractiveStyleBuilder {
