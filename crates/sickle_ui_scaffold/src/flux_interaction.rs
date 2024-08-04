@@ -1,7 +1,6 @@
 use std::{cmp::Ordering, ops::Add, time::Duration};
 
-use bevy::{prelude::*, time::Stopwatch, utils::HashMap};
-use bevy_reflect::Reflect;
+use bevy::{prelude::*, reflect::Reflect, time::Stopwatch, utils::HashMap};
 
 pub struct FluxInteractionPlugin;
 

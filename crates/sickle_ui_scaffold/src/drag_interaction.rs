@@ -1,7 +1,7 @@
 use bevy::prelude::*;
+use bevy::reflect::Reflect;
 use bevy::ui::RelativeCursorPosition;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
-use bevy_reflect::Reflect;
 
 use crate::flux_interaction::{FluxInteraction, FluxInteractionUpdate};
 

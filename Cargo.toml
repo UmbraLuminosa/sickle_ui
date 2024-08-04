@@ -28,8 +28,12 @@ sickle_math = { path = "crates/sickle_math", version = "0.2.1" }
 sickle_macros = { path = "crates/sickle_macros", version = "0.2.1" }
 sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold", version = "0.2.1" }
 
-bevy = { version = "0.14" }
-bevy_reflect = { version = "0.14" }
-bevy_ecs_macros = { version = "0.14" }
+bevy = { version = "0.14", default-features = false, features = [
+    "bevy_asset",
+    "bevy_color",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_winit",
+] }
 
 serde = { version = "1.0", features = ["derive"] }
