@@ -462,6 +462,7 @@ where
                 // Unsafe unwrap: ctx_name comes from the context itslef, we should panic if it doesn't resolve!
                 context.get(&ctx_name).unwrap()
             })
+            .filter(|e| *e != Entity::PLACEHOLDER)
             .collect();
 
         for (placement, mut style) in styles {
