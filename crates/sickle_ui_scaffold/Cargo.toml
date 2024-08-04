@@ -15,6 +15,8 @@ sickle_math = { path = "../sickle_math", version = "0.2.1" }
 sickle_macros = { path = "../sickle_macros", version = "0.2.1" }
 
 bevy = { version = "0.14", default-features = true, features = [
+    "bevy_asset",
+    "bevy_color",
     "bevy_state",
     "bevy_text",
     "bevy_ui",
