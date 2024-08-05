@@ -22,6 +22,9 @@ opt-level = 3
 
 [features]
 dev = ["bevy/dynamic_linking"]
+disable-ui-context-placeholder-warn = [
+    "sickle_ui_scaffold/disable-ui-context-placeholder-warn",
+]
 
 [dependencies]
 sickle_math = { path = "crates/sickle_math", version = "0.2.1" }

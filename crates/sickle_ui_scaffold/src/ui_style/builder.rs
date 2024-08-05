@@ -239,16 +239,26 @@ impl StyleBuilder {
 
         let mut result: Vec<(Option<Entity>, DynamicStyle)> = Vec::with_capacity(placements.len());
         for placement in placements {
-            let placement_entity = match &placement {
-                Some(target_placement) => match context.get(target_placement) {
-                    Ok(target_entity) => Some(target_entity),
+            let mut placement_entity: Option<Entity> = None;
+
+            if let Some(target_placement) = placement {
+                let target_entity = match context.get(target_placement) {
+                    Ok(entity) => entity,
                     Err(msg) => {
                         warn!("{}", msg);
                         continue;
                     }
-                },
-                None => None,
-            };
+                };
+
+                if target_entity == Entity::PLACEHOLDER {
+                    #[cfg(not(feature = "disable-ui-context-placeholder-warn"))]
+                    warn!("Entity::PLACEHOLDER returned for placement target!");
+
+                    continue;
+                } else {
+                    placement_entity = Some(target_entity);
+                }
+            }
 
             result.push((
                 placement_entity,
@@ -256,45 +266,57 @@ impl StyleBuilder {
                     self.attributes
                         .iter()
                         .filter(|csac| csac.placement == placement)
-                        .fold(Vec::new(), |mut acc: Vec<ContextStyleAttribute>, csac| {
-                            let new_entry: ContextStyleAttribute = match &csac.target {
-                                Some(target) => match context.get(target) {
-                                    Ok(target_entity) => ContextStyleAttribute::new(
-                                        target_entity,
-                                        csac.attribute.clone(),
-                                    )
-                                    .into(),
-                                    Err(msg) => {
-                                        warn!("{}", msg);
-                                        return acc;
-                                    }
-                                },
-                                None => {
-                                    ContextStyleAttribute::new(None, csac.attribute.clone()).into()
-                                }
-                            };
-
-                            if !acc
-                                .iter()
-                                .any(|csa: &ContextStyleAttribute| csa.logical_eq(&new_entry))
-                            {
-                                acc.push(new_entry);
-                            } else {
-                                warn!("Style overwritten for {:?}", new_entry);
-                                // Safe unwrap: checked in if above
-                                let index = acc
-                                    .iter()
-                                    .position(|csa| csa.logical_eq(&new_entry))
-                                    .unwrap();
-                                acc[index] = new_entry;
-                            }
-
-                            acc
+                        .fold(Vec::new(), |acc: Vec<ContextStyleAttribute>, csac| {
+                            StyleBuilder::fold_context_style_attributes(acc, csac, context)
                         }),
                 ),
             ));
         }
 
         result
+    }
+
+    fn fold_context_style_attributes(
+        mut acc: Vec<ContextStyleAttribute>,
+        csac: &ContextStyleAttributeConfig,
+        context: &impl UiContext,
+    ) -> Vec<ContextStyleAttribute> {
+        let new_entry: ContextStyleAttribute = match &csac.target {
+            Some(target) => match context.get(target) {
+                Ok(target_entity) => match target_entity == Entity::PLACEHOLDER {
+                    true => {
+                        #[cfg(not(feature = "disable-ui-context-placeholder-warn"))]
+                        warn!("Entity::PLACEHOLDER returned for styling target!");
+
+                        return acc;
+                    }
+                    false => {
+                        ContextStyleAttribute::new(target_entity, csac.attribute.clone()).into()
+                    }
+                },
+                Err(msg) => {
+                    warn!("{}", msg);
+                    return acc;
+                }
+            },
+            None => ContextStyleAttribute::new(None, csac.attribute.clone()).into(),
+        };
+
+        if !acc
+            .iter()
+            .any(|csa: &ContextStyleAttribute| csa.logical_eq(&new_entry))
+        {
+            acc.push(new_entry);
+        } else {
+            warn!("Style overwritten for {:?}", new_entry);
+            // Safe unwrap: checked in if above
+            let index = acc
+                .iter()
+                .position(|csa| csa.logical_eq(&new_entry))
+                .unwrap();
+            acc[index] = new_entry;
+        }
+
+        acc
     }
 }
