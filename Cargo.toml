@@ -1,6 +1,6 @@
 [package]
 name = "sickle_ui"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 categories = ["gui"]
 description = "A widget library built for Bevy, in Bevy."
@@ -27,9 +27,9 @@ disable-ui-context-placeholder-warn = [
 ]
 
 [dependencies]
-sickle_math = { path = "crates/sickle_math", version = "0.2.1" }
-sickle_macros = { path = "crates/sickle_macros", version = "0.2.1" }
-sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold", version = "0.2.1" }
+sickle_math = { path = "crates/sickle_math", version = "0.2.2" }
+sickle_macros = { path = "crates/sickle_macros", version = "0.2.2" }
+sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold", version = "0.2.2" }
 
 bevy = { version = "0.14", default-features = false, features = [
     "bevy_asset",

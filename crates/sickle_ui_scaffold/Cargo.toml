@@ -1,6 +1,6 @@
 [package]
 name = "sickle_ui_scaffold"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Scaffolding framework for sickle_ui"
 keywords = ["sickle_ui"]
@@ -12,8 +12,8 @@ dev = ["bevy/dynamic_linking"]
 disable-ui-context-placeholder-warn = []
 
 [dependencies]
-sickle_math = { path = "../sickle_math", version = "0.2.1" }
-sickle_macros = { path = "../sickle_macros", version = "0.2.1" }
+sickle_math = { path = "../sickle_math", version = "0.2.2" }
+sickle_macros = { path = "../sickle_macros", version = "0.2.2" }
 
 bevy = { version = "0.14", default-features = true, features = [
     "bevy_asset",
